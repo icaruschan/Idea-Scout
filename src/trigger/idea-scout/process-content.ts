@@ -190,7 +190,7 @@ Return JSON:
       publishedDate,
       aiSummary: summaryResult.summary,
       keyTakeaways: summaryResult.keyTakeaways,
-      transcript: transcript.substring(0, 2000),
+      transcript,
       creatorPageId,
     });
 

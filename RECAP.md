@@ -99,7 +99,7 @@ timeline
 * **Code Modifications:**
   * **Instagram Upgrades (`src/lib/apify.ts`)**: Updated `scrapeInstagramReels` to pull the newest 30 reels per creator, immediately selecting the 5 newest reels (freshness) plus the 5 highest-viewed reels (virality) from the remaining batch, merging them into 10 items. Replaced the legacy transcript scraper with `apple_yang/instagram-transcripts-scraper` mapping transcripts concurrently by `videoUrl`.
   * **Apify Token Rotation (`src/lib/apify.ts` & `src/lib/constants.ts`)**: Built a robust rotation loop across `APIFY_TOKEN` and backup variables `BACKUP_APIFY_TOKEN` (1 through 4) to ensure failover/credit sharing on rate limits or account exhaustion.
-  * **Disambiguation / Relevance Filter (`src/trigger/idea-scout/process-content.ts`)**: Implemented a two-step LLM filter. First checks pillar relevance (confidence score $\ge 0.6$). Second verifies disambiguation to discard keyword false positives (e.g. Formula 1 driver Kimi Antonelli, NBA athlete Amen Thompson) that are unrelated to tech or content creation.
+  * **Disambiguation / Relevance Filter (`src/trigger/idea-scout/process-content.ts`)**: Implemented a single-step LLM filter. Checks pillar relevance (confidence score $\ge 0.6$) and verifies disambiguation to discard keyword false positives (e.g. Formula 1 driver Kimi Antonelli, NBA athlete Amen Thompson) that are unrelated to tech or content creation.
   * **Twitter Programmatic Filter (`src/trigger/idea-scout/scout-content.ts`)**: Refined the filter to check only `views >= MIN_VIEWS` (default 1000). Completely removed bookmark filters (`MIN_BOOKMARKS`) to keep viral/popular tweets that have 0 bookmarks.
   * **Test Suites**: Created `scripts/test-disambiguation.ts` for validating relevance, updated `test-twitter.ts` to test programmatic view counts.
 
@@ -109,12 +109,12 @@ timeline
 
 ### 1. The Unified Idea Scout Flow
 
-The Unified Idea Scout pipeline runs weekly on Wednesday mornings at 8 AM. It runs in three sequential phases:
+The Unified Idea Scout pipeline runs weekly on Monday evenings at 11:30 PM. It runs in three sequential phases:
 
 ```
-Trigger.dev Wednesday Cron
+Trigger.dev Monday Cron
 │
-└── scout-content (runs 8 AM Wednesday, 3600s max)
+└── scout-content (runs 11:30 PM Monday, 3600s max)
     ├── Step 1: Fetch active creators from YouTube, Instagram, and X databases
     ├── Step 2: Trigger scrapers (Apify Actors for YT/IG, TwitterAPI.io for X)
     ├── Step 3: Run process-content in a concurrent batch task for all scraped items
@@ -216,13 +216,13 @@ src/
 ├── lib/
 │   ├── apify.ts            — Apify Actor triggers for YouTube transcripts and Instagram Reels
 │   ├── constants.ts        — Database IDs, Data Source IDs, Content Pillars list
-│   ├── llm.ts              — The LLM System Prompt (OpenRouter/Claude)
+│   ├── llm.ts              — The LLM System Prompt (OpenRouter)
 │   ├── notion.ts           — Query creators, fetch patterns, read past ideas, create scouted entries/ideas
 │   └── twitter.ts          — Advanced TwitterAPI.io search for monitoring focus creators
 │
 └── trigger/
     └── idea-scout/
-        ├── scout-content.ts   — Wednesday 8 AM cron orchestrator (gathers creators, scrapes, batch triggers processes)
+        ├── scout-content.ts   — Monday 11:30 PM cron orchestrator (gathers creators, scrapes, batch triggers processes)
         ├── process-content.ts — Concurrent task: filters relevance, generates summary, stores in Scouted Content
         └── draft-ideas.ts     — Idea drafting: pulls fresh scouted items, remixes with VPL patterns, writes to Ideas Bank
 ```
@@ -233,7 +233,7 @@ src/
 
 | Task ID | Type | Trigger / Schedule | Max Duration | Status |
 | ------- | ---- | ------------------ | ------------ | ------ |
-| `scout-content` | `schedules.task` | `0 8 * * 3` (Wednesday 8 AM) | 3600s | Active |
+| `scout-content` | `schedules.task` | `30 23 * * 1` (Monday 11:30 PM) | 3600s | Active |
 | `process-content` | `task` | On-demand (Concurrent Batch) | 120s | Active |
 | `draft-ideas` | `task` | On-demand (Post-Processing) | 180s | Active |
 

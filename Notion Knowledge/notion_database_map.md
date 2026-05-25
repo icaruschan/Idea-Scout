@@ -161,7 +161,7 @@ graph LR
 | `Category`                 | multi_select                      | **12 options** (10 content pillars + `Personal/Vulnerability` + `Building in Public`)                                                         |
 | `Format Idea`              | select                            | `Short`, `Mid-length`, `Thread`, `Article`, `Video` — assigned by LLM                                                                          |
 | `Hook Angle`               | rich_text                         | The opening angle / psychological hook for the idea                                                                                           |
-| `Why it works`             | rich_text                         | The psychological/strategic reason why this format/angle works for the target audience                                                         |
+| `Why It Works`             | rich_text                         | The psychological/strategic reason why this format/angle works for the target audience                                                         |
 | `Steal-able Pattern`       | rich_text                         | Verbatim steal-able template from Viral Library or Scouted Content                                                                            |
 | `Tweet Structure`          | rich_text                         | Verbatim structural outline from Viral Library or Scouted Content                                                                             |
 | `Inspired By (Scouted)`    | **relation → Scouted Content**    | Lineage tracking linking back to the original source creator post in Scouted Content                                                          |

@@ -11,7 +11,7 @@ An automated agentic content scouting and idea remixing engine. This system moni
 * **Scraping Tools:** 
   * [Apify API](https://apify.com/) (Extracts YouTube video transcripts and Instagram Reels data).
   * [TwitterAPI.io](https://twitterapi.io/) (High-speed X search wrapper).
-* **AI Engine:** [OpenRouter API](https://openrouter.ai/) (Uses `qwen/qwen3.6-plus` with fallback to Claude/Gemini models).
+* **AI Engine:** [OpenRouter API](https://openrouter.ai/) (Uses `qwen/qwen3.6-plus` or other configured OpenRouter models).
 * **Environment:** TypeScript, Node.js, npm.
 
 ---
@@ -22,11 +22,9 @@ An automated agentic content scouting and idea remixing engine. This system moni
 graph TD
     A[Start: Monday 11:30 PM Schedule] --> B[Read Creator lists from Notion]
     B --> C[Scrape X, YouTube, & Instagram]
-    C --> D[Filter 1: Pillar Relevance check]
-    D -->|Noise| E[Ignore Post]
-    D -->|Match| F[Filter 2: Disambiguation check]
-    F -->|False Positive| E
-    F -->|True Match| G[Write to Scouted Content DB + Page Body Toggle]
+    C --> D[AI Relevance & Disambiguation Filter]
+    D -->|Noise or False Positive| E[Ignore Post]
+    D -->|Match| G[Write to Scouted Content DB + Page Body Toggle]
     G --> H[Remix with Viral Post Library Patterns]
     H --> I[Write New Drafts to Ideas Bank DB]
 ```
@@ -51,13 +49,13 @@ The scrapers gather recent content. To save API credits, several smart optimizat
 * **YouTube:** Triggers Apify's `fast-youtube-transcript-scraper` to pull the latest video metadata and its **entire audio transcript** (spoken words).
 * **Instagram:** Triggers Apify's `apify/instagram-reel-scraper` on the newest 30 reels.
   * *Virality Strategy:* Selects the **5 newest reels** (freshness) plus the **5 highest-viewed reels** (virality) from the rest, then runs Apify's `apple_yang/instagram-transcripts-scraper` on these 10 items.
-* **Apify Token Rotation:** If the primary Apify API token hits rate limits or runs out of credits, the code automatically rotates through backup credentials (`BACKUP_APIFY_TOKEN`, `APIFY_TOKEN_2`, etc.) and retries.
+* **Apify Token Rotation:** If the primary Apify API token hits rate limits or runs out of credits, the code automatically rotates through backup credentials (`BACKUP_APIFY_TOKEN`, `BACKUP_APIFY_TOKEN_2`, etc.) and retries.
 * **Pre-Filtering Deduplication:** Before calling expensive transcript scraper actors, the system cross-references URLs against the Notion database to ensure we do not scrape a post we have already processed.
 
 ---
 
-### Step 3: Two-Tier LLM Filter (Relevance & Disambiguation)
-To prevent your Notion databases from filling up with unrelated spam, the AI runs a two-step review:
+### Step 3: Single-Step LLM Filter (Relevance & Disambiguation)
+To prevent your Notion databases from filling up with unrelated spam, the AI runs a single-step review:
 
 * **Pillar Relevance Check:** The AI matches the post against active content pillars:
   * *Active Pillars:* Automation, AI Creative, AI Prompting & Tools, Vibe Coding, Web3, Creator Economy, Copywriting & Storytelling, Personal/Vulnerability, Building in Public.

@@ -2,8 +2,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 dotenv.config({ override: true });
 
-const API_KEY = process.env.BACKUP_TWITTER_API_KEY;
-console.log("src/lib/twitter.ts API_KEY:", API_KEY ? API_KEY.substring(0, 8) + "..." : "undefined");
+const API_KEY = process.env.TWITTER_API_KEY || process.env.BACKUP_TWITTER_API_KEY;
 const API_BASE = "https://api.twitterapi.io/twitter";
 
 const client = axios.create({
@@ -52,10 +51,31 @@ export async function searchCreatorPosts(
     const sinceDateStr = sinceDate.toISOString().split("T")[0];
 
     const query = `from:${handle} -filter:replies -filter:retweets since:${sinceDateStr}`;
-    const response = await client.get("/tweet/advanced_search", {
-      params: { query, queryType: "Latest" },
-    });
-    return response.data?.tweets || [];
+    let allTweets: any[] = [];
+    let nextCursor: string | undefined = undefined;
+    let page = 1;
+
+    do {
+      const params: any = { query, queryType: "Latest" };
+      if (nextCursor) {
+        params.cursor = nextCursor;
+      }
+
+      const response = await client.get("/tweet/advanced_search", { params });
+      const tweets = response.data?.tweets || [];
+      allTweets = allTweets.concat(tweets);
+
+      const hasNext = response.data?.has_next_page;
+      nextCursor = response.data?.next_cursor;
+
+      if (!hasNext || !nextCursor) {
+        break;
+      }
+
+      page++;
+    } while (page <= 3);
+
+    return allTweets;
   } catch (error) {
     console.error(`Error fetching posts for @${handle}:`, error);
     return []; // Non-blocking — return empty on failure

@@ -3,6 +3,7 @@ import { CONTENT_PILLARS } from "../../lib/constants";
 import { generateJSON } from "../../lib/llm";
 import {
   getRecentScoutedContent,
+  getScoutedContentByIds,
   getTopViralPosts,
   getRecentIdeaTitles,
   getPillarDistribution,
@@ -95,7 +96,9 @@ export const draftIdeas = task({
 
     const [scoutedContent, viralPosts, existingTitles, pillarCounts] =
       await Promise.all([
-        getRecentScoutedContent(7),   // Last 7 days of scouted content
+        payload.scoutedContentIds && payload.scoutedContentIds.length > 0
+          ? getScoutedContentByIds(payload.scoutedContentIds)
+          : getRecentScoutedContent(7),
         getTopViralPosts(15),         // Top 15 viral posts (4★+)
         getRecentIdeaTitles(30),      // Last 30 days of ideas for dedup
         getPillarDistribution(14),    // 14-day pillar balance
@@ -132,13 +135,20 @@ export const draftIdeas = task({
     const viralSummary = (viralPosts as any[])
       .map((post) => {
         const p = post.properties || {};
-        const tweetText = p["Tweet"]?.title?.[0]?.plain_text || "";
-        const structure = p["Structure"]?.select?.name || "";
+        const tweetText =
+          p["Post Title"]?.title?.[0]?.plain_text ||
+          p["Tweet"]?.title?.[0]?.plain_text ||
+          p["Post Content"]?.rich_text?.[0]?.plain_text ||
+          "";
+        const structure =
+          p["Tweet Structure"]?.rich_text?.[0]?.plain_text ||
+          p["Structure"]?.select?.name ||
+          "";
         const rating = p["⭐ Rating"]?.select?.name || "";
         const hookType = p["Hook Type"]?.select?.name || "";
         const stealable =
           p["Steal-able Pattern"]?.rich_text?.[0]?.plain_text || "";
-        return `[${rating}] ${tweetText.substring(0, 300)}\nStructure: ${structure} | Hook: ${hookType}\nSteal-able Pattern: ${stealable}`;
+        return `[ID: ${post.id}] [${rating}] ${tweetText.substring(0, 300)}\nStructure: ${structure} | Hook: ${hookType}\nSteal-able Pattern: ${stealable}`;
       })
       .join("\n\n---\n\n");
 
@@ -179,6 +189,7 @@ Return JSON:
       "stealablePattern": "The viral format pattern being applied (from Source 2)",
       "tweetStructure": "Brief outline of the tweet structure",
       "sourcedFrom": "Which scouted content item(s) inspired this",
+      "inspiredByLibraryId": "The [ID: ...] of the Viral Library post you used from Source 2 that inspired this format/pattern",
       "crossPollinationLogic": "Brief explanation of how Source 1 insight + Source 2 format = this idea"
     }
   ]
@@ -197,6 +208,7 @@ Return JSON:
         stealablePattern: string;
         tweetStructure: string;
         sourcedFrom: string;
+        inspiredByLibraryId?: string;
         crossPollinationLogic: string;
       }[];
     };
@@ -267,6 +279,10 @@ Return JSON:
           `🔧 Structure: ${idea.tweetStructure}`,
         ].join("\n\n");
 
+        const cleanLibraryId = idea.inspiredByLibraryId
+          ? idea.inspiredByLibraryId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
+          : undefined;
+
         await createIdea(
           idea.title,
           "Idea Scout", // Source = "Idea Scout"
@@ -280,6 +296,7 @@ Return JSON:
             tweetStructure: idea.tweetStructure,
             inspiredByScoutedIds:
               inspiredByScoutedIds.length > 0 ? inspiredByScoutedIds : undefined,
+            inspiredByLibraryId: cleanLibraryId,
             whyItWorks: idea.whyItWorks,
           },
         );

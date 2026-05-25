@@ -291,7 +291,7 @@ export async function createScoutedContent(
           rich_text: splitIntoRichText(input.keyTakeaways),
         },
         Transcript: {
-          rich_text: splitIntoRichText(input.transcript),
+          rich_text: splitIntoRichText(safeString(input.transcript).substring(0, 2000)),
         },
         ...creatorRelation,
       },
@@ -326,9 +326,49 @@ export function cleanContentUrl(url: string): string {
   if (!url) return "";
   try {
     const parsed = new URL(url.trim());
-    // Remove common tracker / share params
-    const trackerParams = ["si", "feature", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid"];
-    trackerParams.forEach(param => parsed.searchParams.delete(param));
+
+    // Normalize hostname for X/Twitter
+    if (
+      parsed.hostname === "twitter.com" ||
+      parsed.hostname === "www.twitter.com" ||
+      parsed.hostname === "mobile.twitter.com" ||
+      parsed.hostname === "www.x.com"
+    ) {
+      parsed.hostname = "x.com";
+    }
+
+    // Platform-specific query parameter stripping
+    if (parsed.hostname === "x.com") {
+      // Strip all query parameters for X/Twitter URLs
+      parsed.search = "";
+    } else if (
+      parsed.hostname === "instagram.com" ||
+      parsed.hostname === "www.instagram.com"
+    ) {
+      // Strip all query parameters for Instagram URLs
+      parsed.search = "";
+    } else {
+      // For other domains (like YouTube), just remove common tracker / share params
+      const trackerParams = [
+        "si",
+        "feature",
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_term",
+        "utm_content",
+        "gclid",
+        "igsh",
+        "igshid",
+        "s",
+        "t",
+        "ref",
+        "ref_src",
+        "src",
+        "fbclid",
+      ];
+      trackerParams.forEach((param) => parsed.searchParams.delete(param));
+    }
     
     // Normalize youtu.be to youtube.com/watch?v=
     if (parsed.hostname === "youtu.be") {
@@ -343,8 +383,13 @@ export function cleanContentUrl(url: string): string {
       normalized = normalized.slice(0, -1);
     }
     return normalized;
-  } catch {
-    return url.trim();
+  } catch (e) {
+    // If it's not a valid URL structure, just return trimmed/cleaned string
+    let cleaned = url.trim();
+    if (cleaned.endsWith("/")) {
+      cleaned = cleaned.slice(0, -1);
+    }
+    return cleaned;
   }
 }
 
@@ -380,9 +425,9 @@ export async function getScoutedItemsForCreator(
   try {
     let relationField = "";
     if (platform === "YouTube") {
-      relationField = "👤 YouTube Creators";
+      relationField = "YouTube Creators";
     } else if (platform === "Instagram") {
-      relationField = "👤 Instagram Creators";
+      relationField = "Instagram Creators";
     } else if (platform === "X") {
       relationField = "👤 Twitter Creators";
     }
@@ -512,6 +557,53 @@ export async function getRecentScoutedContent(
   }
 }
 
+/**
+ * Fetch specific scouted content entries by their page IDs.
+ */
+export async function getScoutedContentByIds(
+  ids: string[],
+): Promise<
+  {
+    pageId: string;
+    title: string;
+    platform: string;
+    aiSummary: string;
+    keyTakeaways: string;
+    url: string;
+  }[]
+> {
+  if (!ids || ids.length === 0) return [];
+  try {
+    const promises = ids.map(async (id) => {
+      try {
+        const page: any = await notion.pages.retrieve({ page_id: id });
+        const p = page.properties || {};
+        const getRichTextPlain = (prop: any) => {
+          if (!prop?.rich_text) return "";
+          return prop.rich_text.map((r: any) => r.plain_text || "").join("");
+        };
+        return {
+          pageId: page.id,
+          title: p["Title"]?.title?.[0]?.plain_text || "",
+          platform: p["Platform"]?.select?.name || "",
+          aiSummary: getRichTextPlain(p["AI Summary"]),
+          keyTakeaways: getRichTextPlain(p["Key Takeaways"]),
+          url: p["URL"]?.url || "",
+        };
+      } catch (err) {
+        console.error(`Error retrieving scouted content page ${id}:`, err);
+        return null;
+      }
+    });
+
+    const results = await Promise.all(promises);
+    return results.filter((item): item is NonNullable<typeof item> => item !== null);
+  } catch (error) {
+    console.error("Error fetching scouted content by IDs:", error);
+    return [];
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // IDEAS BANK (for Idea Scout Step 5: WRITE)
 // ═══════════════════════════════════════════════════════════════
@@ -568,7 +660,7 @@ export async function createIdea(
       };
     }
     if (options.whyItWorks) {
-      properties["Why it works"] = {
+      properties["Why It Works"] = {
         rich_text: [
           { text: { content: options.whyItWorks.substring(0, 2000) } },
         ],
@@ -741,6 +833,7 @@ export async function getTopViralPosts(limit = 15) {
                 select: { equals: "⭐⭐⭐⭐⭐ (Holy Grail)" },
               },
               { property: "⭐ Rating", select: { equals: "⭐⭐⭐⭐" } },
+              { property: "⭐ Rating", select: { equals: "★★★★★" } },
             ],
           },
           {
