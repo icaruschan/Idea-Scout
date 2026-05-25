@@ -1,0 +1,25 @@
+# Environment & Secrets
+.env
+credentials.json
+token.json
+
+# Dependencies & Build Artifacts
+node_modules/
+.trigger/
+.openclaude/
+
+# Intermediate files
+.tmp/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Other unneeded files
+nomad.jpg

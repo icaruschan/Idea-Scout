@@ -1,0 +1,27 @@
+{
+  "name": "agentic-workflows",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx trigger dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@notionhq/client": "^5.14.0",
+    "@trigger.dev/sdk": "4.4.6",
+    "apify-client": "^2.22.3",
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1",
+    "openai": "^6.32.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@trigger.dev/build": "4.4.6",
+    "trigger.dev": "4.4.6"
+  }
+}
