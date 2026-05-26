@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous weekly creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) on Tuesday mornings (4:30 AM UTC / 5:30 AM local), evaluates new uploads for relevance against 9 active content pillars, summarizes findings, and synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating scouted concepts with templates from a Viral Post Library.
+Maintain and execute the autonomous weekly creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Tuesday at 2:00 PM UTC (3:00 PM WAT), evaluates new uploads for relevance against 9 active content pillars, summarizes findings, and synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating scouted concepts with templates from a Viral Post Library.
 
 ---
 
@@ -80,20 +80,22 @@ The filter checks content relevance against these specific domains. If a piece o
 ```
 Trigger.dev Tuesday Cron
 │
-└── scout-content (Runs 4:30 AM UTC Tue | maxDuration: 3600s)
+└── scout-content (Runs 2:00 PM UTC Tue | maxDuration: 3600s)
     ├── 1. Gather active creators (YT: 10, IG: 10, X: 24) sorted by Last Checked (oldest first)
-    ├── 2. Scrape content streams:
-    │      ├── YT: Scrapes newest 5 videos (Apify Actor)
-    │      ├── IG: Pulls newest 30 reels, selects the 5 newest + 5 highest-viewed reels,
-    │      │       and transcribes all 10 selected reels concurrently (using apple_yang transcript scraper)
-    │      └── X: Queries all recent tweets via search query and applies programmatic view filter (views >= TWITTER_MIN_VIEWS)
-    ├── 3. Execute process-content in a concurrent batch task for all scraped items
-    │      ├── A. Duplicate check: Verify title does not clash with 14-day history
+    ├── 2. Scrape content streams (with 5s cooldowns between phases):
+    │      ├── YT: Scrapes newest 5 videos (Apify Actor) — sequential per creator
+    │      ├── ⏸️ 5s cooldown
+    │      ├── IG: Pulls newest 30 reels, selects 5 newest + 5 top-viewed,
+    │      │       transcribes in chunks of 3 concurrent actors (apple_yang) with 2s delays
+    │      ├── ⏸️ 5s cooldown
+    │      └── X: Queries recent tweets via search with 5.5s throttle, applies programmatic view filter (>= TWITTER_MIN_VIEWS)
+    ├── 3. Execute process-content via batchTriggerAndWait (queue concurrencyLimit: 5)
+    │      ├── A. Duplicate check: Verify URL/title does not clash with existing scouted content for that creator
     │      ├── B. Relevance check: LLM checks content maps to 9 pillars (reject if < 0.6 confidence)
     │      ├── C. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
     │      ├── D. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
     │      └── E. Notion insert: Create Scouted Content page, establishing creator relation
-    ├── 4. Update Last Checked date on creators to rotate roster
+    ├── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
     └── 5. Trigger draft-ideas to draft concepts from processed scouted list
 ```
 
@@ -112,10 +114,26 @@ The synthesis engine runs following successful content processing:
 
 ---
 
-## 5. Edge Cases & Learnings
+## 5. Concurrency & Rate Limiting
 
+The pipeline controls concurrency at multiple levels to prevent API exhaustion:
+
+| Layer | Control | Why |
+| :--- | :--- | :--- |
+| **Apify IG Transcripts** | Max 3 concurrent actors + 2s cooldown between chunks | Prevents 8192MB free-tier memory exhaustion (was causing 402 errors) |
+| **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter |
+| **Notion batch reads** | `getScoutedContentByIds` chunks into batches of 5 + 350ms delay | Stays under Notion's 3 req/s rate limit |
+| **Inter-platform cooldowns** | 5s pause between YT→IG and IG→Twitter phases | Lets Apify actors release memory before next phase |
+| **Twitter API throttle** | 5.5s delay between requests + exponential backoff on 429/5xx | Respects 1 QPS free-tier limit |
+
+---
+
+## 6. Edge Cases & Learnings
+
+- **Scraper Failures Skip `Last Checked` Update:** If a scraper throws an error (Apify 402, network timeout, etc.), that creator is caught by the per-creator `try/catch` and excluded from `processedCreatorIds`. This ensures failed creators are retried on the next run rather than silently skipped.
 - **Notion Relation Failures:** Relation linking during `createIdea` can sometimes error with `validation_error` or `object_not_found`. The client catches this error and automatically retries the insert without the `Inspired By` relations to keep task executions green.
-- **Twitter API Rate Limits & Indexing:** Implement a 5-second interval sleep between X creator searches in the fetching loop. We pull all recent tweets and programmatically filter them using `MIN_VIEWS` (default 1000) rather than using search parameter filters which suffer from search index delay. We do not apply bookmark filtering as high-signal viral tweets often have 0 bookmarks.
+- **Twitter API Rate Limits & Indexing:** We pull all recent tweets and programmatically filter them using `MIN_VIEWS` (default 1000) rather than using search parameter filters which suffer from search index delay. We do not apply bookmark filtering as high-signal viral tweets often have 0 bookmarks.
 - **Apify Token Rotation:** If the main `APIFY_TOKEN` fails or runs out of credits, the system automatically rotates through a failover array of backup tokens (`BACKUP_APIFY_TOKEN` through `BACKUP_APIFY_TOKEN_4`).
-- **Scraper Constraints:** YouTube limits channel queries to `maxItems: 5`. Instagram reels pulls up to `resultsLimit: 30` per creator, selecting the 5 newest and 5 top-performing (most viewed) reels for concurrent audio transcript mapping, reducing run times and costs.
+- **Scraper Constraints:** YouTube limits channel queries to `maxItems: 5`. Instagram reels pulls up to `resultsLimit: 30` per creator, selecting the 5 newest and 5 top-performing (most viewed) reels, transcribing in controlled batches of 3.
 - **Title Formatting Rules:** The LLM is prohibited from generating template titles (e.g. *"The [Adjective] [Noun] Framework"* or *"The X Arbitrage"*). Every title must contain a specific name, metric, or monetary value (e.g., *"$0 Technical Co-Founder"*).
+- **OpenRouter API Key:** Must be set in both `.env` (local) AND Trigger.dev production environment variables. Missing this key causes silent content filtering failures (LLM returns 401, caught by try/catch, content marked as "filtered").
