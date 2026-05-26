@@ -109,6 +109,12 @@ export const scoutContent = schedules.task({
       }
     }
 
+    // Cooldown between platform phases to let Apify actors release memory
+    if (ytCreators.length > 0) {
+      console.log("⏸️ Cooldown before Instagram phase...");
+      await new Promise(r => setTimeout(r, 5000));
+    }
+
     // ─── STEP 2B: Scrape Instagram reels ────────────────────────
 
     for (const creator of igCreators) {
@@ -161,6 +167,12 @@ export const scoutContent = schedules.task({
           error: errorMsg,
         });
       }
+    }
+
+    // Cooldown between platform phases
+    if (igCreators.length > 0) {
+      console.log("⏸️ Cooldown before Twitter phase...");
+      await new Promise(r => setTimeout(r, 5000));
     }
 
     // ─── STEP 2C: Scrape Twitter (X) posts ──────────────────────

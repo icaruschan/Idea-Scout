@@ -327,26 +327,32 @@ export async function scrapeInstagramReels(
     if (reelUrls.length > 0) {
       try {
         console.log(`Transcribing ${reelUrls.length} reels for @${cleanUsername} using apple_yang...`);
-        // apple_yang takes a single videoUrl per run, so we call it concurrently for all selected reels
-        const transcriptPromises = reelUrls.map(async (url) => {
-          try {
-            await withApifyClient(async (client) => {
-              const run = await client.actor('apple_yang/instagram-transcripts-scraper').call({ videoUrl: url });
-              const { items } = await client.dataset(run.defaultDatasetId).listItems();
-              
-              if (items && items.length > 0) {
-                const item = items[0] as any;
-                if (item.code && item.text) {
-                  transcriptsByCode.set(item.code, item.text);
+        // Process transcripts in chunks to avoid Apify memory exhaustion (free tier: 8192MB)
+        const TRANSCRIPT_CONCURRENCY = 3;
+        for (let i = 0; i < reelUrls.length; i += TRANSCRIPT_CONCURRENCY) {
+          const chunk = reelUrls.slice(i, i + TRANSCRIPT_CONCURRENCY);
+          await Promise.all(chunk.map(async (url) => {
+            try {
+              await withApifyClient(async (client) => {
+                const run = await client.actor('apple_yang/instagram-transcripts-scraper').call({ videoUrl: url });
+                const { items } = await client.dataset(run.defaultDatasetId).listItems();
+                
+                if (items && items.length > 0) {
+                  const item = items[0] as any;
+                  if (item.code && item.text) {
+                    transcriptsByCode.set(item.code, item.text);
+                  }
                 }
-              }
-            });
-          } catch (err) {
-            console.error(`Failed to transcribe reel ${url}:`, err);
+              });
+            } catch (err) {
+              console.error(`Failed to transcribe reel ${url}:`, err);
+            }
+          }));
+          // Cooldown between chunks to let Apify actors release memory
+          if (i + TRANSCRIPT_CONCURRENCY < reelUrls.length) {
+            await new Promise(r => setTimeout(r, 2000));
           }
-        });
-        
-        await Promise.all(transcriptPromises);
+        }
       } catch (transcribeError) {
         console.error(`Failed to transcribe reels for @${cleanUsername}:`, transcribeError);
       }

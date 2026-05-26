@@ -574,29 +574,47 @@ export async function getScoutedContentByIds(
 > {
   if (!ids || ids.length === 0) return [];
   try {
-    const promises = ids.map(async (id) => {
-      try {
-        const page: any = await notion.pages.retrieve({ page_id: id });
-        const p = page.properties || {};
-        const getRichTextPlain = (prop: any) => {
-          if (!prop?.rich_text) return "";
-          return prop.rich_text.map((r: any) => r.plain_text || "").join("");
-        };
-        return {
-          pageId: page.id,
-          title: p["Title"]?.title?.[0]?.plain_text || "",
-          platform: p["Platform"]?.select?.name || "",
-          aiSummary: getRichTextPlain(p["AI Summary"]),
-          keyTakeaways: getRichTextPlain(p["Key Takeaways"]),
-          url: p["URL"]?.url || "",
-        };
-      } catch (err) {
-        console.error(`Error retrieving scouted content page ${id}:`, err);
-        return null;
-      }
-    });
+    const results: (NonNullable<{
+      pageId: string;
+      title: string;
+      platform: string;
+      aiSummary: string;
+      keyTakeaways: string;
+      url: string;
+    }> | null)[] = [];
 
-    const results = await Promise.all(promises);
+    // Chunk requests to stay under Notion's 3 req/s rate limit
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const chunk = ids.slice(i, i + BATCH_SIZE);
+      const chunkResults = await Promise.all(chunk.map(async (id) => {
+        try {
+          const page: any = await notion.pages.retrieve({ page_id: id });
+          const p = page.properties || {};
+          const getRichTextPlain = (prop: any) => {
+            if (!prop?.rich_text) return "";
+            return prop.rich_text.map((r: any) => r.plain_text || "").join("");
+          };
+          return {
+            pageId: page.id,
+            title: p["Title"]?.title?.[0]?.plain_text || "",
+            platform: p["Platform"]?.select?.name || "",
+            aiSummary: getRichTextPlain(p["AI Summary"]),
+            keyTakeaways: getRichTextPlain(p["Key Takeaways"]),
+            url: p["URL"]?.url || "",
+          };
+        } catch (err) {
+          console.error(`Error retrieving scouted content page ${id}:`, err);
+          return null;
+        }
+      }));
+      results.push(...chunkResults);
+      // Delay between batches to respect Notion rate limits (~3 req/s)
+      if (i + BATCH_SIZE < ids.length) {
+        await new Promise(r => setTimeout(r, 350));
+      }
+    }
+
     return results.filter((item): item is NonNullable<typeof item> => item !== null);
   } catch (error) {
     console.error("Error fetching scouted content by IDs:", error);
