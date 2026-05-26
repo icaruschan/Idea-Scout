@@ -122,7 +122,7 @@ export async function searchCreatorPosts(
     return allTweets;
   } catch (error) {
     console.error(`Error fetching posts for @${handle}:`, error);
-    return []; // Non-blocking — return empty on failure
+    throw error;
   }
 }
 

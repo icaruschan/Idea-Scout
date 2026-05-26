@@ -221,7 +221,7 @@ export async function scrapeYouTubeChannel(
     });
   } catch (error) {
     console.error(`Failed to scrape YouTube channel ${channelHandle}:`, error);
-    return []; // Non-blocking — return empty on failure
+    throw error;
   }
 }
 
@@ -376,6 +376,6 @@ export async function scrapeInstagramReels(
     });
   } catch (error) {
     console.error(`Failed to scrape Instagram reels for ${username}:`, error);
-    return []; // Non-blocking — return empty on failure
+    throw error;
   }
 }
