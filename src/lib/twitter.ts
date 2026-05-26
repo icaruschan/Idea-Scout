@@ -12,9 +12,53 @@ const client = axios.create({
   },
 });
 
+let lastRequestTime = 0;
+
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function throttleRequest() {
+  const now = Date.now();
+  const timeSinceLast = now - lastRequestTime;
+  // Free tier has QPS limit of 1 request every 5 seconds. Use 5500ms to be safe.
+  if (timeSinceLast < 5500) {
+    const waitTime = 5500 - timeSinceLast;
+    await sleep(waitTime);
+  }
+  lastRequestTime = Date.now();
+}
+
+async function getWithRetry(url: string, config?: any, retries = 4, initialDelay = 6000): Promise<any> {
+  let delay = initialDelay;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await throttleRequest();
+      return await client.get(url, config);
+    } catch (error: any) {
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+      const errorMsg = errorData?.message || errorData?.error || error.message;
+      const isRateLimit = status === 429 || errorMsg?.toLowerCase().includes("too many requests");
+      const is5xx = status >= 500 && status < 600;
+
+      if ((isRateLimit || is5xx) && attempt < retries) {
+        console.warn(
+          `[Twitter API] ${isRateLimit ? "Rate limited (429)" : `Server error (${status})`} on ${url}. ` +
+          `Waiting ${delay}ms before retry ${attempt}/${retries}. Error: ${errorMsg}`
+        );
+        await sleep(delay);
+        delay *= 2; // exponential backoff
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 export async function getLastTweets(username: string) {
   try {
-    const response = await client.get("/user/last_tweets", {
+    const response = await getWithRetry("/user/last_tweets", {
       params: { userName: username },
     });
     return response.data?.data?.tweets || [];
@@ -26,7 +70,7 @@ export async function getLastTweets(username: string) {
 
 export async function searchTweets(query: string) {
   try {
-    const response = await client.get("/tweet/advanced_search", {
+    const response = await getWithRetry("/tweet/advanced_search", {
       params: { query, queryType: "Latest" },
     });
     return response.data?.tweets || [];
@@ -61,7 +105,7 @@ export async function searchCreatorPosts(
         params.cursor = nextCursor;
       }
 
-      const response = await client.get("/tweet/advanced_search", { params });
+      const response = await getWithRetry("/tweet/advanced_search", { params });
       const tweets = response.data?.tweets || [];
       allTweets = allTweets.concat(tweets);
 
@@ -84,7 +128,7 @@ export async function searchCreatorPosts(
 
 export async function getTrends() {
   try {
-    const response = await client.get("/trends", { params: { woeid: 1 } });
+    const response = await getWithRetry("/trends", { params: { woeid: 1 } });
     return response.data?.trends || response.data || [];
   } catch (error) {
     console.error("Error fetching trends:", error);

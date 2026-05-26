@@ -1,0 +1,9 @@
+node_modules
+.git
+.tmp
+.openclaude
+.trigger
+nomad.jpg
+Notion Knowledge
+Apify actors
+*.log

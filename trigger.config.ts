@@ -1,10 +1,11 @@
 import { defineConfig } from '@trigger.dev/sdk/v3';
+import { additionalPackages } from '@trigger.dev/build/extensions/core';
 
 export default defineConfig({
   project: 'proj_vhgaozsabmhfnampfijm',
   runtime: 'node',
   logLevel: 'log',
-  maxDuration: 300,
+  maxDuration: 3600, // Increase max duration to 1 hour to allow scraping multiple X creators with rate limits (since we wait 5.5s between requests)
   retries: {
     enabledInDev: true,
     default: {
@@ -16,4 +17,12 @@ export default defineConfig({
     },
   },
   dirs: ['./src/trigger'],
+  build: {
+    external: ['proxy-agent'],
+    extensions: [
+      additionalPackages({
+        packages: ['proxy-agent'],
+      }),
+    ],
+  },
 });
