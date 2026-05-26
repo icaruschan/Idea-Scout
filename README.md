@@ -20,9 +20,9 @@ An automated agentic content scouting and idea remixing engine. This system moni
 
 ```mermaid
 graph TD
-    A[Start: Monday 11:30 PM Schedule] --> B[Read Creator lists from Notion]
-    B --> C[Scrape X, YouTube, & Instagram]
-    C --> D[AI Relevance & Disambiguation Filter]
+    A[Start: Tuesday 2:00 PM UTC Schedule] --> B[Read Creator lists from Notion]
+    B --> C[Scrape YT → 5s pause → IG → 5s pause → X]
+    C --> D[AI Relevance & Disambiguation Filter<br/>queue concurrency: 5]
     D -->|Noise or False Positive| E[Ignore Post]
     D -->|Match| G[Write to Scouted Content DB + Page Body Toggle]
     G --> H[Remix with Viral Post Library Patterns]
@@ -44,11 +44,12 @@ The system queries your Notion Workspace to fetch active target accounts to moni
 ### Step 2: Multi-Source Scraping & Optimization
 The scrapers gather recent content. To save API credits, several smart optimization strategies are applied:
 
-* **X (Twitter):** Fetches recent tweets from each creator.
+* **X (Twitter):** Fetches recent tweets from each creator with a 5.5s throttle between requests.
   * *Views Filter:* Immediately drops tweets that have **fewer than 1,000 views** to avoid waste.
-* **YouTube:** Triggers Apify's `fast-youtube-transcript-scraper` to pull the latest video metadata and its **entire audio transcript** (spoken words).
+* **YouTube:** Triggers Apify's `streamers/youtube-scraper` to pull the latest video metadata, subtitles, and transcripts.
 * **Instagram:** Triggers Apify's `apify/instagram-reel-scraper` on the newest 30 reels.
-  * *Virality Strategy:* Selects the **5 newest reels** (freshness) plus the **5 highest-viewed reels** (virality) from the rest, then runs Apify's `apple_yang/instagram-transcripts-scraper` on these 10 items.
+  * *Virality Strategy:* Selects the **5 newest reels** (freshness) plus the **5 highest-viewed reels** (virality) from the rest, then transcribes them in **chunks of 3 concurrent actors** (with 2s cooldown between chunks) using `apple_yang/instagram-transcripts-scraper`.
+* **Inter-Platform Cooldowns:** 5-second pauses between YouTube→Instagram and Instagram→Twitter phases allow Apify actors to release memory before the next phase starts.
 * **Apify Token Rotation:** If the primary Apify API token hits rate limits or runs out of credits, the code automatically rotates through backup credentials (`BACKUP_APIFY_TOKEN`, `BACKUP_APIFY_TOKEN_2`, etc.) and retries.
 * **Pre-Filtering Deduplication:** Before calling expensive transcript scraper actors, the system cross-references URLs against the Notion database to ensure we do not scrape a post we have already processed.
 
@@ -213,11 +214,11 @@ src/
 ### 4. Background Workers Configuration
 The system uses the following task registrations in Trigger.dev:
 
-| Task ID | Trigger Type | Schedule / Trigger | Max Duration |
-| :--- | :--- | :--- | :--- |
-| `scout-content` | `schedules.task` | Monday 11:30 PM (`30 23 * * 1`) | 3600 seconds |
-| `process-content`| `task` | Batched from orchestrator | 120 seconds |
-| `draft-ideas` | `task` | Triggered post-processing | 180 seconds |
+| Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency |
+| :--- | :--- | :--- | :--- | :--- |
+| `scout-content` | `schedules.task` | Tuesday 2:00 PM UTC (`0 14 * * 2`) | 3600 seconds | 1 |
+| `process-content`| `task` | Batched from orchestrator | 120 seconds | 5 (queue limit) |
+| `draft-ideas` | `task` | Triggered post-processing | 180 seconds | 1 |
 
 ---
 
@@ -252,7 +253,13 @@ TRIGGER_ENV=dev
 
 ### 6. Deployment Checklist
 
-1. **Upload Secrets:** In your Trigger.dev Dashboard, add your environment variables (`NOTION_API_KEY`, `APIFY_TOKEN`, etc.) to the project settings.
+1. **Upload Secrets:** In your Trigger.dev Dashboard, add ALL environment variables to the production environment:
+   - `NOTION_API_KEY`
+   - `OPENROUTER_API_KEY` ⚠️ **Critical** — missing this causes silent LLM failures (content gets filtered out with no visible error)
+   - `OPENROUTER_MODEL` (e.g. `qwen/qwen3.6-plus`)
+   - `APIFY_TOKEN` + `BACKUP_APIFY_TOKEN` through `BACKUP_APIFY_TOKEN_4`
+   - `BACKUP_TWITTER_API_KEY`
+   - `TWITTER_MIN_VIEWS` (default: `1000`)
 2. **Run Deploy Command:** Run this in your terminal to sync your workers to production:
    ```bash
    npx trigger.dev@latest deploy

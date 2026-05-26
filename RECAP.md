@@ -1,6 +1,6 @@
 # Agentic Workflows — Chronological Project Log & Reference Manual
 
-> **Last Updated:** May 24, 2026  
+> **Last Updated:** May 26, 2026  
 > **Project:** Ultimate Creator Brain — Unified Idea Scout Pipeline  
 > **Platform:** Trigger.dev v3 (TypeScript), Notion API v5, OpenRouter (Qwen 3.6 Plus)
 
@@ -18,6 +18,7 @@ timeline
     Stabilization & Refactor : Notion SDK v5 migration : Concurrent batching implemented : Resolved TS compilation errors
     Feature Expansion : Added 'Why it works' schema field : Separated hook framing from psychology : Updated all database docs
     Free Tier Resolution : Fixed Instagram scraper block : Switched to official Reel scraper : Maintained transcription integration
+    Production Hardening : Scraper error-throwing fix : Concurrency rate limiting : Apify memory exhaustion prevention
 ```
 
 ---
@@ -105,22 +106,42 @@ timeline
 
 ---
 
+### LOG ENTRY 7: Production Hardening — Error Propagation & Concurrency Rate Limiting
+*Date: May 25–26, 2026*
+
+* **Goal:** Fix three production blockers: (1) Missing `OPENROUTER_API_KEY` in Trigger.dev prod causing silent LLM failures, (2) Apify free-tier memory exhaustion from too many concurrent actors, (3) Scrapers silently updating `Last Checked` on failed creators.
+* **Code Modifications:**
+  * **Scraper Error Propagation (`src/lib/apify.ts`, `src/lib/twitter.ts`):** Changed scrapers to `throw` on top-level failures instead of returning empty arrays. This ensures the per-creator `try/catch` in `scout-content.ts` catches the error and excludes the failed creator from `processedCreatorIds`, preventing false `Last Checked` updates.
+  * **Instagram Transcript Concurrency (`src/lib/apify.ts`):** Replaced unbounded `Promise.all()` with chunked processing (max 3 concurrent transcript actors + 2s cooldown between chunks). Prevents Apify 8192MB free-tier memory exhaustion.
+  * **Process-Content Queue Limit (`src/trigger/idea-scout/process-content.ts`):** Added `queue.concurrencyLimit: 5` to prevent 300+ parallel tasks from flooding Notion (3 req/s limit) and OpenRouter simultaneously.
+  * **Notion Batch Read Chunking (`src/lib/notion.ts`):** `getScoutedContentByIds()` now processes in batches of 5 with 350ms delay to stay under Notion's rate limit.
+  * **Inter-Platform Cooldowns (`src/trigger/idea-scout/scout-content.ts`):** Added 5-second pauses between YouTube→Instagram and Instagram→Twitter phases to allow Apify actors to release memory.
+  * **Schedule Change:** Moved cron from `30 4 * * 2` (Tuesday 4:30 AM UTC) to `0 14 * * 2` (Tuesday 2:00 PM UTC / 3:00 PM WAT).
+* **Environment Fix:** Added `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` to Trigger.dev production environment variables.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow
 
-The Unified Idea Scout pipeline runs weekly on Monday evenings at 11:30 PM. It runs in three sequential phases:
+The Unified Idea Scout pipeline runs weekly on Tuesday afternoons at 2:00 PM UTC (3:00 PM WAT). It runs in three sequential phases with concurrency controls:
 
 ```
-Trigger.dev Monday Cron
+Trigger.dev Tuesday Cron
 │
-└── scout-content (runs 11:30 PM Monday, 3600s max)
+└── scout-content (runs 2:00 PM UTC Tuesday, 3600s max)
     ├── Step 1: Fetch active creators from YouTube, Instagram, and X databases
-    ├── Step 2: Trigger scrapers (Apify Actors for YT/IG, TwitterAPI.io for X)
-    ├── Step 3: Run process-content in a concurrent batch task for all scraped items
-    │           It runs the LLM relevance filter on a single piece of scraped content. If the content matches active pillars, the LLM generates a 2-3 sentence AI summary and 3-5 key takeaways.
-    │           └── Database Storage (Scouted Content DB with creator relations)
-    └── Step 4: Trigger draft-ideas to synthesize and write fresh drafts to Ideas Bank
+    ├── Step 2: Trigger scrapers (with 5s cooldowns between platform phases)
+    │           ├── YT: Apify actor, sequential per creator
+    │           ├── ⏸️ 5s cooldown
+    │           ├── IG: Apify actor, transcripts chunked to 3 concurrent + 2s delay
+    │           ├── ⏸️ 5s cooldown
+    │           └── X: TwitterAPI.io with 5.5s throttle per request
+    ├── Step 3: Run process-content via batchTriggerAndWait (queue concurrencyLimit: 5)
+    │           LLM relevance filter → AI summary → Scouted Content DB with creator relations
+    ├── Step 4: Update Last Checked ONLY for successfully processed creators
+    └── Step 5: Trigger draft-ideas to synthesize and write fresh drafts to Ideas Bank
 ```
 
 ---
@@ -222,8 +243,8 @@ src/
 │
 └── trigger/
     └── idea-scout/
-        ├── scout-content.ts   — Monday 11:30 PM cron orchestrator (gathers creators, scrapes, batch triggers processes)
-        ├── process-content.ts — Concurrent task: filters relevance, generates summary, stores in Scouted Content
+        ├── scout-content.ts   — Tuesday 2:00 PM UTC cron orchestrator (gathers creators, scrapes, batch triggers processes)
+        ├── process-content.ts — Concurrent task (max 5 parallel): filters relevance, generates summary, stores in Scouted Content
         └── draft-ideas.ts     — Idea drafting: pulls fresh scouted items, remixes with VPL patterns, writes to Ideas Bank
 ```
 
@@ -231,11 +252,11 @@ src/
 
 ### 6. Trigger.dev Task Registry
 
-| Task ID | Type | Trigger / Schedule | Max Duration | Status |
-| ------- | ---- | ------------------ | ------------ | ------ |
-| `scout-content` | `schedules.task` | `30 23 * * 1` (Monday 11:30 PM) | 3600s | Active |
-| `process-content` | `task` | On-demand (Concurrent Batch) | 120s | Active |
-| `draft-ideas` | `task` | On-demand (Post-Processing) | 180s | Active |
+| Task ID | Type | Trigger / Schedule | Max Duration | Concurrency | Status |
+| ------- | ---- | ------------------ | ------------ | ----------- | ------ |
+| `scout-content` | `schedules.task` | `0 14 * * 2` (Tuesday 2:00 PM UTC) | 3600s | 1 | Active |
+| `process-content` | `task` | On-demand (Concurrent Batch) | 120s | 5 (queue limit) | Active |
+| `draft-ideas` | `task` | On-demand (Post-Processing) | 180s | 1 | Active |
 
 ---
 
@@ -272,7 +293,13 @@ TRIGGER_ENV=dev|prod
 
 ### 2. Checklist Before Production Deployment
 
-- [ ] **Register Secrets in Production:** Upload `BACKUP_TWITTER_API_KEY` and `APIFY_TOKEN` variables to the Trigger.dev cloud dashboard for the production environment.
+- [ ] **Register Secrets in Production:** Upload ALL environment variables to the Trigger.dev cloud dashboard for the production environment, including:
+  - `NOTION_API_KEY`
+  - `OPENROUTER_API_KEY` ⚠️ (missing this causes silent LLM failures — content gets filtered with no error)
+  - `OPENROUTER_MODEL`
+  - `APIFY_TOKEN` + backup tokens
+  - `BACKUP_TWITTER_API_KEY`
+  - `TWITTER_MIN_VIEWS`
 - [ ] **Deploy Project:** Run the deployment command:
   ```bash
   npx trigger.dev@latest deploy
