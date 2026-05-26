@@ -13,12 +13,9 @@ const getKeys = (): string[] => {
   if (process.env.APIFY_TOKEN) keys.push(process.env.APIFY_TOKEN);
   if (process.env.BACKUP_APIFY_TOKEN) keys.push(process.env.BACKUP_APIFY_TOKEN);
   
-  let index = 2;
-  while (true) {
+  for (let index = 2; index <= 20; index++) {
     const key = process.env[`BACKUP_APIFY_TOKEN_${index}`];
-    if (!key) break;
-    keys.push(key);
-    index++;
+    if (key) keys.push(key);
   }
   
   const filteredKeys = keys.filter((key): key is string => typeof key === 'string' && key.trim().length > 0);
