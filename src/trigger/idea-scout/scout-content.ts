@@ -20,7 +20,7 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 // ═══════════════════════════════════════════════════════════════
 // IDEA SCOUT — Orchestrator
 // ═══════════════════════════════════════════════════════════════
-// Runs every Monday at 11:30 PM.
+// Runs every Tuesday at 4:30 AM UTC.
 // Step 1: Query creators from 3 platforms (YT: 10, IG: 10, X: 24)
 // Step 2: Scrape content from each platform
 // Step 3: Dispatch each piece of content to process-content task
@@ -29,7 +29,7 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 
 export const scoutContent = schedules.task({
   id: "scout-content",
-  cron: "30 23 * * 1", // Monday at 11:30 PM
+  cron: "30 4 * * 2", // Tuesday at 4:30 AM UTC
   maxDuration: 3600,  // 1 hour — accounts for Apify actor wait times
   run: async (payload) => {
     const runTimestamp = payload?.timestamp ?? new Date().toISOString();
