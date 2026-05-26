@@ -121,6 +121,15 @@ timeline
 
 ---
 
+### LOG ENTRY 8: Max Duration Timeout Fix for Apify Scraping
+*Date: May 26, 2026*
+
+* **Goal:** Prevent the `scout-content` orchestrator from timing out in production during heavy Apify scraping and concurrent batch processing.
+* **Code Modifications:**
+  * Increased `maxDuration` from 3600s (1 hour) to 14400s (4 hours) in `src/trigger/idea-scout/scout-content.ts` and globally in `trigger.config.ts`.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow
@@ -130,7 +139,7 @@ The Unified Idea Scout pipeline runs weekly on Tuesday afternoons at 2:00 PM UTC
 ```
 Trigger.dev Tuesday Cron
 │
-└── scout-content (runs 2:00 PM UTC Tuesday, 3600s max)
+└── scout-content (runs 2:00 PM UTC Tuesday, 14400s max)
     ├── Step 1: Fetch active creators from YouTube, Instagram, and X databases
     ├── Step 2: Trigger scrapers (with 5s cooldowns between platform phases)
     │           ├── YT: Apify actor, sequential per creator
@@ -254,7 +263,7 @@ src/
 
 | Task ID | Type | Trigger / Schedule | Max Duration | Concurrency | Status |
 | ------- | ---- | ------------------ | ------------ | ----------- | ------ |
-| `scout-content` | `schedules.task` | `0 14 * * 2` (Tuesday 2:00 PM UTC) | 3600s | 1 | Active |
+| `scout-content` | `schedules.task` | `0 14 * * 2` (Tuesday 2:00 PM UTC) | 14400s | 1 | Active |
 | `process-content` | `task` | On-demand (Concurrent Batch) | 120s | 5 (queue limit) | Active |
 | `draft-ideas` | `task` | On-demand (Post-Processing) | 180s | 1 | Active |
 

@@ -5,7 +5,7 @@ export default defineConfig({
   project: 'proj_vhgaozsabmhfnampfijm',
   runtime: 'node',
   logLevel: 'log',
-  maxDuration: 3600, // Increase max duration to 1 hour to allow scraping multiple X creators with rate limits (since we wait 5.5s between requests)
+  maxDuration: 14400, // Increase max duration to 4 hours to allow scraping multiple X creators with rate limits (since we wait 5.5s between requests)
   retries: {
     enabledInDev: true,
     default: {

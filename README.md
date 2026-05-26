@@ -216,7 +216,7 @@ The system uses the following task registrations in Trigger.dev:
 
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency |
 | :--- | :--- | :--- | :--- | :--- |
-| `scout-content` | `schedules.task` | Tuesday 2:00 PM UTC (`0 14 * * 2`) | 3600 seconds | 1 |
+| `scout-content` | `schedules.task` | Tuesday 2:00 PM UTC (`0 14 * * 2`) | 14400 seconds (4 hours) | 1 |
 | `process-content`| `task` | Batched from orchestrator | 120 seconds | 5 (queue limit) |
 | `draft-ideas` | `task` | Triggered post-processing | 180 seconds | 1 |
 
