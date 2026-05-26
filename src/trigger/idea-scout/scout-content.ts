@@ -37,6 +37,7 @@ export const scoutContent = schedules.task({
 
     const allRawContent: RawContentItem[] = [];
     const processedCreatorIds: string[] = [];
+    const failedCreators: { name: string; handle: string; platform: string; error: string }[] = [];
 
     // ─── STEP 1: Gather creators from all 3 platforms ───────────
 
@@ -97,7 +98,14 @@ export const scoutContent = schedules.task({
 
         processedCreatorIds.push(creator.pageId);
       } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.warn(`Failed to scrape YT creator ${creator.name}:`, err);
+        failedCreators.push({
+          name: creator.name,
+          handle: creator.handle || "",
+          platform: "YouTube",
+          error: errorMsg,
+        });
       }
     }
 
@@ -144,7 +152,14 @@ export const scoutContent = schedules.task({
 
         processedCreatorIds.push(creator.pageId);
       } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.warn(`Failed to scrape IG creator ${creator.name}:`, err);
+        failedCreators.push({
+          name: creator.name,
+          handle: creator.handle || "",
+          platform: "Instagram",
+          error: errorMsg,
+        });
       }
     }
 
@@ -206,7 +221,14 @@ export const scoutContent = schedules.task({
         // Rate limit: 5s between Twitter API calls
         await new Promise((r) => setTimeout(r, 5000));
       } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.warn(`Failed to scrape X creator ${creator.handle}:`, err);
+        failedCreators.push({
+          name: creator.name,
+          handle: creator.handle || "",
+          platform: "X",
+          error: errorMsg,
+        });
       }
     }
 
@@ -280,11 +302,20 @@ export const scoutContent = schedules.task({
       console.log("⚠️ No content passed filtering — skipping draft step");
     }
 
+    if (failedCreators.length > 0) {
+      console.warn(
+        `⚠️ Failed to scrape ${failedCreators.length} creators:\n` +
+          failedCreators.map((f) => `- [${f.platform}] ${f.name} (@${f.handle}): ${f.error}`).join("\n"),
+      );
+    }
+
     return {
       rawContentScraped: allRawContent.length,
       contentStored: processedCount,
       contentSkipped: skippedCount,
       creatorsProcessed: uniqueCreatorIds.length,
+      creatorsFailedCount: failedCreators.length,
+      failedCreators,
     };
   },
 });
