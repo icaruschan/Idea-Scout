@@ -116,7 +116,7 @@ timeline
   * **Process-Content Queue Limit (`src/trigger/idea-scout/process-content.ts`):** Added `queue.concurrencyLimit: 5` to prevent 300+ parallel tasks from flooding Notion (3 req/s limit) and OpenRouter simultaneously.
   * **Notion Batch Read Chunking (`src/lib/notion.ts`):** `getScoutedContentByIds()` now processes in batches of 5 with 350ms delay to stay under Notion's rate limit.
   * **Inter-Platform Cooldowns (`src/trigger/idea-scout/scout-content.ts`):** Added 5-second pauses between YouTube→Instagram and Instagram→Twitter phases to allow Apify actors to release memory.
-  * **Schedule Change:** Moved cron from `30 4 * * 2` (Tuesday 4:30 AM UTC) to `0 14 * * 2` (Tuesday 2:00 PM UTC / 3:00 PM WAT).
+  * **Schedule Change:** Moved cron from `0 14 * * 2` (Tuesday 2:00 PM UTC) to `0 2 * * 3` (Wednesday 2:00 AM UTC / 3:00 AM WAT).
 * **Environment Fix:** Added `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` to Trigger.dev production environment variables.
 
 ---
@@ -134,12 +134,12 @@ timeline
 
 ### 1. The Unified Idea Scout Flow
 
-The Unified Idea Scout pipeline runs weekly on Tuesday afternoons at 2:00 PM UTC (3:00 PM WAT). It runs in three sequential phases with concurrency controls:
+The Unified Idea Scout pipeline runs weekly on Wednesday mornings at 2:00 AM UTC (3:00 AM WAT). It runs in three sequential phases with concurrency controls:
 
 ```
-Trigger.dev Tuesday Cron
+Trigger.dev Wednesday Cron
 │
-└── scout-content (runs 2:00 PM UTC Tuesday, 14400s max)
+└── scout-content (runs 2:00 AM UTC Wednesday, 14400s max)
     ├── Step 1: Fetch active creators from YouTube, Instagram, and X databases
     ├── Step 2: Trigger scrapers (with 5s cooldowns between platform phases)
     │           ├── YT: Apify actor, sequential per creator
@@ -252,7 +252,7 @@ src/
 │
 └── trigger/
     └── idea-scout/
-        ├── scout-content.ts   — Tuesday 2:00 PM UTC cron orchestrator (gathers creators, scrapes, batch triggers processes)
+        ├── scout-content.ts   — Wednesday 2:00 AM UTC cron orchestrator (gathers creators, scrapes, batch triggers processes)
         ├── process-content.ts — Concurrent task (max 5 parallel): filters relevance, generates summary, stores in Scouted Content
         └── draft-ideas.ts     — Idea drafting: pulls fresh scouted items, remixes with VPL patterns, writes to Ideas Bank
 ```
@@ -263,7 +263,7 @@ src/
 
 | Task ID | Type | Trigger / Schedule | Max Duration | Concurrency | Status |
 | ------- | ---- | ------------------ | ------------ | ----------- | ------ |
-| `scout-content` | `schedules.task` | `0 14 * * 2` (Tuesday 2:00 PM UTC) | 14400s | 1 | Active |
+| `scout-content` | `schedules.task` | `0 2 * * 3` (Wednesday 2:00 AM UTC) | 14400s | 1 | Active |
 | `process-content` | `task` | On-demand (Concurrent Batch) | 120s | 5 (queue limit) | Active |
 | `draft-ideas` | `task` | On-demand (Post-Processing) | 180s | 1 | Active |
 

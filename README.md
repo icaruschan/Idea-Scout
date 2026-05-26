@@ -20,7 +20,7 @@ An automated agentic content scouting and idea remixing engine. This system moni
 
 ```mermaid
 graph TD
-    A[Start: Tuesday 2:00 PM UTC Schedule] --> B[Read Creator lists from Notion]
+    A[Start: Wednesday 2:00 AM UTC Schedule] --> B[Read Creator lists from Notion]
     B --> C[Scrape YT → 5s pause → IG → 5s pause → X]
     C --> D[AI Relevance & Disambiguation Filter<br/>queue concurrency: 5]
     D -->|Noise or False Positive| E[Ignore Post]
@@ -216,7 +216,7 @@ The system uses the following task registrations in Trigger.dev:
 
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency |
 | :--- | :--- | :--- | :--- | :--- |
-| `scout-content` | `schedules.task` | Tuesday 2:00 PM UTC (`0 14 * * 2`) | 14400 seconds (4 hours) | 1 |
+| `scout-content` | `schedules.task` | Wednesday 2:00 AM UTC (`0 2 * * 3`) | 14400 seconds (4 hours) | 1 |
 | `process-content`| `task` | Batched from orchestrator | 120 seconds | 5 (queue limit) |
 | `draft-ideas` | `task` | Triggered post-processing | 180 seconds | 1 |
 

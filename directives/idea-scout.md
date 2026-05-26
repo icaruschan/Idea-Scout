@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous weekly creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Tuesday at 2:00 PM UTC (3:00 PM WAT), evaluates new uploads for relevance against 9 active content pillars, summarizes findings, and synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating scouted concepts with templates from a Viral Post Library.
+Maintain and execute the autonomous weekly creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Wednesday at 2:00 AM UTC (3:00 AM WAT), evaluates new uploads for relevance against 9 active content pillars, summarizes findings, and synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating scouted concepts with templates from a Viral Post Library.
 
 ---
 
@@ -78,9 +78,9 @@ The filter checks content relevance against these specific domains. If a piece o
 ## 4. Pipeline Architecture & Execution Flow
 
 ```
-Trigger.dev Tuesday Cron
+Trigger.dev Wednesday Cron
 │
-└── scout-content (Runs 2:00 PM UTC Tue | maxDuration: 3600s)
+└── scout-content (Runs 2:00 AM UTC Wed | maxDuration: 14400s)
     ├── 1. Gather active creators (YT: 10, IG: 10, X: 24) sorted by Last Checked (oldest first)
     ├── 2. Scrape content streams (with 5s cooldowns between phases):
     │      ├── YT: Scrapes newest 5 videos (Apify Actor) — sequential per creator
