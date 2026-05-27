@@ -52,7 +52,7 @@ timeline
   * Created `src/trigger/idea-scout/` folder containing the new unified task files:
     * `scout-content.ts` (Orchestrator: Monday 11:30 PM cron, gathers creators, dispatches scrapers, runs batches).
     * `process-content.ts` (Processor: runs relevance check, summaries, writes to Scouted Content DB).
-    * `draft-ideas.ts` (Synthesis: The LLM synthesizes these with this week's scouted content to draft 5-8 highly targeted tweet concepts in the Ideas Bank DB).
+    * `draft-ideas.ts` (Synthesis: The LLM synthesizes these with this week's scouted content to draft 10 highly targeted tweet concepts in the Ideas Bank DB).
 
 ---
 
@@ -140,6 +140,7 @@ timeline
   * **Task Decoupling (`src/trigger/idea-scout/scout-content.ts`):** Removed Step 5 (triggering/waiting for `draftIdeas`) so the scraping orchestrator runs independently and finishes cleanly.
   * **Independent Scheduling (`src/trigger/idea-scout/draft-ideas.ts`):** Changed `draftIdeas` to a scheduled task (`schedules.task`) triggered Mon, Wed, Fri at 8:00 AM UTC (`0 8 * * 1,3,5`). Extracted `scoutedContentIds` from the payload to support both cron runs and manual/dashboard triggers.
   * **Source Deduplication (`src/lib/notion.ts`):** Modified `getRecentScoutedContent` to include a filter checking that `"Linked Ideas"` relation is empty (`relation: { is_empty: true }`). This ensures that the independent scheduled runs of `draft-ideas` only process newly scouted items that have not been remixed yet.
+  * **Draft Ideas Count (`src/trigger/idea-scout/draft-ideas.ts`):** Raised the number of generated tweet drafts from 5-8 to 10.
 
 ---
 

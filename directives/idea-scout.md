@@ -106,7 +106,7 @@ Trigger.dev Mon/Wed/Fri Cron
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
     │      └── D. Category distribution balance (prioritize underserved pillars)
     ├── 2. Prompt LLM via OpenRouter to cross-pollinate raw insights with templates
-    └── 3. Create 5-8 Idea entries in Ideas Bank and establish the "Inspired By" relation
+    └── 3. Create 10 Idea entries in Ideas Bank and establish the "Inspired By" relation
 ```
 
 ### Synthesis & Drafting Task (`draft-ideas`)
@@ -116,7 +116,7 @@ The synthesis engine runs independently on its scheduled days:
 3. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
 4. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
 5. Instructs the LLM (via OpenRouter) to cross-pollinate new insights with VPL layouts.
-6. Saves 5-8 raw concepts into the `Ideas Bank` Notion database containing:
+6. Saves 10 raw concepts into the `Ideas Bank` Notion database containing:
    - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
    - Source: `"Idea Scout"`
    - Categories and Hook Angles
