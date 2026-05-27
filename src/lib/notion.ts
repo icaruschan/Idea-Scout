@@ -519,19 +519,22 @@ export async function getRecentScoutedContent(
     const sinceDate = new Date();
     sinceDate.setDate(sinceDate.getDate() - days);
 
-    const filter: any = {
-      property: "Scouted Date",
-      date: { on_or_after: sinceDate.toISOString().split("T")[0] },
-    };
+    const filters: any[] = [
+      {
+        property: "Scouted Date",
+        date: { on_or_after: sinceDate.toISOString().split("T")[0] },
+      },
+      {
+        property: "Linked Ideas",
+        relation: { is_empty: true },
+      },
+    ];
 
-    const fullFilter = platform
-      ? {
-          and: [
-            filter,
-            { property: "Platform", select: { equals: platform } },
-          ],
-        }
-      : filter;
+    if (platform) {
+      filters.push({ property: "Platform", select: { equals: platform } });
+    }
+
+    const fullFilter = { and: filters };
 
     const response = await notion.dataSources.query({
       data_source_id: NOTION_DATA_SOURCE_IDS.SCOUTED_CONTENT,

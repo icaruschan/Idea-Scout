@@ -1,4 +1,4 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { schedules, task } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { generateJSON } from "../../lib/llm";
 import {
@@ -79,25 +79,28 @@ ANTI-PATTERNS (never produce)
 
 Respond only with pure JSON — no markdown fences, no explanation.`;
 
-export const draftIdeas = task({
+export const draftIdeas = schedules.task({
   id: "draft-ideas",
+  cron: "0 8 * * 1,3,5", // Monday, Wednesday, Friday at 8:00 AM UTC (9:00 AM local)
   maxDuration: 180,
   retry: {
     maxAttempts: 2,
   },
-  run: async (
-    payload: DraftIdeasPayload,
-  ): Promise<{ ideasCreated: number }> => {
+  run: async (payload): Promise<{ ideasCreated: number }> => {
+    const scoutedContentIds = payload && "scoutedContentIds" in payload && Array.isArray(payload.scoutedContentIds)
+      ? (payload.scoutedContentIds as string[])
+      : [];
+
     console.log(
-      `💡 Draft Ideas starting — ${payload.scoutedContentIds.length} scouted items to synthesize`,
+      `💡 Draft Ideas starting — ${scoutedContentIds.length > 0 ? scoutedContentIds.length : "all recent"} scouted items to synthesize`,
     );
 
     // ─── Step 1: Gather context from all sources ────────────────
 
     const [scoutedContent, viralPosts, existingTitles, pillarCounts] =
       await Promise.all([
-        payload.scoutedContentIds && payload.scoutedContentIds.length > 0
-          ? getScoutedContentByIds(payload.scoutedContentIds)
+        scoutedContentIds.length > 0
+          ? getScoutedContentByIds(scoutedContentIds)
           : getRecentScoutedContent(7),
         getTopViralPosts(15),         // Top 15 viral posts (4★+)
         getRecentIdeaTitles(30),      // Last 30 days of ideas for dedup

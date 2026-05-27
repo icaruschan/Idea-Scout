@@ -14,7 +14,6 @@ import {
 import { searchCreatorPosts } from "../../lib/twitter";
 import { processContent } from "./process-content";
 import type { RawContentItem } from "./process-content";
-import { draftIdeas } from "./draft-ideas";
 import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 
 // ═══════════════════════════════════════════════════════════════
@@ -293,26 +292,7 @@ export const scoutContent = schedules.task({
     }
     console.log(`📅 Updated Last Checked for ${uniqueCreatorIds.length} creators`);
 
-    // ─── STEP 5: Dispatch synthesis/draft step ──────────────────
-
-    if (processResults.length > 0) {
-      try {
-        const draftResult = await draftIdeas.triggerAndWait(
-          { scoutedContentIds: processResults },
-          { idempotencyKey: `draft-${new Date().toISOString().split("T")[0]}` },
-        );
-
-        if (draftResult.ok) {
-          console.log(
-            `💡 Draft complete: ${draftResult.output?.ideasCreated || 0} ideas generated`,
-          );
-        }
-      } catch (err) {
-        console.error("Draft ideas task failed:", err);
-      }
-    } else {
-      console.log("⚠️ No content passed filtering — skipping draft step");
-    }
+    // ─── STEP 5: Dispatch synthesis/draft step (decoupled) ──────────────────
 
     if (failedCreators.length > 0) {
       console.warn(
