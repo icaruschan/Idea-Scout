@@ -13,6 +13,7 @@ function getClient() {
         "HTTP-Referer": "http://localhost:3000", // Required by OpenRouter
         "X-Title": "Agentic Workflows", // Required by OpenRouter
       },
+      timeout: 60000, // 60 seconds timeout to prevent hanging on slow APIs
     });
   }
   return _client;

@@ -63,7 +63,7 @@ Respond with pure JSON — no markdown fences, no explanation.`;
 
 export const processContent = task({
   id: "process-content",
-  maxDuration: 120,
+  maxDuration: 300,
   queue: {
     concurrencyLimit: 5, // Prevent Notion/OpenRouter rate-limit storms from 300+ parallel tasks
   },
