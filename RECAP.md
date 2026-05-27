@@ -1,6 +1,6 @@
 # Agentic Workflows — Chronological Project Log & Reference Manual
 
-> **Last Updated:** May 26, 2026  
+> **Last Updated:** May 27, 2026  
 > **Project:** Ultimate Creator Brain — Unified Idea Scout Pipeline  
 > **Platform:** Trigger.dev v3 (TypeScript), Notion API v5, OpenRouter (Qwen 3.6 Plus)
 
@@ -130,11 +130,24 @@ timeline
 
 ---
 
+### LOG ENTRY 9: Task Decoupling, Independent Scheduling, and API Robustness
+*Date: May 27, 2026*
+
+* **Goal:** Decouple `draft-ideas` from the `scout-content` orchestrator to prevent parent run hangs on child timeouts, set up client-side API timeouts to fail gracefully, and schedule the drafting task 3 times a week with automated source deduplication.
+* **Code Modifications:**
+  * **API Client Timeout (`src/lib/llm.ts`):** Added a 60-second client-side timeout (`timeout: 60000`) to the OpenAI/OpenRouter client to prevent infinite hangs on slow API calls.
+  * **Platform Timeout Safety (`src/trigger/idea-scout/process-content.ts`):** Increased `process-content` `maxDuration` from 120s to 300s to ensure ample execution time for AI filters.
+  * **Task Decoupling (`src/trigger/idea-scout/scout-content.ts`):** Removed Step 5 (triggering/waiting for `draftIdeas`) so the scraping orchestrator runs independently and finishes cleanly.
+  * **Independent Scheduling (`src/trigger/idea-scout/draft-ideas.ts`):** Changed `draftIdeas` to a scheduled task (`schedules.task`) triggered Mon, Wed, Fri at 8:00 AM UTC (`0 8 * * 1,3,5`). Extracted `scoutedContentIds` from the payload to support both cron runs and manual/dashboard triggers.
+  * **Source Deduplication (`src/lib/notion.ts`):** Modified `getRecentScoutedContent` to include a filter checking that `"Linked Ideas"` relation is empty (`relation: { is_empty: true }`). This ensures that the independent scheduled runs of `draft-ideas` only process newly scouted items that have not been remixed yet.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow
 
-The Unified Idea Scout pipeline runs weekly on Wednesday mornings at 2:00 AM UTC (3:00 AM WAT). It runs in three sequential phases with concurrency controls:
+The Unified Idea Scout pipeline consists of two decoupled, independently scheduled tasks running with strict concurrency controls:
 
 ```
 Trigger.dev Wednesday Cron
@@ -147,10 +160,16 @@ Trigger.dev Wednesday Cron
     │           ├── IG: Apify actor, transcripts chunked to 3 concurrent + 2s delay
     │           ├── ⏸️ 5s cooldown
     │           └── X: TwitterAPI.io with 5.5s throttle per request
-    ├── Step 3: Run process-content via batchTriggerAndWait (queue concurrencyLimit: 5)
+    ├── Step 3: Run process-content via batchTriggerAndWait (queue concurrencyLimit: 5, maxDuration: 300s)
     │           LLM relevance filter → AI summary → Scouted Content DB with creator relations
-    ├── Step 4: Update Last Checked ONLY for successfully processed creators
-    └── Step 5: Trigger draft-ideas to synthesize and write fresh drafts to Ideas Bank
+    └── Step 4: Update Last Checked ONLY for successfully processed creators
+
+Trigger.dev Mon/Wed/Fri Cron
+│
+└── draft-ideas (runs 8:00 AM UTC Mon/Wed/Fri, 180s max)
+    ├── Step 1: Fetch unused scouted content (Linked Ideas is empty)
+    ├── Step 2: Fetch Viral Library posts (4★+) and recent idea titles
+    └── Step 3: Remix concepts and write fresh drafts to Ideas Bank DB
 ```
 
 ---
@@ -264,8 +283,8 @@ src/
 | Task ID | Type | Trigger / Schedule | Max Duration | Concurrency | Status |
 | ------- | ---- | ------------------ | ------------ | ----------- | ------ |
 | `scout-content` | `schedules.task` | `0 2 * * 3` (Wednesday 2:00 AM UTC) | 14400s | 1 | Active |
-| `process-content` | `task` | On-demand (Concurrent Batch) | 120s | 5 (queue limit) | Active |
-| `draft-ideas` | `task` | On-demand (Post-Processing) | 180s | 1 | Active |
+| `process-content` | `task` | On-demand (Concurrent Batch) | 300s | 5 (queue limit) | Active |
+| `draft-ideas` | `schedules.task` | `0 8 * * 1,3,5` (Mon, Wed, Fri 8:00 AM UTC) | 180s | 1 | Active |
 
 ---
 
