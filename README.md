@@ -20,13 +20,19 @@ An automated agentic content scouting and idea remixing engine. This system moni
 
 ```mermaid
 graph TD
-    A[Start: Wednesday 2:00 AM UTC Schedule] --> B[Read Creator lists from Notion]
-    B --> C[Scrape YT → 5s pause → IG → 5s pause → X]
-    C --> D[AI Relevance & Disambiguation Filter<br/>queue concurrency: 5]
-    D -->|Noise or False Positive| E[Ignore Post]
-    D -->|Match| G[Write to Scouted Content DB + Page Body Toggle]
-    G --> H[Remix with Viral Post Library Patterns]
-    H --> I[Write New Drafts to Ideas Bank DB]
+    subgraph Content Scouting (Wed 2:00 AM UTC)
+        A[Start Schedule] --> B[Read Creator lists from Notion]
+        B --> C[Scrape YT → 5s pause → IG → 5s pause → X]
+        C --> D[AI Relevance & Disambiguation Filter<br/>queue concurrency: 5]
+        D -->|Noise/False Positive| E[Ignore Post]
+        D -->|Match| G[Write to Scouted Content DB + Page Body Toggle]
+    end
+
+    subgraph Idea Drafting (Mon/Wed/Fri 8:00 AM UTC)
+        J[Start Schedule] --> K[Fetch Unused Scouted Content]
+        K --> H[Remix with Viral Post Library Patterns]
+        H --> I[Write New Drafts to Ideas Bank DB]
+    end
 ```
 
 ---
@@ -90,10 +96,10 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 ---
 
 ### Step 5: The Idea Remix & Drafting Phase
-The system automatically translates scouted concepts into fresh drafts using proven hooks:
+The idea remixing engine runs as an independent task scheduled 3 times a week (Monday, Wednesday, Friday at 8:00 AM UTC):
 
-1. It reads your **Viral Post Library** database for patterns rated ⭐⭐⭐⭐ or higher.
-2. It fetches the fresh **Scouted Content** entries.
+1. It queries **Scouted Content** from the past 7 days, filtering out entries that are already linked to generated ideas to ensure no duplicate drafting.
+2. It reads your **Viral Post Library** database for patterns rated ⭐⭐⭐⭐ or higher.
 3. It asks the AI to combine the scouted content topic with the viral pattern template structure.
 
 #### Example of a Remix:
@@ -217,8 +223,8 @@ The system uses the following task registrations in Trigger.dev:
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency |
 | :--- | :--- | :--- | :--- | :--- |
 | `scout-content` | `schedules.task` | Wednesday 2:00 AM UTC (`0 2 * * 3`) | 14400 seconds (4 hours) | 1 |
-| `process-content`| `task` | Batched from orchestrator | 120 seconds | 5 (queue limit) |
-| `draft-ideas` | `task` | Triggered post-processing | 180 seconds | 1 |
+| `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) |
+| `draft-ideas` | `schedules.task` | Mon, Wed, Fri 8:00 AM UTC (`0 8 * * 1,3,5`) | 180 seconds | 1 |
 
 ---
 

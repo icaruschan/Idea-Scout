@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous weekly creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Wednesday at 2:00 AM UTC (3:00 AM WAT), evaluates new uploads for relevance against 9 active content pillars, summarizes findings, and synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating scouted concepts with templates from a Viral Post Library.
+Maintain and execute the autonomous weekly creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Wednesday at 2:00 AM UTC (3:00 AM local time), evaluates new uploads for relevance against 9 active content pillars, and saves summaries in Notion. A decoupled task running every Monday, Wednesday, and Friday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library.
 
 ---
 
@@ -95,17 +95,28 @@ Trigger.dev Wednesday Cron
     │      ├── C. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
     │      ├── D. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
     │      └── E. Notion insert: Create Scouted Content page, establishing creator relation
-    ├── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
-    └── 5. Trigger draft-ideas to draft concepts from processed scouted list
+    └── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
+
+Trigger.dev Mon/Wed/Fri Cron
+│
+└── draft-ideas (Runs 8:00 AM UTC Mon/Wed/Fri | maxDuration: 180s)
+    ├── 1. Gather context from all sources:
+    │      ├── A. Unused Scouted Content (from past 7 days, filtering out those already linked to Ideas)
+    │      ├── B. Top 15 Viral Posts (4★+)
+    │      ├── C. Past 30 days of generated Idea titles (soft dedup)
+    │      └── D. Category distribution balance (prioritize underserved pillars)
+    ├── 2. Prompt LLM via OpenRouter to cross-pollinate raw insights with templates
+    └── 3. Create 5-8 Idea entries in Ideas Bank and establish the "Inspired By" relation
 ```
 
 ### Synthesis & Drafting Task (`draft-ideas`)
-The synthesis engine runs following successful content processing:
-1. Queries the top 15 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
-2. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
-3. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
-4. Instructs the LLM (via OpenRouter) to cross-pollinate new insights with VPL layouts.
-5. Saves 5-8 raw concepts into the `Ideas Bank` Notion database containing:
+The synthesis engine runs independently on its scheduled days:
+1. Queries the past 7 days of Scouted Content, filtering out entries that are already linked to generated ideas in the `"Linked Ideas"` relation (Source Deduplication).
+2. Queries the top 15 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
+3. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
+4. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
+5. Instructs the LLM (via OpenRouter) to cross-pollinate new insights with VPL layouts.
+6. Saves 5-8 raw concepts into the `Ideas Bank` Notion database containing:
    - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
    - Source: `"Idea Scout"`
    - Categories and Hook Angles
@@ -121,7 +132,8 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 | Layer | Control | Why |
 | :--- | :--- | :--- |
 | **Apify IG Transcripts** | Max 3 concurrent actors + 2s cooldown between chunks | Prevents 8192MB free-tier memory exhaustion (was causing 402 errors) |
-| **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter |
+| **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` and `maxDuration: 300s` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter, with 5 min safety buffer |
+| **OpenAI/OpenRouter Client** | 60s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, failing gracefully instead of timing out at platform level |
 | **Notion batch reads** | `getScoutedContentByIds` chunks into batches of 5 + 350ms delay | Stays under Notion's 3 req/s rate limit |
 | **Inter-platform cooldowns** | 5s pause between YT→IG and IG→Twitter phases | Lets Apify actors release memory before next phase |
 | **Twitter API throttle** | 5.5s delay between requests + exponential backoff on 429/5xx | Respects 1 QPS free-tier limit |
