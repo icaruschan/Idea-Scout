@@ -32,9 +32,10 @@ export async function generateText(
   prompt: string,
   systemPrompt: string = "You are a helpful assistant.",
   temperature: number = 1,
+  modelOverride?: string
 ) {
   const response = await getClient().chat.completions.create({
-    model: defaultModel,
+    model: modelOverride || defaultModel,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },
@@ -98,9 +99,10 @@ ANTI-PATTERNS (never produce)
 
 Respond only with pure JSON — no markdown fences, no explanation`,
   temperature: number = 1,
+  modelOverride?: string
 ) {
   const response = await getClient().chat.completions.create({
-    model: defaultModel,
+    model: modelOverride || defaultModel,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },

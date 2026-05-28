@@ -129,7 +129,7 @@ Return JSON:
     };
 
     try {
-      filterResult = await generateJSON(filterPrompt, RELEVANCE_SYSTEM_PROMPT, 0.3);
+      filterResult = await generateJSON(filterPrompt, RELEVANCE_SYSTEM_PROMPT, 0.3, "xiaomi/mimo-v2.5-pro");
     } catch (err) {
       console.error("LLM filter failed:", err);
       return { scoutedContentId: null, filtered: true };
@@ -170,7 +170,7 @@ Return JSON:
     };
 
     try {
-      summaryResult = await generateJSON(summaryPrompt, RELEVANCE_SYSTEM_PROMPT, 0.5);
+      summaryResult = await generateJSON(summaryPrompt, RELEVANCE_SYSTEM_PROMPT, 0.5, "xiaomi/mimo-v2.5-pro");
     } catch (err) {
       console.error("LLM summary failed:", err);
       // Still store the content, just without a summary

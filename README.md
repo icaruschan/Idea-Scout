@@ -1,6 +1,6 @@
 # Ultimate Creator Brain — Unified Idea Scout Pipeline
 
-An automated agentic content scouting and idea remixing engine. This system monitors target creators across YouTube, Instagram, and X (Twitter), filters out noise using a two-tier LLM system, and remixes relevant concepts with high-performing templates to generate fresh tweet drafts directly inside Notion.
+An automated agentic content scouting and idea remixing engine. This system monitors target creators across YouTube, Instagram, and X (Twitter), filters out noise using a single-step LLM filter, and remixes relevant concepts with high-performing templates to generate fresh tweet drafts directly inside Notion.
 
 ---
 
@@ -11,7 +11,7 @@ An automated agentic content scouting and idea remixing engine. This system moni
 * **Scraping Tools:** 
   * [Apify API](https://apify.com/) (Extracts YouTube video transcripts and Instagram Reels data).
   * [TwitterAPI.io](https://twitterapi.io/) (High-speed X search wrapper).
-* **AI Engine:** [OpenRouter API](https://openrouter.ai/) (Uses `qwen/qwen3.6-plus` or other configured OpenRouter models).
+* **AI Engine:** [OpenRouter API](https://openrouter.ai/) (Dual-model setup: `xiaomi/mimo-v2.5-pro` for fast data processing, `qwen/qwen3.6-plus` for creative idea synthesis).
 * **Environment:** TypeScript, Node.js, npm.
 
 ---
@@ -77,9 +77,9 @@ To prevent your Notion databases from filling up with unrelated spam, the AI run
 ### Step 4: Write to "Scouted Content" Database
 For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** and 3-5 bulleted **Key Takeaways**. 
 
-* **Bypassing Notion's 2,000 Character Limit:** Notion cells cut off text longer than 2,000 characters. To prevent transcript loss:
-  1. The system truncates the transcript field to 2,000 characters for the database column.
-  2. It pastes the **entire, uncut transcript** inside a collapsible **Toggle Block** (`▶️ Full Transcript`) directly in the page body.
+* **Bypassing Notion's 2,000 Character Limit:** Notion text properties hard-limit strings to 2,000 characters. To prevent transcript loss:
+  1. The system truncates the transcript preview string to 2,000 characters to fit inside the database property column safely.
+  2. It then appends the **entire, uncut transcript** (which the AI already fully processed) inside a collapsible **Toggle Block** (`▶️ Full Transcript`) directly into the page body. This preserves the 100% full original transcript in the Notion interface.
 
 #### Example Notion Scouted Entry:
 * **Title:** "The Future of Vibe Coding with Claude Code"

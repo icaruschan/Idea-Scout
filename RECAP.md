@@ -154,6 +154,19 @@ timeline
 
 ---
 
+### LOG ENTRY 11: Deep Documentation Alignment & Dual-Model Setup
+*Date: May 28, 2026*
+
+* **Goal:** Eradicate outdated documentation claims that cause AI agent hallucinations, clarify transcript saving behavior, and optimize processing cost via a dual-model LLM architecture.
+* **Code Modifications:**
+  * Modified `src/lib/llm.ts`: Added optional `modelOverride` to `generateText` and `generateJSON` functions.
+  * Modified `src/trigger/idea-scout/process-content.ts`: Injected `xiaomi/mimo-v2.5-pro` into the filtering and summarization LLM calls to reduce token costs for heavy extraction workloads. `draft-ideas.ts` remains on `qwen/qwen3.6-plus` for creative synthesis.
+* **Documentation Actions:**
+  * **Deleted** `doc.md` (a legacy snapshot from May 25th that asserted inaccurate bugs).
+  * **Rewrote** `README.md` to formally document the single-step LLM filter, document the dual-model LLM architecture, and clarify that Notion's 2,000 char property limit is bypassed by storing the full un-truncated transcript inside the page body blocks.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow
