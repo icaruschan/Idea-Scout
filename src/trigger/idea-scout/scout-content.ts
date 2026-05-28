@@ -11,7 +11,7 @@ import {
   scrapeYouTubeChannel,
   scrapeInstagramReels,
 } from "../../lib/apify";
-import { searchCreatorPosts } from "../../lib/twitter";
+import { searchCreatorPosts, getArticle } from "../../lib/twitter";
 import { processContent } from "./process-content";
 import type { RawContentItem } from "./process-content";
 import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
@@ -210,14 +210,28 @@ export const scoutContent = schedules.task({
 
         for (const tweet of recentTweets) {
           const tweetUrl = tweet.url || `https://x.com/${creator.handle}/status/${tweet.id}`;
-          const tweetTitle = (tweet.text || "").substring(0, 200);
+          let fullText = tweet.text || "";
+          
+          // Detect articles via flag or URL structure
+          const isArticle = tweet.isArticle === true || 
+                           (tweet.entities?.urls || []).some((u: any) => u.expanded_url?.includes('/article/'));
+
+          if (isArticle && tweet.id) {
+            console.log(`📄 Detected X Article for @${creator.handle}, fetching full text...`);
+            const articleText = await getArticle(tweet.id);
+            if (articleText) {
+              fullText = articleText;
+            }
+          }
+
+          const tweetTitle = fullText.substring(0, 200);
 
           allRawContent.push({
             platform: "X",
             creatorPageId: creator.pageId,
             creatorName: creator.name,
             title: tweetTitle,
-            text: tweet.text || "",
+            text: fullText,
             url: tweetUrl,
             likes: tweet.likeCount || 0,
             views: tweet.viewCount || 0,

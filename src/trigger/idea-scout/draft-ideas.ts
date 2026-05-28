@@ -1,5 +1,6 @@
 import { schedules, task } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
+import { matchPillar } from "../../lib/pillar-utils";
 import { generateJSON } from "../../lib/llm";
 import {
   getRecentScoutedContent,
@@ -18,7 +19,7 @@ import {
 //   2. Viral Post Library (proven tweet formats)
 //   3. Existing Ideas Bank (dedup)
 //   4. Pillar Distribution (balance)
-// ...then generates 5-8 high-quality tweet idea drafts.
+// ...then generates 10 high-quality tweet idea drafts.
 // ═══════════════════════════════════════════════════════════════
 
 interface DraftIdeasPayload {
@@ -156,6 +157,10 @@ export const draftIdeas = schedules.task({
       .join("\n\n---\n\n");
 
     // ─── Step 4: Build the synthesis prompt ──────────────────────
+    
+    // Calculate dynamic idea volume based on input size
+    const targetIdeaCount = Math.max(10, Math.min(30, Math.ceil(scoutedContent.length * 0.75)));
+    console.log(`🎯 Targeting ${targetIdeaCount} ideas based on ${scoutedContent.length} scouted items`);
 
     const synthesisPrompt = `You have two data sources. Your job is to CROSS-POLLINATE them to create tweet ideas.
 
@@ -172,7 +177,7 @@ ${existingTitles.slice(0, 30).join("\n") || "None yet"}
 ${underservedPillars.length > 0 ? underservedPillars.join(", ") : "All pillars are balanced"}
 
 ═══ TASK ═══
-Generate 5-8 tweet idea drafts by combining scouted content insights with proven viral formats.
+Generate EXACTLY ${targetIdeaCount} tweet idea drafts by combining scouted content insights with proven viral formats.
 
 For each idea, you MUST:
 1. Pick a specific insight from Source 1 (scouted content)
@@ -184,7 +189,7 @@ Return JSON:
   "ideas": [
     {
       "title": "Specific, compelling idea title following the TITLE RULES",
-      "pillar": "One of the 9 content pillars",
+      "pillar": "MUST MATCH EXACTLY ONE OF: ${CONTENT_PILLARS.join(", ")}",
       "hookAngle": "The specific hook/angle framing for this topic",
       "whyItWorks": "The psychological/strategic reason why this format/angle works (audience motivation, curiosity gap, etc.)",
       "format": "Short" | "Mid-length" | "Thread",
@@ -248,10 +253,8 @@ Return JSON:
 
     for (const idea of generatedIdeas.ideas) {
       try {
-        // Validate pillar is one of the 9 active pillars
-        const validPillar = CONTENT_PILLARS.includes(idea.pillar)
-          ? idea.pillar
-          : CONTENT_PILLARS[0]; // Fallback to Automation
+        // Validate pillar using fuzzy matching
+        const validPillar = matchPillar(idea.pillar);
 
         // Try to find the scouted content IDs this idea references
         const inspiredByScoutedIds: string[] = [];

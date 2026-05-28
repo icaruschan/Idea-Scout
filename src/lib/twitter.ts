@@ -135,3 +135,16 @@ export async function getTrends() {
     throw error;
   }
 }
+
+export async function getArticle(tweetId: string) {
+  try {
+    const response = await getWithRetry("/article", {
+      params: { tweetId },
+    });
+    // The response schema for /article contains the full text
+    return response.data?.article?.text || response.data?.text || ""; 
+  } catch (error) {
+    console.error(`Error fetching article for tweet ${tweetId}:`, error);
+    return ""; // Soft fail: return empty so we can fallback to preview text
+  }
+}

@@ -52,6 +52,7 @@ The scrapers gather recent content. To save API credits, several smart optimizat
 
 * **X (Twitter):** Fetches recent tweets from each creator with a 5.5s throttle between requests.
   * *Views Filter:* Immediately drops tweets that have **fewer than 1,000 views** to avoid waste.
+  * *X Article Support:* Detects long-form X Articles (via the `isArticle` flag or URLs containing `/article/`) and queries the TwitterAPI.io `/article` endpoint to retrieve the full article body, bypassing the standard tweet character limits.
 * **YouTube:** Triggers Apify's `streamers/youtube-scraper` to pull the latest video metadata, subtitles, and transcripts.
 * **Instagram:** Triggers Apify's `apify/instagram-reel-scraper` on the newest 30 reels.
   * *Virality Strategy:* Selects the **5 newest reels** (freshness) plus the **5 highest-viewed reels** (virality) from the rest, then transcribes them in **chunks of 3 concurrent actors** (with 2s cooldown between chunks) using `apple_yang/instagram-transcripts-scraper`.
@@ -67,6 +68,7 @@ To prevent your Notion databases from filling up with unrelated spam, the AI run
 * **Pillar Relevance Check:** The AI matches the post against active content pillars:
   * *Active Pillars:* Automation, AI Creative, AI Prompting & Tools, Vibe Coding, Web3, Creator Economy, Copywriting & Storytelling, Personal/Vulnerability, Building in Public.
   * *Relevance threshold:* Must match an active pillar with a confidence score of $\ge 0.6$ or it is ignored.
+  * *Expanded Context Limit:* The pipeline passes up to **100,000 characters** of the content/transcript to the LLM (expanded from 6,000 characters) to ensure full-length YouTube transcripts and X Articles are analyzed completely without early truncation.
 * **Disambiguation Check:** Drops false-positives that match keywords by coincidence.
   * *Example:* A sports news post mentions "Kimi Antonelli" (an F1 racer) or "Amen Thompson" (an NBA player). The AI detects this is sports entertainment news rather than actionable tech or creator content, and automatically discards it.
 
@@ -100,7 +102,7 @@ The idea remixing engine runs as an independent task scheduled 3 times a week (M
 
 1. It queries **Scouted Content** from the past 7 days, filtering out entries that are already linked to generated ideas to ensure no duplicate drafting.
 2. It reads your **Viral Post Library** database for patterns rated ⭐⭐⭐⭐ or higher.
-3. It asks the AI to combine the scouted content topic with the viral pattern template structure.
+3. It asks the AI to combine the scouted content topic with the viral pattern template structure. The system automatically calculates a dynamic target volume for the drafts (ranging from 10 to 30, scaled as 75% of the total scouted items processed in the run) to adjust output volume to the inputs.
 
 #### Example of a Remix:
 * **Scouted Input:** A transcript about using Claude Code to build static websites.
@@ -127,6 +129,7 @@ The idea remixing engine runs as an independent task scheduled 3 times a week (M
 ### Step 6: Write to "Ideas Bank" Database
 The generated tweet drafts are written directly to the **Ideas Bank** database.
 * **Source Tracking:** The draft links back to the original scouted entry so you can easily reference the source.
+* **Robust Pillar Mapping:** Generated pillars are passed through a validation check (`matchPillar()` in `src/lib/pillar-utils.ts`). It performs exact match, fuzzy substring checks, and custom heuristics to match the AI output with one of the 9 active pillars, preventing write validation errors or silent fallback to "Automation".
 * **Error Prevention:** If the relation schema has changed or is missing, the script catches the error and saves the idea anyway, preventing data loss.
 
 ---

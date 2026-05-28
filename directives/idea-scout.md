@@ -88,13 +88,14 @@ Trigger.dev Wednesday Cron
     │      ├── IG: Pulls newest 30 reels, selects 5 newest + 5 top-viewed,
     │      │       transcribes in chunks of 3 concurrent actors (apple_yang) with 2s delays
     │      ├── ⏸️ 5s cooldown
-    │      └── X: Queries recent tweets via search with 5.5s throttle, applies programmatic view filter (>= TWITTER_MIN_VIEWS)
+    │      └── X: Queries recent tweets with 5.5s throttle, filters by views (>= TWITTER_MIN_VIEWS), and fetches full-text X Articles using the getArticle endpoint if /article/ url or isArticle flag is detected
     ├── 3. Execute process-content via batchTriggerAndWait (queue concurrencyLimit: 5)
     │      ├── A. Duplicate check: Verify URL/title does not clash with existing scouted content for that creator
-    │      ├── B. Relevance check: LLM checks content maps to 9 pillars (reject if < 0.6 confidence)
-    │      ├── C. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
-    │      ├── D. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
-    │      └── E. Notion insert: Create Scouted Content page, establishing creator relation
+    │      ├── B. Feed to LLM: Prepares up to 100,000 characters of content/transcript (expanded from 6,000 to prevent context truncation)
+    │      ├── C. Relevance check: LLM checks content maps to 9 pillars (reject if < 0.6 confidence)
+    │      ├── D. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
+    │      ├── E. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
+    │      └── F. Notion insert: Create Scouted Content page, establishing creator relation
     └── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
 
 Trigger.dev Mon/Wed/Fri Cron
@@ -106,7 +107,7 @@ Trigger.dev Mon/Wed/Fri Cron
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
     │      └── D. Category distribution balance (prioritize underserved pillars)
     ├── 2. Prompt LLM via OpenRouter to cross-pollinate raw insights with templates
-    └── 3. Create 10 Idea entries in Ideas Bank and establish the "Inspired By" relation
+    └── 3. Create dynamic targetIdeaCount (Math.max(10, Math.min(30, Math.ceil(scoutedCount * 0.75)))) entries in Ideas Bank, matching pillars with a fuzzy matcher, and establishing relations
 ```
 
 ### Synthesis & Drafting Task (`draft-ideas`)
@@ -116,12 +117,13 @@ The synthesis engine runs independently on its scheduled days:
 3. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
 4. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
 5. Instructs the LLM (via OpenRouter) to cross-pollinate new insights with VPL layouts.
-6. Saves 10 raw concepts into the `Ideas Bank` Notion database containing:
+6. Saves a dynamic number of raw concepts (Math.max(10, Math.min(30, Math.ceil(scoutedCount * 0.75)))) into the `Ideas Bank` Notion database, validating and fuzzy-mapping the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults. The entries contain:
    - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
    - Source: `"Idea Scout"`
    - Categories and Hook Angles
    - Relation link back to `Scouted Content`
    - Page Body: Source Context recap, rough draft copy, why it works explanation, and patterns used.
+
 
 ---
 

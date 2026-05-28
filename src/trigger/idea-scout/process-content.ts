@@ -83,7 +83,7 @@ export const processContent = task({
     ]
       .filter(Boolean)
       .join("\n\n")
-      .substring(0, 6000);
+      .substring(0, 100000);
 
     if (contentBody.trim().length < 50) {
       console.log(`⏭️ Skipping "${title.substring(0, 60)}" — too short`);
