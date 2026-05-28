@@ -268,6 +268,7 @@ graph LR
 | `Scouted Date`       | date                             | When the automated pipeline scraped the content                                      |
 | `AI Summary`         | rich_text                        | Brief summary of the content's message (split in 2k-char chunks if needed)           |
 | `Key Takeaways`      | rich_text                        | Bulleted list of strategic lessons/insights (split in 2k-char chunks if needed)      |
+| `Niche`              | multi_select                     | The AI-classified content pillar(s) assigned to the post during ingestion.           |
 | `Transcript`         | rich_text                        | Raw text of tweet, or audio transcript of reel/video. Stored as a multi-chunk rich text array (up to 200k chars) and appended inside a collapsible toggle block (`▶️ Full Transcript`) in the page body to prevent truncation. |
 | `YouTube Creators`   | **relation → YouTube Creators**   | Backlink to the YouTube Creator (if Platform = YouTube)                              |
 | `Instagram Creators` | **relation → Instagram Creators** | Backlink to the Instagram Creator (if Platform = Instagram)                          |
@@ -324,28 +325,36 @@ graph LR
 ## Automation Pipeline Flow
 
 ```
-WEEKLY (Wed 8:00 AM) — Idea Scout Pipeline:
-  scout-content (Runs weekly via Trigger.dev cron)
+WEEKLY (Mon/Thu/Sat 8:30 AM) — Idea Scout Pipeline:
+  scout-content (Runs Mon/Thu/Sat via Trigger.dev cron)
     ├── 1. Gather active focus creators (X: 24, YouTube: 10, Instagram: 10)
     │      sorted by Last Checked (oldest first)
     ├── 2. Scrape recent posts/uploads (last 7 days):
     │      ├── YouTube: Newest 5 videos via Apify
     │      ├── Instagram: Newest 30 reels, selects top 10 (newest/most viewed) via Apify, transcribes audio
     │      └── X: Scrapes recent tweets via TwitterAPI.io, programmatically filters by views (views >= MIN_VIEWS, default 1000)
+    │             and pulls full-text X Articles using the getArticle endpoint if /article/ is detected
     ├── 3. Execute process-content in a concurrent batch:
     │      ├── Check duplicates (all-time URL deduplication check)
     │      ├── Relevance check (maps to 9 active content pillars, conf >= 0.6)
     │      ├── Disambiguation check (filters false positives)
     │      ├── Extract summaries & takeaways
-    │      └── Create entry in 📡 Scouted Content (linked to source creator)
-    ├── 4. Update Last Checked date on creators to rotate roster
-    └── 5. Trigger draft-ideas:
-           ├── Query top 15 VPL patterns (4★/5★)
-           ├── Soft-deduplicate against past 30 days of ideas
-           ├── Target underserved pillars from past 14 days
-           ├── LLM cross-pollinates insights with VPL patterns
-           └── Create 5-8 raw draft concepts in 💡 Ideas Bank
-                 (Source = "Idea Scout", links to Scouted Content & VPL pattern)
+    │      └── Create entry in 📡 Scouted Content (linked to source creator, saving Matched Pillars to "Niche" field)
+    └── 4. Update Last Checked date on creators to rotate roster
+
+DAILY (Mon-Sat 8:00 AM) — Idea Drafting Pipeline:
+  draft-ideas (Runs Mon-Sat via Trigger.dev cron)
+    ├── 1. Gather context from all sources:
+    │      ├── Query top 30 VPL templates (4★/5★)
+    │      ├── Soft-deduplicate against past 30 days of ideas
+    │      └── Target underserved pillars from past 14 days
+    ├── 2. Group scouted posts by their "Niche" multi-select tag (using AI-Keyword Sorter fallback if missing)
+    ├── 3. Process each Niche group sequentially:
+    │      ├── Filter templates matching Category tags relevant to the Niche
+    │      ├── LLM cross-pollinates the group's insights with matched templates
+    │      └── Create dynamic number of drafts (Math.max(1, Math.min(5, Math.ceil(groupItems.length * 0.75))) per chunk) in Ideas Bank
+    │            (Source = "Idea Scout", links to Scouted Content & VPL pattern)
+    └── 4. Pause for 1s between chunks to respect API limits
 ```
 
 ## Manual Content Lifecycle Through Databases

@@ -100,30 +100,38 @@ Trigger.dev Mon/Thu/Sat Cron
 
 Trigger.dev Mon-Sat Cron
 │
-└── draft-ideas (Runs 8:00 AM UTC Mon-Sat | maxDuration: 180s)
+└── draft-ideas (Runs 8:00 AM UTC Mon-Sat | maxDuration: 900s)
     ├── 1. Gather context from all sources:
     │      ├── A. Unused Scouted Content (from past 7 days, filtering out those already linked to Ideas)
-    │      ├── B. Top 15 Viral Posts (4★+)
+    │      ├── B. Top 30 Viral Posts (4★+)
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
     │      └── D. Category distribution balance (prioritize underserved pillars)
-    ├── 2. Prompt LLM via OpenRouter to cross-pollinate raw insights with templates
-    └── 3. Create dynamic targetIdeaCount (Math.max(10, Math.min(30, Math.ceil(scoutedCount * 0.75)))) entries in Ideas Bank, matching pillars with a fuzzy matcher, and establishing relations
+    ├── 2. Group scouted posts into buckets based on their "Niche" property in Notion (falling back to AI-Keyword Sorter regex matching if empty)
+    ├── 3. For each Niche bucket sequentially:
+    │      ├── A. Filter the 30 viral templates to match the Category tags matching the current Niche
+    │      ├── B. Calculate the target idea volume (Math.max(1, Math.min(5, Math.ceil(groupItems.length * 0.75))))
+    │      ├── C. Call OpenRouter with only the bucket's posts and matched templates
+    │      └── D. Create entries in Ideas Bank, matching pillars with a fuzzy matcher, establishing relations, and pausing for 1s between chunks
 ```
 
 ### Synthesis & Drafting Task (`draft-ideas`)
 The synthesis engine runs independently on its scheduled days:
 1. Cleans up any Ideas Bank entries marked as "Rejected" (archiving them) to sever relations and free up the associated scouted content for reuse.
 2. Queries the past 7 days of Scouted Content, filtering out entries that are already linked to generated ideas in the `"Linked Ideas"` relation (Source Deduplication).
-3. Queries the top 15 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
+3. Queries the top 30 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns (increased from 15).
 4. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
 5. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
-6. Instructs the LLM (via OpenRouter) to cross-pollinate new insights with VPL layouts.
-7. Saves a dynamic number of raw concepts (Math.max(10, Math.min(30, Math.ceil(scoutedCount * 0.75)))) into the `Ideas Bank` Notion database, validating and fuzzy-mapping the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults. The entries contain:
-   - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
-   - Source: `"Idea Scout"`
-   - Categories and Hook Angles
-   - Relation link back to `Scouted Content`
-   - Page Body: Source Context recap, rough draft copy, why it works explanation, and patterns used.
+6. Groups scouted posts by their `"Niche"` multi-select property (instead of general creator categories).
+7. Processes each group sequentially in focused chunks:
+   - Filters templates to only those containing Category tags relevant to the current niche.
+   - Instructs the LLM (via OpenRouter) to cross-pollinate the niche's raw insights with the matched templates.
+   - Saves a dynamic number of raw concepts (Math.max(1, Math.min(5, Math.ceil(groupItems.length * 0.75))) per chunk) into the `Ideas Bank` Notion database, validating and fuzzy-mapping the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults. The entries contain:
+     - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
+     - Source: `"Idea Scout"`
+     - Categories and Hook Angles
+     - Relation link back to `Scouted Content`
+     - Page Body: Source Context recap, rough draft copy, why it works explanation, and patterns used.
+8. Decoupled Business Logic: The core synthesis logic is extracted into a named export `runDraftIdeas` so it can be run and verified locally using `scripts/test-draft-locally.ts` without Trigger.dev overhead.
 
 
 ---
