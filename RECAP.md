@@ -167,6 +167,19 @@ timeline
 
 ---
 
+### LOG ENTRY 12: Niche-Based Chunked Drafting & Notion Schema Standardization
+*Date: May 28, 2026 (Current Session)*
+
+* **Goal:** Eradicate "idea poisoning" (mixing irrelevant categories) and parent run timeouts by grouping scouted content by AI-matched niches, standardizing on a single Multi-Select property in Notion, and executing chunked synthesis loops.
+* **Code Modifications:**
+  * **Schema Standardization (`src/lib/notion.ts`):** Unified database operations (reads and writes) on the `"Niche"` multi-select property in the `Scouted Content` database (replacing the legacy `"Pillars"` schema concept).
+  * **Core Chunked Drafting Rewrite (`src/trigger/idea-scout/draft-ideas.ts`):** Modified the synthesis runner to group scouted posts by their `"Niche"` values. It loops through each niche group sequentially, matches relevant viral templates, calculates dynamic target counts (`length * 0.75`), prompts OpenRouter, writes the drafts, and pauses for 1s between chunks.
+  * **Decoupled Business Logic (`src/trigger/idea-scout/draft-ideas.ts`):** Extracted `runDraftIdeas` so it can be verified locally.
+  * **One-Time Tagging Migration (`scripts/tag-existing-content.ts`):** Created a recursive paginated migration script that fetched **308 total historical posts** missing niche tags, categorized them using `google/gemini-3.1-flash-lite`, and updated them safely in Notion without deleting data. An audit script (`count-empty-niches.ts`) verified that 100% of posts were fully tagged (0 remaining untagged).
+  * **Local Test Suite (`scripts/test-draft-locally.ts`):** Created a script to locally trigger the synthesis logic and verify Notion page creations.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow
@@ -190,10 +203,15 @@ Trigger.dev Mon/Thu/Sat Cron
 
 Trigger.dev Mon-Sat Cron
 │
-└── draft-ideas (runs 8:00 AM UTC Mon-Sat, 180s max)
+└── draft-ideas (runs 8:00 AM UTC Mon-Sat, 900s max)
     ├── Step 1: Fetch unused scouted content (Linked Ideas is empty)
-    ├── Step 2: Fetch Viral Library posts (4★+) and recent idea titles
-    └── Step 3: Remix concepts and write fresh drafts to Ideas Bank DB
+    ├── Step 2: Fetch Viral Library posts (4★+, up to 30 templates) and recent idea titles
+    ├── Step 3: Group scouted posts into buckets by their "Niche" property
+    ├── Step 4: For each Niche bucket sequentially:
+    │           ├── Filter viral library templates matching Category tags for current Niche
+    │           ├── Remix insights with templates per bucket
+    │           └── Write fresh drafts (Math.max(1, Math.min(5, Math.ceil(len * 0.75)))) to Ideas Bank DB
+    └── Step 5: Pause for 1s between chunks to respect API limits
 ```
 
 ---
