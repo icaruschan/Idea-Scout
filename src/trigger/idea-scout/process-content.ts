@@ -195,6 +195,7 @@ Return JSON:
       keyTakeaways: summaryResult.keyTakeaways,
       transcript,
       creatorPageId,
+      pillars: filterResult.matchedPillars,
     });
 
     console.log(

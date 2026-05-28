@@ -81,14 +81,7 @@ ANTI-PATTERNS (never produce)
 
 Respond only with pure JSON — no markdown fences, no explanation.`;
 
-export const draftIdeas = schedules.task({
-  id: "draft-ideas",
-  cron: "0 8 * * 1-6", // Monday through Saturday at 8:00 AM UTC (9:00 AM local)
-  maxDuration: 900,
-  retry: {
-    maxAttempts: 2,
-  },
-  run: async (payload): Promise<{ ideasCreated: number }> => {
+export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: number }> {
     const scoutedContentIds = payload && "scoutedContentIds" in payload && Array.isArray(payload.scoutedContentIds)
       ? (payload.scoutedContentIds as string[])
       : [];
@@ -111,7 +104,7 @@ export const draftIdeas = schedules.task({
         scoutedContentIds.length > 0
           ? getScoutedContentByIds(scoutedContentIds)
           : getRecentScoutedContent(7),
-        getTopViralPosts(15),         // Top 15 viral posts (4★+)
+        getTopViralPosts(30),         // Top 30 viral posts (4★+)
         getRecentIdeaTitles(30),      // Last 30 days of ideas for dedup
         getPillarDistribution(14),    // 14-day pillar balance
       ]);
@@ -133,59 +126,104 @@ export const draftIdeas = schedules.task({
       `Underserved pillars: ${underservedPillars.length > 0 ? underservedPillars.join(", ") : "none"}`,
     );
 
-    // ─── Step 2: Format scouted content for the LLM ─────────────
+    if (scoutedContent.length === 0) {
+      console.log("⚠️ No scouted content available. Skipping drafting.");
+      return { ideasCreated: 0 };
+    }
 
-    const scoutedSummary = scoutedContent
-      .map(
-        (item: any) =>
-          `[${item.platform}] ${item.title}\nSummary: ${item.aiSummary}\nKey Takeaways: ${item.keyTakeaways}\nURL: ${item.url}`,
-      )
-      .join("\n\n---\n\n");
+    // ─── Step 2: Group scouted content by primary pillar ───────────
 
-    // ─── Step 3: Format viral posts for pattern matching ────────
+    const groups = new Map<string, any[]>();
+    for (const item of scoutedContent) {
+      const p = getPrimaryPillar(item);
+      const list = groups.get(p) || [];
+      list.push(item);
+      groups.set(p, list);
+    }
 
-    const viralSummary = (viralPosts as any[])
-      .map((post) => {
+    console.log(`Pillar groups created: ${Array.from(groups.keys()).map(k => `${k}: ${groups.get(k)?.length}`).join(", ")}`);
+
+    let ideasCreated = 0;
+
+    // Process each group sequentially
+    for (const [pillar, groupItems] of groups.entries()) {
+      console.log(`Processing group: ${pillar} (${groupItems.length} items)...`);
+
+      // ─── Step 3: Filter templates matching this pillar's categories ───────────
+
+      const matchedCategories = PILLAR_TO_VIRAL_CATEGORIES[pillar] || [];
+      let groupTemplates = (viralPosts as any[]).filter(post => {
         const p = post.properties || {};
-        const tweetText =
-          p["Post Title"]?.title?.[0]?.plain_text ||
-          p["Tweet"]?.title?.[0]?.plain_text ||
-          p["Post Content"]?.rich_text?.[0]?.plain_text ||
-          "";
-        const structure =
-          p["Tweet Structure"]?.rich_text?.[0]?.plain_text ||
-          p["Structure"]?.select?.name ||
-          "";
-        const rating = p["⭐ Rating"]?.select?.name || "";
-        const hookType = p["Hook Type"]?.select?.name || "";
-        const stealable =
-          p["Steal-able Pattern"]?.rich_text?.[0]?.plain_text || "";
-        return `[ID: ${post.id}] [${rating}] ${tweetText.substring(0, 300)}\nStructure: ${structure} | Hook: ${hookType}\nSteal-able Pattern: ${stealable}`;
-      })
-      .join("\n\n---\n\n");
+        const cats = p.Category?.multi_select?.map((s: any) => s.name) || [];
+        return cats.some((c: string) => matchedCategories.includes(c));
+      });
 
-    // ─── Step 4: Build the synthesis prompt ──────────────────────
-    
-    // Calculate dynamic idea volume based on input size
-    const targetIdeaCount = Math.max(10, Math.min(30, Math.ceil(scoutedContent.length * 0.75)));
-    console.log(`🎯 Targeting ${targetIdeaCount} ideas based on ${scoutedContent.length} scouted items`);
+      // If less than 4 templates matched, append general top-rated templates to ensure variety
+      if (groupTemplates.length < 4) {
+        const generalTemplates = (viralPosts as any[]).filter(post => {
+          const rating = post.properties?.["⭐ Rating"]?.select?.name || "";
+          return rating.includes("⭐⭐⭐⭐⭐") || rating.includes("★★★★★");
+        });
+        const existingIds = new Set(groupTemplates.map(t => t.id));
+        for (const gt of generalTemplates) {
+          if (!existingIds.has(gt.id)) {
+            groupTemplates.push(gt);
+          }
+        }
+      }
 
-    const synthesisPrompt = `You have two data sources. Your job is to CROSS-POLLINATE them to create tweet ideas.
+      // Limit templates to a maximum of 8 per chunk to prevent prompt overload
+      groupTemplates = groupTemplates.slice(0, 8);
 
-═══ SOURCE 1: SCOUTED CONTENT (raw intelligence from YouTube, Instagram, and Twitter creators) ═══
-${scoutedSummary || "No scouted content available this run."}
+      console.log(`  Filtered templates for ${pillar}: ${groupTemplates.length}`);
 
-═══ SOURCE 2: VIRAL POST LIBRARY (proven tweet formats with 4★+ ratings) ═══
+      // ─── Step 4: Format scouted content and templates for the LLM ───────────
+
+      const scoutedSummary = groupItems
+        .map((item: any) => `[${item.platform}] ${item.title}\nSummary: ${item.aiSummary}\nKey Takeaways: ${item.keyTakeaways}\nURL: ${item.url}`)
+        .join("\n\n---\n\n");
+
+      const viralSummary = groupTemplates
+        .map((post) => {
+          const p = post.properties || {};
+          const tweetText =
+            p["Post Title"]?.title?.[0]?.plain_text ||
+            p["Tweet"]?.title?.[0]?.plain_text ||
+            p["Post Content"]?.rich_text?.[0]?.plain_text ||
+            "";
+          const structure =
+            p["Tweet Structure"]?.rich_text?.[0]?.plain_text ||
+            p["Structure"]?.select?.name ||
+            "";
+          const rating = p["⭐ Rating"]?.select?.name || "";
+          const hookType = p["Hook Type"]?.select?.name || "";
+          const stealable =
+            p["Steal-able Pattern"]?.rich_text?.[0]?.plain_text || "";
+          const whyItWorksVal =
+            p["💡 Why It Works"]?.rich_text?.[0]?.plain_text ||
+            p["Why It Works"]?.rich_text?.[0]?.plain_text ||
+            "";
+          return `[ID: ${post.id}] [${rating}] [Hook Type: ${hookType}] ${tweetText.substring(0, 300)}\nStructure: ${structure}\nSteal-able Pattern: ${stealable}\nWhy it works: ${whyItWorksVal}`;
+        })
+        .join("\n\n---\n\n");
+
+      // Calculate dynamic idea volume for this chunk (0.75 ratio, min 1, max 5)
+      const targetIdeaCount = Math.max(1, Math.min(5, Math.ceil(groupItems.length * 0.75)));
+      console.log(`  🎯 Targeting ${targetIdeaCount} ideas for ${pillar}`);
+
+      const synthesisPrompt = `You have two data sources. Your job is to CROSS-POLLINATE them to create tweet ideas for the content pillar: ${pillar}.
+
+═══ SOURCE 1: SCOUTED CONTENT (raw intelligence about ${pillar}) ═══
+${scoutedSummary}
+
+═══ SOURCE 2: VIRAL POST LIBRARY (proven templates matching ${pillar}) ═══
 ${viralSummary || "No viral posts available."}
 
 ═══ EXISTING IDEAS (do NOT duplicate these) ═══
 ${existingTitles.slice(0, 30).join("\n") || "None yet"}
 
-═══ UNDERSERVED PILLARS (bias toward these if possible) ═══
-${underservedPillars.length > 0 ? underservedPillars.join(", ") : "All pillars are balanced"}
-
 ═══ TASK ═══
-Generate EXACTLY ${targetIdeaCount} tweet idea drafts by combining scouted content insights with proven viral formats.
+Generate EXACTLY ${targetIdeaCount} tweet idea drafts specifically for the "${pillar}" pillar by combining the scouted content insights with the proven viral templates.
 
 For each idea, you MUST:
 1. Pick a specific insight from Source 1 (scouted content)
@@ -197,7 +235,7 @@ Return JSON:
   "ideas": [
     {
       "title": "Specific, compelling idea title following the TITLE RULES",
-      "pillar": "MUST MATCH EXACTLY ONE OF: ${CONTENT_PILLARS.join(", ")}",
+      "pillar": "${pillar}",
       "hookAngle": "The specific hook/angle framing for this topic",
       "whyItWorks": "The psychological/strategic reason why this format/angle works (audience motivation, curiosity gap, etc.)",
       "format": "Short" | "Mid-length" | "Thread",
@@ -211,123 +249,207 @@ Return JSON:
   ]
 }`;
 
-    // ─── Step 5: Generate ideas via LLM ─────────────────────────
+      // ─── Step 5: Generate ideas via LLM ─────────────────────────
 
-    let generatedIdeas: {
-      ideas: {
-        title: string;
-        pillar: string;
-        hookAngle: string;
-        whyItWorks: string;
-        format: string;
-        priority: string;
-        stealablePattern: string;
-        tweetStructure: string;
-        sourcedFrom: string;
-        inspiredByLibraryId?: string;
-        crossPollinationLogic: string;
-      }[];
-    };
-
-    try {
-      generatedIdeas = await generateJSON(
-        synthesisPrompt,
-        SYNTHESIS_SYSTEM_PROMPT,
-        0.8, // Higher temperature for creative synthesis
-      );
-    } catch (err) {
-      console.error("LLM synthesis failed:", err);
-      return { ideasCreated: 0 };
-    }
-
-    if (!generatedIdeas?.ideas || generatedIdeas.ideas.length === 0) {
-      console.log("⚠️ LLM returned no ideas");
-      return { ideasCreated: 0 };
-    }
-
-    console.log(`🧠 LLM generated ${generatedIdeas.ideas.length} ideas`);
-
-    // ─── Step 6: Write each idea to Ideas Bank ──────────────────
-
-    // Build a lookup of scouted content page IDs by title for relation linking
-    const scoutedLookup = new Map<string, string>(
-      scoutedContent.map((item: any) => [
-        item.title.toLowerCase().substring(0, 100),
-        item.pageId,
-      ]),
-    );
-
-    let ideasCreated = 0;
-
-    for (const idea of generatedIdeas.ideas) {
+      let generatedIdeas: any;
       try {
-        // Validate pillar using fuzzy matching
-        const validPillar = matchPillar(idea.pillar);
-
-        // Try to find the scouted content IDs this idea references
-        const inspiredByScoutedIds: string[] = [];
-        if (idea.sourcedFrom) {
-          // Fuzzy match against scouted content titles
-          for (const [titleKey, pageId] of scoutedLookup) {
-            if (
-              idea.sourcedFrom.toLowerCase().includes(titleKey) ||
-              titleKey.includes(idea.sourcedFrom.toLowerCase().substring(0, 50))
-            ) {
-              inspiredByScoutedIds.push(pageId);
-            }
-          }
-        }
-
-        // Map format string to valid select option
-        const formatMap: Record<string, string> = {
-          Short: "Short",
-          "Mid-length": "Mid-length",
-          Thread: "Thread",
-          Article: "Article",
-          Video: "Video",
-        };
-
-        const rawData = [
-          `📌 Cross-Pollination: ${idea.crossPollinationLogic}`,
-          `📦 Sourced From: ${idea.sourcedFrom}`,
-          `🔧 Structure: ${idea.tweetStructure}`,
-        ].join("\n\n");
-
-        const cleanLibraryId = idea.inspiredByLibraryId
-          ? idea.inspiredByLibraryId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
-          : undefined;
-
-        await createIdea(
-          idea.title,
-          "Idea Scout", // Source = "Idea Scout"
-          validPillar,
-          idea.hookAngle,
-          rawData,
-          {
-            priority: idea.priority as any,
-            formatIdea: formatMap[idea.format] as any || "Short",
-            stealablePattern: idea.stealablePattern,
-            tweetStructure: idea.tweetStructure,
-            inspiredByScoutedIds:
-              inspiredByScoutedIds.length > 0 ? inspiredByScoutedIds : undefined,
-            inspiredByLibraryId: cleanLibraryId,
-            whyItWorks: idea.whyItWorks,
-          },
-        );
-
-        ideasCreated++;
-        console.log(
-          `💡 Created idea: "${idea.title.substring(0, 60)}" [${validPillar}]`,
+        generatedIdeas = await generateJSON(
+          synthesisPrompt,
+          SYNTHESIS_SYSTEM_PROMPT,
+          0.8, // Creative synthesis
         );
       } catch (err) {
-        console.error(
-          `Failed to create idea "${idea.title.substring(0, 60)}":`,
-          err,
-        );
+        console.error(`LLM synthesis failed for pillar ${pillar}:`, err);
+        continue;
       }
+
+      if (!generatedIdeas?.ideas || generatedIdeas.ideas.length === 0) {
+        console.log(`⚠️ LLM returned no ideas for pillar ${pillar}`);
+        continue;
+      }
+
+      console.log(`  🧠 LLM generated ${generatedIdeas.ideas.length} ideas for pillar ${pillar}`);
+
+      // ─── Step 6: Write each idea to Ideas Bank ──────────────────
+
+      const scoutedLookup = new Map<string, string>(
+        groupItems.map((item: any) => [
+          item.title.toLowerCase().substring(0, 100),
+          item.pageId,
+        ]),
+      );
+
+      for (const idea of generatedIdeas.ideas) {
+        try {
+          const validPillar = matchPillar(idea.pillar || pillar);
+          const inspiredByScoutedIds: string[] = [];
+          if (idea.sourcedFrom) {
+            for (const [titleKey, pageId] of scoutedLookup) {
+              if (
+                idea.sourcedFrom.toLowerCase().includes(titleKey) ||
+                titleKey.includes(idea.sourcedFrom.toLowerCase().substring(0, 50))
+              ) {
+                inspiredByScoutedIds.push(pageId);
+              }
+            }
+          }
+
+          const formatMap: Record<string, string> = {
+            Short: "Short",
+            "Mid-length": "Mid-length",
+            Thread: "Thread",
+            Article: "Article",
+            Video: "Video",
+          };
+
+          const rawData = [
+            `📌 Cross-Pollination: ${idea.crossPollinationLogic}`,
+            `📦 Sourced From: ${idea.sourcedFrom}`,
+            `🔧 Structure: ${idea.tweetStructure}`,
+          ].join("\n\n");
+
+          const cleanLibraryId = idea.inspiredByLibraryId
+            ? idea.inspiredByLibraryId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
+            : undefined;
+
+          await createIdea(
+            idea.title,
+            "Idea Scout",
+            validPillar,
+            idea.hookAngle,
+            rawData,
+            {
+              priority: idea.priority as any,
+              formatIdea: formatMap[idea.format] as any || "Short",
+              stealablePattern: idea.stealablePattern,
+              tweetStructure: idea.tweetStructure,
+              inspiredByScoutedIds:
+                inspiredByScoutedIds.length > 0 ? inspiredByScoutedIds : undefined,
+              inspiredByLibraryId: cleanLibraryId,
+              whyItWorks: idea.whyItWorks,
+            },
+          );
+
+          ideasCreated++;
+          console.log(
+            `💡 Created idea: "${idea.title.substring(0, 60)}" [${validPillar}]`,
+          );
+        } catch (err) {
+          console.error(`Failed to create idea "${idea.title?.substring(0, 60)}":`, err);
+        }
+      }
+
+      // Brief pause between chunks to respect OpenRouter rate limits
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     console.log(`✅ Draft complete: ${ideasCreated} ideas written to Ideas Bank`);
     return { ideasCreated };
+}
+
+export const draftIdeas = schedules.task({
+  id: "draft-ideas",
+  cron: "0 8 * * 1-6", // Monday through Saturday at 8:00 AM UTC (9:00 AM local)
+  maxDuration: 900,
+  retry: {
+    maxAttempts: 2,
+  },
+  run: async (payload): Promise<{ ideasCreated: number }> => {
+    return runDraftIdeas(payload);
   },
 });
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS FOR CHUNKED DRAFTING
+// ═══════════════════════════════════════════════════════════════
+
+const PILLAR_TO_VIRAL_CATEGORIES: Record<string, string[]> = {
+  "Vibe Coding": ["Vibe Coding", "Tech/AI"],
+  "Automation": ["Tools/Resources", "Tech/AI"],
+  "Web3": ["Web3/Crypto"],
+  "Creator Economy": ["Content Creators", "Business/Entrepreneurs"],
+  "Copywriting and Storytelling": ["Marketing/Growth", "Content Creators"],
+  "AI Prompting & Tools": ["Tech/AI", "Tools/Resources"],
+  "AI Creative": ["Tech/AI", "Design/Creative"],
+  "Personal/Vulnerability": ["Productivity/Self-Improvement", "Business/Entrepreneurs"],
+  "Building in Public": ["Business/Entrepreneurs", "Marketing/Growth"],
+};
+
+function getPrimaryPillar(item: any): string {
+  if (item.pillars && item.pillars.length > 0) {
+    return item.pillars[0]; // Use the first AI-matched pillar
+  }
+
+  // Fallback: Keyword-based matching on summary / takeaways
+  const textToSearch = `${item.title} ${item.aiSummary} ${item.keyTakeaways}`.toLowerCase();
+  if (
+    textToSearch.includes("cursor") ||
+    textToSearch.includes("claude code") ||
+    textToSearch.includes("lovable") ||
+    textToSearch.includes("v0") ||
+    textToSearch.includes("bolt.new") ||
+    textToSearch.includes("vibe coding") ||
+    textToSearch.includes("coder") ||
+    textToSearch.includes("developer")
+  ) {
+    return "Vibe Coding";
+  }
+  if (
+    textToSearch.includes("n8n") ||
+    textToSearch.includes("make.com") ||
+    textToSearch.includes("zapier") ||
+    textToSearch.includes("automation") ||
+    textToSearch.includes("workflows") ||
+    textToSearch.includes("agentic")
+  ) {
+    return "Automation";
+  }
+  if (
+    textToSearch.includes("solana") ||
+    textToSearch.includes("base") ||
+    textToSearch.includes("memecoin") ||
+    textToSearch.includes("crypto") ||
+    textToSearch.includes("web3")
+  ) {
+    return "Web3";
+  }
+  if (
+    textToSearch.includes("newsletter") ||
+    textToSearch.includes("beehiiv") ||
+    textToSearch.includes("audience") ||
+    textToSearch.includes("creator economy") ||
+    textToSearch.includes("monetise") ||
+    textToSearch.includes("sponsorship")
+  ) {
+    return "Creator Economy";
+  }
+  if (
+    textToSearch.includes("kling") ||
+    textToSearch.includes("runway") ||
+    textToSearch.includes("sora") ||
+    textToSearch.includes("elevenlabs") ||
+    textToSearch.includes("avatar") ||
+    textToSearch.includes("ai creative") ||
+    textToSearch.includes("generate video")
+  ) {
+    return "AI Creative";
+  }
+  if (
+    textToSearch.includes("hook") ||
+    textToSearch.includes("copywriting") ||
+    textToSearch.includes("storytelling") ||
+    textToSearch.includes("persuasion")
+  ) {
+    return "Copywriting and Storytelling";
+  }
+  if (
+    textToSearch.includes("public") ||
+    textToSearch.includes("milestone") ||
+    textToSearch.includes("mrr") ||
+    textToSearch.includes("building in public")
+  ) {
+    return "Building in Public";
+  }
+  // Default fallback
+  return "AI Prompting & Tools";
+}

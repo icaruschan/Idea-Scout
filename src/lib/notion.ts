@@ -38,6 +38,7 @@ export interface ScoutedContentInput {
   keyTakeaways: string;
   transcript: string;
   creatorPageId: string;
+  pillars?: string[];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -294,6 +295,11 @@ export async function createScoutedContent(
           rich_text: splitIntoRichText(safeString(input.transcript).substring(0, 2000)),
         },
         ...creatorRelation,
+        ...(input.pillars && input.pillars.length > 0 ? {
+          "Niche": {
+            multi_select: input.pillars.map((p) => ({ name: p })),
+          },
+        } : {}),
       },
     };
 
@@ -545,6 +551,11 @@ export async function getRecentScoutedContent(
 
     return response.results.map((page: any) => {
       const p = page.properties || {};
+      const creatorPageId = 
+        p["YouTube Creators"]?.relation?.[0]?.id || 
+        p["Instagram Creators"]?.relation?.[0]?.id || 
+        p["👤 Twitter Creators"]?.relation?.[0]?.id || 
+        "";
       return {
         pageId: page.id,
         title: p["Title"]?.title?.[0]?.plain_text || "",
@@ -552,6 +563,8 @@ export async function getRecentScoutedContent(
         aiSummary: p["AI Summary"]?.rich_text?.[0]?.plain_text || "",
         keyTakeaways: p["Key Takeaways"]?.rich_text?.[0]?.plain_text || "",
         url: p["URL"]?.url || "",
+        pillars: p["Niche"]?.multi_select?.map((s: any) => s.name) || [],
+        creatorPageId,
       };
     });
   } catch (error) {
@@ -598,6 +611,11 @@ export async function getScoutedContentByIds(
             if (!prop?.rich_text) return "";
             return prop.rich_text.map((r: any) => r.plain_text || "").join("");
           };
+          const creatorPageId = 
+            p["YouTube Creators"]?.relation?.[0]?.id || 
+            p["Instagram Creators"]?.relation?.[0]?.id || 
+            p["👤 Twitter Creators"]?.relation?.[0]?.id || 
+            "";
           return {
             pageId: page.id,
             title: p["Title"]?.title?.[0]?.plain_text || "",
@@ -605,6 +623,8 @@ export async function getScoutedContentByIds(
             aiSummary: getRichTextPlain(p["AI Summary"]),
             keyTakeaways: getRichTextPlain(p["Key Takeaways"]),
             url: p["URL"]?.url || "",
+            pillars: p["Niche"]?.multi_select?.map((s: any) => s.name) || [],
+            creatorPageId,
           };
         } catch (err) {
           console.error(`Error retrieving scouted content page ${id}:`, err);
