@@ -382,3 +382,76 @@ export async function scrapeInstagramReels(
     throw error;
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Actor 5: Twitter (X) Batch Scraper (apidojo/twitter-scraper-lite)
+// ─────────────────────────────────────────────────────────────
+
+export interface TwitterTweet {
+  id: string;
+  text: string;
+  url: string;
+  likes: number;
+  retweets: number;
+  replies: number;
+  views: number;
+  publishedDate: string;
+  author: {
+    userName: string;
+    name: string;
+  };
+}
+
+/**
+ * Bulk scrape recent tweets for a list of Twitter handles using Apify.
+ * Uses apidojo/twitter-scraper-lite for cost-effective event-based scraping.
+ * Returns an array of parsed tweets.
+ */
+export async function scrapeTwitterProfiles(
+  handles: string[],
+  maxItemsPerHandle: number = 5,
+): Promise<TwitterTweet[]> {
+  try {
+    if (!handles || handles.length === 0) return [];
+
+    // Clean handles by removing "@"
+    const cleanHandles = handles.map(h => h.replace(/^@/, ""));
+
+    const input = {
+      twitterHandles: cleanHandles,
+      sort: "Latest", // Fetch chronological
+      maxItems: handles.length * maxItemsPerHandle,
+    };
+
+    console.log(`Scraping Twitter profiles via Apify for ${handles.length} handles (max ${input.maxItems} items)...`);
+
+    return await withApifyClient(async (client) => {
+      const run = await client.actor("apidojo/twitter-scraper-lite").call(input);
+      const { items } = await client.dataset(run.defaultDatasetId).listItems();
+
+      // Only parse actual "tweet" objects (ignore any other noise the actor might return)
+      const tweets = (items as any[]).filter(item => item.type === "tweet").map((item) => {
+        return {
+          id: item.id || "",
+          text: item.text || item.full_text || "",
+          url: item.url || item.twitterUrl || `https://x.com/${item.author?.userName}/status/${item.id}`,
+          likes: item.likeCount || item.favorite_count || 0,
+          retweets: item.retweetCount || item.retweet_count || 0,
+          replies: item.replyCount || item.reply_count || 0,
+          views: item.viewCount || item.views || 0,
+          publishedDate: item.createdAt || item.created_at || "",
+          author: {
+            userName: item.author?.userName || "",
+            name: item.author?.name || "",
+          },
+        };
+      });
+
+      console.log(`Apify Twitter scrape returned ${tweets.length} tweets.`);
+      return tweets;
+    });
+  } catch (error) {
+    console.error("Failed to scrape Twitter profiles via Apify:", error);
+    throw error;
+  }
+}

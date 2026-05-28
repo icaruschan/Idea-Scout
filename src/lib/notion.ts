@@ -945,7 +945,7 @@ export async function cleanRejectedIdeas(): Promise<number> {
       data_source_id: NOTION_DATA_SOURCE_IDS.IDEAS_BANK,
       filter: {
         property: "Status",
-        status: { equals: "Rejected" },
+        select: { equals: "Rejected" },
       },
     });
 

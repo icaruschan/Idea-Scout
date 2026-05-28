@@ -10,8 +10,9 @@ import {
 import {
   scrapeYouTubeChannel,
   scrapeInstagramReels,
+  scrapeTwitterProfiles,
 } from "../../lib/apify";
-import { searchCreatorPosts, getArticle } from "../../lib/twitter";
+import { getArticle } from "../../lib/twitter";
 import { processContent } from "./process-content";
 import type { RawContentItem } from "./process-content";
 import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
@@ -176,81 +177,94 @@ export const scoutContent = schedules.task({
 
     // ─── STEP 2C: Scrape Twitter (X) posts ──────────────────────
 
-    for (const creator of xCreators) {
-      if (!creator.handle) continue;
-
+    const xHandles = xCreators.map(c => c.handle).filter(Boolean) as string[];
+    
+    if (xHandles.length > 0) {
       try {
-        const { urls: existingUrls, titles: existingTitles } = await getScoutedItemsForCreator(creator.pageId, "X");
-        const tweets = await searchCreatorPosts(creator.handle, 14);
+        const tweets = await scrapeTwitterProfiles(xHandles, 10);
         
-        // 1. Filter programmatically by minimum views
-        const qualifiedTweets = tweets.filter((t: any) => {
-          const views = t.viewCount || 0;
-          return views >= TWITTER_FILTER_THRESHOLDS.MIN_VIEWS;
-        });
-
-        // 2. Filter out duplicates first
-        const nonDuplicateTweets = qualifiedTweets.filter((tweet: any) => {
-          const tweetUrl = tweet.url || `https://x.com/${creator.handle}/status/${tweet.id}`;
-          const cleanUrl = cleanContentUrl(tweetUrl);
-          const tweetTitle = (tweet.text || "").substring(0, 200);
-          const normTitle = tweetTitle.toLowerCase().trim();
-
-          return !(existingUrls.includes(cleanUrl) || existingTitles.some(t => 
-            t === normTitle || t.includes(normTitle) || normTitle.includes(t)
-          ));
-        });
-
-        // 3. Take the 10 most recent qualified, non-duplicate tweets (prioritizing fresh ideas over just viral hits)
-        const recentTweets = nonDuplicateTweets.slice(0, 10);
-        
-        console.log(
-          `X @${creator.handle}: ${recentTweets.length} new tweets scraped (from ${tweets.length} original posts in past 14 days)`,
-        );
-
-        for (const tweet of recentTweets) {
-          const tweetUrl = tweet.url || `https://x.com/${creator.handle}/status/${tweet.id}`;
-          let fullText = tweet.text || "";
+        // Group tweets by creator handle
+        const tweetsByHandle = new Map<string, any[]>();
+        for (const tweet of tweets) {
+          // Attempt to match by exact handle or lowercased
+          const authorHandle = tweet.author?.userName || "";
+          const normAuthor = authorHandle.toLowerCase();
           
-          // Detect articles via flag or URL structure
-          const isArticle = tweet.isArticle === true || 
-                           (tweet.entities?.urls || []).some((u: any) => u.expanded_url?.includes('/article/'));
-
-          if (isArticle && tweet.id) {
-            console.log(`📄 Detected X Article for @${creator.handle}, fetching full text...`);
-            const articleText = await getArticle(tweet.id);
-            if (articleText) {
-              fullText = articleText;
-            }
+          let matchedCreator = xCreators.find(c => c.handle && c.handle.toLowerCase() === normAuthor);
+          // Sometimes author.userName might omit or include @
+          if (!matchedCreator && authorHandle) {
+             matchedCreator = xCreators.find(c => c.handle && c.handle.toLowerCase() === `@${normAuthor}`);
           }
 
-          const tweetTitle = fullText.substring(0, 200);
-
-          allRawContent.push({
-            platform: "X",
-            creatorPageId: creator.pageId,
-            creatorName: creator.name,
-            title: tweetTitle,
-            text: fullText,
-            url: tweetUrl,
-            likes: tweet.likeCount || 0,
-            views: tweet.viewCount || 0,
-            comments: tweet.replyCount || 0,
-            publishedDate: tweet.createdAt || "",
-            transcript: "",
-          });
+          if (matchedCreator && matchedCreator.handle) {
+             const list = tweetsByHandle.get(matchedCreator.handle) || [];
+             list.push(tweet);
+             tweetsByHandle.set(matchedCreator.handle, list);
+          }
         }
 
-        processedCreatorIds.push(creator.pageId);
+        for (const creator of xCreators) {
+          if (!creator.handle) continue;
+          
+          const creatorTweets = tweetsByHandle.get(creator.handle) || [];
+          if (creatorTweets.length === 0) continue;
 
-        // Rate limit: 5s between Twitter API calls
-        await new Promise((r) => setTimeout(r, 5000));
+          const { urls: existingUrls, titles: existingTitles } = await getScoutedItemsForCreator(creator.pageId, "X");
+
+          const qualifiedTweets = creatorTweets.filter((t: any) => {
+            return (t.views || 0) >= TWITTER_FILTER_THRESHOLDS.MIN_VIEWS;
+          });
+
+          const nonDuplicateTweets = qualifiedTweets.filter((tweet: any) => {
+            const cleanUrl = cleanContentUrl(tweet.url);
+            const tweetTitle = (tweet.text || "").substring(0, 200);
+            const normTitle = tweetTitle.toLowerCase().trim();
+
+            return !(existingUrls.includes(cleanUrl) || existingTitles.some(t => 
+              t === normTitle || t.includes(normTitle) || normTitle.includes(t)
+            ));
+          });
+
+          const recentTweets = nonDuplicateTweets.slice(0, 10);
+          console.log(`X @${creator.handle}: ${recentTweets.length} new tweets scraped (from ${creatorTweets.length} original Apify results)`);
+
+          for (const tweet of recentTweets) {
+            let fullText = tweet.text || "";
+            const isArticle = tweet.url.includes('/article/');
+
+            if (isArticle && tweet.id) {
+              console.log(`📄 Detected X Article for @${creator.handle}, fetching full text via REST...`);
+              try {
+                const articleText = await getArticle(tweet.id);
+                if (articleText) fullText = articleText;
+              } catch(e) {
+                console.warn(`Failed to fetch article text for ${tweet.id}`);
+              }
+            }
+
+            allRawContent.push({
+              platform: "X",
+              creatorPageId: creator.pageId,
+              creatorName: creator.name,
+              title: fullText.substring(0, 200),
+              text: fullText,
+              url: tweet.url,
+              likes: tweet.likes || 0,
+              views: tweet.views || 0,
+              comments: tweet.replies || 0,
+              publishedDate: tweet.publishedDate || "",
+              transcript: "",
+            });
+          }
+
+          processedCreatorIds.push(creator.pageId);
+        }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        console.warn(`Failed to scrape X creator ${creator.handle}:`, err);
+        console.warn(`Failed bulk scraping X creators via Apify:`, err);
         failedCreators.push({
-          name: creator.name,
-          handle: creator.handle || "",
+          name: "All X Creators (Apify Batch)",
+          handle: "",
           platform: "X",
           error: errorMsg,
         });
