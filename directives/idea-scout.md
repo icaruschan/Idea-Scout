@@ -112,12 +112,13 @@ Trigger.dev Mon/Wed/Fri Cron
 
 ### Synthesis & Drafting Task (`draft-ideas`)
 The synthesis engine runs independently on its scheduled days:
-1. Queries the past 7 days of Scouted Content, filtering out entries that are already linked to generated ideas in the `"Linked Ideas"` relation (Source Deduplication).
-2. Queries the top 15 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
-3. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
-4. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
-5. Instructs the LLM (via OpenRouter) to cross-pollinate new insights with VPL layouts.
-6. Saves a dynamic number of raw concepts (Math.max(10, Math.min(30, Math.ceil(scoutedCount * 0.75)))) into the `Ideas Bank` Notion database, validating and fuzzy-mapping the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults. The entries contain:
+1. Cleans up any Ideas Bank entries marked as "Rejected" (archiving them) to sever relations and free up the associated scouted content for reuse.
+2. Queries the past 7 days of Scouted Content, filtering out entries that are already linked to generated ideas in the `"Linked Ideas"` relation (Source Deduplication).
+3. Queries the top 15 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
+4. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
+5. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
+6. Instructs the LLM (via OpenRouter) to cross-pollinate new insights with VPL layouts.
+7. Saves a dynamic number of raw concepts (Math.max(10, Math.min(30, Math.ceil(scoutedCount * 0.75)))) into the `Ideas Bank` Notion database, validating and fuzzy-mapping the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults. The entries contain:
    - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
    - Source: `"Idea Scout"`
    - Categories and Hook Angles

@@ -100,9 +100,10 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 ### Step 5: The Idea Remix & Drafting Phase
 The idea remixing engine runs as an independent task scheduled 3 times a week (Monday, Wednesday, Friday at 8:00 AM UTC):
 
-1. It queries **Scouted Content** from the past 7 days, filtering out entries that are already linked to generated ideas to ensure no duplicate drafting.
-2. It reads your **Viral Post Library** database for patterns rated ⭐⭐⭐⭐ or higher.
-3. It asks the AI to combine the scouted content topic with the viral pattern template structure. The system automatically calculates a dynamic target volume for the drafts (ranging from 10 to 30, scaled as 75% of the total scouted items processed in the run) to adjust output volume to the inputs.
+1. **Automated Cleanup**: It first cleans up any existing Idea Bank entries marked as "Rejected" (archiving them). This severs the relation to their source content, freeing up that scouted content to be used again.
+2. It queries **Scouted Content** from the past 7 days, filtering out entries that are already linked to generated ideas to ensure no duplicate drafting.
+3. It reads your **Viral Post Library** database for patterns rated ⭐⭐⭐⭐ or higher.
+4. It asks the AI to combine the scouted content topic with the viral pattern template structure. The system automatically calculates a dynamic target volume for the drafts (ranging from 10 to 30, scaled as 75% of the total scouted items processed in the run) to adjust output volume to the inputs.
 
 #### Example of a Remix:
 * **Scouted Input:** A transcript about using Claude Code to build static websites.

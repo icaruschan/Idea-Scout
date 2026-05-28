@@ -144,6 +144,16 @@ timeline
 
 ---
 
+### LOG ENTRY 10: Automated Cleanup of Rejected Ideas
+*Date: May 28, 2026*
+
+* **Goal:** Automatically delete ideas marked as "Rejected" from the Ideas Bank to sever their bi-directional relation with scouted content, freeing up the source material for the AI to reuse in future drafting runs.
+* **Code Modifications:**
+  * Added `cleanRejectedIdeas` to `src/lib/notion.ts`: Queries `NOTION_DATA_SOURCE_IDS.IDEAS_BANK` for ideas where `Status` equals `"Rejected"` and sets their `archived` property to `true`.
+  * Updated `src/trigger/idea-scout/draft-ideas.ts`: Integrated `cleanRejectedIdeas` at the very beginning of the `run` method so it cleans up rejected ideas *before* querying scouted content.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow

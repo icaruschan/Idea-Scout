@@ -9,6 +9,7 @@ import {
   getRecentIdeaTitles,
   getPillarDistribution,
   createIdea,
+  cleanRejectedIdeas,
 } from "../../lib/notion";
 
 // ═══════════════════════════════════════════════════════════════
@@ -95,6 +96,13 @@ export const draftIdeas = schedules.task({
     console.log(
       `💡 Draft Ideas starting — ${scoutedContentIds.length > 0 ? scoutedContentIds.length : "all recent"} scouted items to synthesize`,
     );
+
+    // ─── Step 0: Clean up any Rejected ideas ────────────────────
+    
+    const cleanedCount = await cleanRejectedIdeas();
+    if (cleanedCount > 0) {
+      console.log(`🗑️ Cleaned up ${cleanedCount} rejected ideas to free up source content.`);
+    }
 
     // ─── Step 1: Gather context from all sources ────────────────
 
