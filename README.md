@@ -20,7 +20,7 @@ An automated agentic content scouting and idea remixing engine. This system moni
 
 ```mermaid
 graph TD
-    subgraph Content Scouting (Wed 2:00 AM UTC)
+    subgraph Content Scouting (Mon/Sat 2:00 AM UTC)
         A[Start Schedule] --> B[Read Creator lists from Notion]
         B --> C[Scrape YT → 5s pause → IG → 5s pause → X]
         C --> D[AI Relevance & Disambiguation Filter<br/>queue concurrency: 5]
@@ -28,7 +28,7 @@ graph TD
         D -->|Match| G[Write to Scouted Content DB + Page Body Toggle]
     end
 
-    subgraph Idea Drafting (Mon/Wed/Fri 8:00 AM UTC)
+    subgraph Idea Drafting (Mon-Sat 8:00 AM UTC)
         J[Start Schedule] --> K[Fetch Unused Scouted Content]
         K --> H[Remix with Viral Post Library Patterns]
         H --> I[Write New Drafts to Ideas Bank DB]
@@ -98,7 +98,7 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 ---
 
 ### Step 5: The Idea Remix & Drafting Phase
-The idea remixing engine runs as an independent task scheduled 3 times a week (Monday, Wednesday, Friday at 8:00 AM UTC):
+The idea remixing engine runs as an independent task scheduled 6 times a week (Monday through Saturday at 8:00 AM UTC):
 
 1. **Automated Cleanup**: It first cleans up any existing Idea Bank entries marked as "Rejected" (archiving them). This severs the relation to their source content, freeing up that scouted content to be used again.
 2. It queries **Scouted Content** from the past 7 days, filtering out entries that are already linked to generated ideas to ensure no duplicate drafting.
@@ -226,9 +226,9 @@ The system uses the following task registrations in Trigger.dev:
 
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency |
 | :--- | :--- | :--- | :--- | :--- |
-| `scout-content` | `schedules.task` | Wednesday 2:00 AM UTC (`0 2 * * 3`) | 14400 seconds (4 hours) | 1 |
+| `scout-content` | `schedules.task` | Mon/Sat 2:00 AM UTC (`0 2 * * 1,6`) | 14400 seconds (4 hours) | 1 |
 | `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) |
-| `draft-ideas` | `schedules.task` | Mon, Wed, Fri 8:00 AM UTC (`0 8 * * 1,3,5`) | 180 seconds | 1 |
+| `draft-ideas` | `schedules.task` | Mon-Sat 8:00 AM UTC (`0 8 * * 1-6`) | 180 seconds | 1 |
 
 ---
 

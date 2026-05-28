@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous weekly creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Wednesday at 2:00 AM UTC (3:00 AM local time), evaluates new uploads for relevance against 9 active content pillars, and saves summaries in Notion. A decoupled task running every Monday, Wednesday, and Friday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library.
+Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday and Saturday at 2:00 AM UTC (3:00 AM local time), evaluates new uploads for relevance against 9 active content pillars, and saves summaries in Notion. A decoupled task running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library.
 
 ---
 
@@ -78,9 +78,9 @@ The filter checks content relevance against these specific domains. If a piece o
 ## 4. Pipeline Architecture & Execution Flow
 
 ```
-Trigger.dev Wednesday Cron
+Trigger.dev Mon/Sat Cron
 │
-└── scout-content (Runs 2:00 AM UTC Wed | maxDuration: 14400s)
+└── scout-content (Runs 2:00 AM UTC Mon/Sat | maxDuration: 14400s)
     ├── 1. Gather active creators (YT: 10, IG: 10, X: 24) sorted by Last Checked (oldest first)
     ├── 2. Scrape content streams (with 5s cooldowns between phases):
     │      ├── YT: Scrapes newest 5 videos (Apify Actor) — sequential per creator
@@ -98,9 +98,9 @@ Trigger.dev Wednesday Cron
     │      └── F. Notion insert: Create Scouted Content page, establishing creator relation
     └── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
 
-Trigger.dev Mon/Wed/Fri Cron
+Trigger.dev Mon-Sat Cron
 │
-└── draft-ideas (Runs 8:00 AM UTC Mon/Wed/Fri | maxDuration: 180s)
+└── draft-ideas (Runs 8:00 AM UTC Mon-Sat | maxDuration: 180s)
     ├── 1. Gather context from all sources:
     │      ├── A. Unused Scouted Content (from past 7 days, filtering out those already linked to Ideas)
     │      ├── B. Top 15 Viral Posts (4★+)

@@ -83,7 +83,7 @@ Respond only with pure JSON — no markdown fences, no explanation.`;
 
 export const draftIdeas = schedules.task({
   id: "draft-ideas",
-  cron: "0 8 * * 1,3,5", // Monday, Wednesday, Friday at 8:00 AM UTC (9:00 AM local)
+  cron: "0 8 * * 1-6", // Monday through Saturday at 8:00 AM UTC (9:00 AM local)
   maxDuration: 180,
   retry: {
     maxAttempts: 2,

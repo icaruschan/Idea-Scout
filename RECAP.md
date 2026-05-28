@@ -174,9 +174,9 @@ timeline
 The Unified Idea Scout pipeline consists of two decoupled, independently scheduled tasks running with strict concurrency controls:
 
 ```
-Trigger.dev Wednesday Cron
+Trigger.dev Mon/Sat Cron
 │
-└── scout-content (runs 2:00 AM UTC Wednesday, 14400s max)
+└── scout-content (runs 2:00 AM UTC Mon/Sat, 14400s max)
     ├── Step 1: Fetch active creators from YouTube, Instagram, and X databases
     ├── Step 2: Trigger scrapers (with 5s cooldowns between platform phases)
     │           ├── YT: Apify actor, sequential per creator
@@ -188,9 +188,9 @@ Trigger.dev Wednesday Cron
     │           LLM relevance filter → AI summary → Scouted Content DB with creator relations
     └── Step 4: Update Last Checked ONLY for successfully processed creators
 
-Trigger.dev Mon/Wed/Fri Cron
+Trigger.dev Mon-Sat Cron
 │
-└── draft-ideas (runs 8:00 AM UTC Mon/Wed/Fri, 180s max)
+└── draft-ideas (runs 8:00 AM UTC Mon-Sat, 180s max)
     ├── Step 1: Fetch unused scouted content (Linked Ideas is empty)
     ├── Step 2: Fetch Viral Library posts (4★+) and recent idea titles
     └── Step 3: Remix concepts and write fresh drafts to Ideas Bank DB
@@ -295,7 +295,7 @@ src/
 │
 └── trigger/
     └── idea-scout/
-        ├── scout-content.ts   — Wednesday 2:00 AM UTC cron orchestrator (gathers creators, scrapes, batch triggers processes)
+        ├── scout-content.ts   — Mon/Sat 2:00 AM UTC cron orchestrator (gathers creators, scrapes, batch triggers processes)
         ├── process-content.ts — Concurrent task (max 5 parallel): filters relevance, generates summary, stores in Scouted Content
         └── draft-ideas.ts     — Idea drafting: pulls fresh scouted items, remixes with VPL patterns, writes to Ideas Bank
 ```
@@ -306,9 +306,9 @@ src/
 
 | Task ID | Type | Trigger / Schedule | Max Duration | Concurrency | Status |
 | ------- | ---- | ------------------ | ------------ | ----------- | ------ |
-| `scout-content` | `schedules.task` | `0 2 * * 3` (Wednesday 2:00 AM UTC) | 14400s | 1 | Active |
+| `scout-content` | `schedules.task` | `0 2 * * 1,6` (Mon/Sat 2:00 AM UTC) | 14400s | 1 | Active |
 | `process-content` | `task` | On-demand (Concurrent Batch) | 300s | 5 (queue limit) | Active |
-| `draft-ideas` | `schedules.task` | `0 8 * * 1,3,5` (Mon, Wed, Fri 8:00 AM UTC) | 180s | 1 | Active |
+| `draft-ideas` | `schedules.task` | `0 8 * * 1-6` (Mon-Sat 8:00 AM UTC) | 180s | 1 | Active |
 
 ---
 
