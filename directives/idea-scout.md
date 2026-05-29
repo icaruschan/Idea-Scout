@@ -107,11 +107,9 @@ Trigger.dev Mon-Sat Cron
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
     │      └── D. Category distribution balance (prioritize underserved pillars)
     ├── 2. Group scouted posts into buckets based on their "Niche" property in Notion (falling back to AI-Keyword Sorter regex matching if empty)
-    ├── 3. For each Niche bucket sequentially:
-    │      ├── A. Filter the 30 viral templates to match the Category tags matching the current Niche
-    │      ├── B. Calculate the target idea volume (Math.max(1, Math.min(5, Math.ceil(groupItems.length * 0.75))))
-    │      ├── C. Call OpenRouter with only the bucket's posts and matched templates
-    │      └── D. Create entries in Ideas Bank, matching pillars with a fuzzy matcher, establishing relations, and pausing for 1s between chunks
+    ├── 3. Parallelize LLM synthesis across niche groups in concurrency-limited batches of 3 to avoid timeouts
+    ├── 4. Gather and flatten all generated ideas
+    └── 5. Sequentially write the ideas to the Ideas Bank Notion database with a 350ms throttle delay, resolving Inspired By relations using the cleanTitle helper
 ```
 
 ### Synthesis & Drafting Task (`draft-ideas`)
@@ -122,16 +120,20 @@ The synthesis engine runs independently on its scheduled days:
 4. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
 5. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
 6. Groups scouted posts by their `"Niche"` multi-select property (instead of general creator categories).
-7. Processes each group sequentially in focused chunks:
+7. Processes groups in parallel batches of 3:
    - Filters templates to only those containing Category tags relevant to the current niche.
    - Instructs the LLM (via OpenRouter) to cross-pollinate the niche's raw insights with the matched templates.
-   - Saves a dynamic number of raw concepts (Math.max(1, Math.min(5, Math.ceil(groupItems.length * 0.75))) per chunk) into the `Ideas Bank` Notion database, validating and fuzzy-mapping the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults. The entries contain:
+8. Gathers, flattens, and writes the synthesized ideas back to Notion:
+   - Validates and fuzzy-maps the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults.
+   - Applies the `cleanTitle` matching logic to resolve and link the exact source content page to the newly created idea's `Inspired By (Scouted)` relation (handling flexible prefixes and lengths).
+   - Sequentially invokes Notion's API, introducing a `350ms` throttle pause between writes to strictly stay under Notion's rate limits.
+   - The entries written contain:
      - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
      - Source: `"Idea Scout"`
      - Categories and Hook Angles
      - Relation link back to `Scouted Content`
      - Page Body: Source Context recap, rough draft copy, why it works explanation, and patterns used.
-8. Decoupled Business Logic: The core synthesis logic is extracted into a named export `runDraftIdeas` so it can be run and verified locally using `scripts/test-draft-locally.ts` without Trigger.dev overhead.
+9. Decoupled Business Logic: The core synthesis logic is extracted into a named export `runDraftIdeas` so it can be run and verified locally using `scripts/test-draft-locally.ts` without Trigger.dev overhead.
 
 
 ---
@@ -144,8 +146,10 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 | :--- | :--- | :--- |
 | **Apify IG Transcripts** | Max 3 concurrent actors + 2s cooldown between chunks | Prevents 8192MB free-tier memory exhaustion (was causing 402 errors) |
 | **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` and `maxDuration: 300s` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter, with 5 min safety buffer |
-| **OpenAI/OpenRouter Client** | 60s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, failing gracefully instead of timing out at platform level |
+| **OpenAI/OpenRouter Client** | 120s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, increased from 60s to handle parallel synthesis workloads |
+| **LLM Synthesis Parallelization** | Concurrency limit of 3 | Processes 3 niche groups concurrently to prevent network/connection saturation while speeding up the pipeline |
 | **Notion batch reads** | `getScoutedContentByIds` chunks into batches of 5 + 350ms delay | Stays under Notion's 3 req/s rate limit |
+| **Notion writes throttle** | 350ms delay between consecutive `createIdea` requests | Strictly prevents Notion 429 rate limit errors when writing newly drafted ideas |
 | **Inter-platform cooldowns** | 5s pause between YT→IG and IG→Twitter phases | Lets Apify actors release memory before next phase |
 | **Twitter API throttle** | 5.5s delay between requests + exponential backoff on 429/5xx | Respects 1 QPS free-tier limit |
 

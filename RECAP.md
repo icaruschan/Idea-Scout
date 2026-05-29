@@ -177,6 +177,16 @@ timeline
   * **Decoupled Business Logic (`src/trigger/idea-scout/draft-ideas.ts`):** Extracted `runDraftIdeas` so it can be verified locally.
   * **One-Time Tagging Migration (`scripts/tag-existing-content.ts`):** Created a recursive paginated migration script that fetched **308 total historical posts** missing niche tags, categorized them using `google/gemini-3.1-flash-lite`, and updated them safely in Notion without deleting data. An audit script (`count-empty-niches.ts`) verified that 100% of posts were fully tagged (0 remaining untagged).
   * **Local Test Suite (`scripts/test-draft-locally.ts`):** Created a script to locally trigger the synthesis logic and verify Notion page creations.
+### LOG ENTRY 13: Parallel LLM Synthesis, Throttled Notion Writes, and Title Cleaning Helper
+*Date: May 29, 2026*
+
+* **Goal:** Resolve Trigger.dev task execution timeouts in the `draft-ideas` pipeline caused by sequential LLM calls, and fix the empty `Inspired By (Scouted)` relations bug in the Notion Ideas Bank.
+* **Code Modifications:**
+  * **Parallel LLM Synthesis with Concurrency Limit (`src/trigger/idea-scout/draft-ideas.ts`):** Parallelized LLM calls across all niche groups to run concurrently instead of sequentially. Implemented a concurrency limiter (`CONCURRENCY_LIMIT = 3`) to process 3 niche groups at a time to prevent API key/network congestion or rate limits from causing timeout failures.
+  * **Throttled Sequential Notion Writes (`src/trigger/idea-scout/draft-ideas.ts`):** Decoupled the database writes from LLM synthesis. All synthesized ideas are gathered, flattened, and then sequentially inserted into the Notion database with a `350ms` delay between writes to respect Notion's 3 requests/second rate limits.
+  * **Title Cleaning and Matching (`src/trigger/idea-scout/draft-ideas.ts`):** Added a `cleanTitle` helper to strip platform prefixes (like `[youtube]`, `instagram post:`) and normalize whitespace before matching LLM output titles against scouted content titles. Enabled flexible title matching (prefix match up to 30 characters, min 15, or substring inclusion) to guarantee correct population of the `Inspired By (Scouted)` relation.
+  * **Increased client timeout (`src/lib/llm.ts`):** Raised client-side OpenAI timeout from 60 seconds to 120 seconds to prevent large parallel synthesis requests from throwing connection timeouts.
+  * **Local validation:** Created and ran a local test script `scripts/check-ideas.ts` verifying that generated ideas were correctly tagged with their content pillars and correctly linked to their scouted source and library templates.
 
 ---
 
@@ -207,11 +217,9 @@ Trigger.dev Mon-Sat Cron
     ├── Step 1: Fetch unused scouted content (Linked Ideas is empty)
     ├── Step 2: Fetch Viral Library posts (4★+, up to 30 templates) and recent idea titles
     ├── Step 3: Group scouted posts into buckets by their "Niche" property
-    ├── Step 4: For each Niche bucket sequentially:
-    │           ├── Filter viral library templates matching Category tags for current Niche
-    │           ├── Remix insights with templates per bucket
-    │           └── Write fresh drafts (Math.max(1, Math.min(5, Math.ceil(len * 0.75)))) to Ideas Bank DB
-    └── Step 5: Pause for 1s between chunks to respect API limits
+    ├── Step 4: Parallelize LLM synthesis across niche buckets (concurrency limit: 3) to prevent timeouts
+    ├── Step 5: Gather and flatten all generated ideas
+    └── Step 6: Write fresh drafts to Ideas Bank DB sequentially with a 350ms throttle to prevent rate limiting
 ```
 
 ---

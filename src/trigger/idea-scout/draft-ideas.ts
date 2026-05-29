@@ -143,16 +143,21 @@ export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: numb
 
     console.log(`Pillar groups created: ${Array.from(groups.keys()).map(k => `${k}: ${groups.get(k)?.length}`).join(", ")}`);
 
-    let ideasCreated = 0;
+    // ─── Step 3: Run LLM Synthesis in Parallel ─────────────────────
+    console.log("🧠 Starting parallel LLM synthesis across all pillar groups...");
 
-    // Process each group sequentially
-    for (const [pillar, groupItems] of groups.entries()) {
-      console.log(`Processing group: ${pillar} (${groupItems.length} items)...`);
+    interface GeneratedIdeaResult {
+      pillar: string;
+      groupItems: any[];
+      ideas: any[];
+    }
 
-      // ─── Step 3: Filter templates matching this pillar's categories ───────────
-
+    const synthesizePillar = async (
+      pillar: string,
+      groupItems: any[],
+    ): Promise<GeneratedIdeaResult> => {
       const matchedCategories = PILLAR_TO_VIRAL_CATEGORIES[pillar] || [];
-      let groupTemplates = (viralPosts as any[]).filter(post => {
+      let groupTemplates = (viralPosts as any[]).filter((post) => {
         const p = post.properties || {};
         const cats = p.Category?.multi_select?.map((s: any) => s.name) || [];
         return cats.some((c: string) => matchedCategories.includes(c));
@@ -160,11 +165,11 @@ export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: numb
 
       // If less than 4 templates matched, append general top-rated templates to ensure variety
       if (groupTemplates.length < 4) {
-        const generalTemplates = (viralPosts as any[]).filter(post => {
+        const generalTemplates = (viralPosts as any[]).filter((post) => {
           const rating = post.properties?.["⭐ Rating"]?.select?.name || "";
           return rating.includes("⭐⭐⭐⭐⭐") || rating.includes("★★★★★");
         });
-        const existingIds = new Set(groupTemplates.map(t => t.id));
+        const existingIds = new Set(groupTemplates.map((t) => t.id));
         for (const gt of generalTemplates) {
           if (!existingIds.has(gt.id)) {
             groupTemplates.push(gt);
@@ -175,12 +180,11 @@ export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: numb
       // Limit templates to a maximum of 8 per chunk to prevent prompt overload
       groupTemplates = groupTemplates.slice(0, 8);
 
-      console.log(`  Filtered templates for ${pillar}: ${groupTemplates.length}`);
-
-      // ─── Step 4: Format scouted content and templates for the LLM ───────────
-
       const scoutedSummary = groupItems
-        .map((item: any) => `[${item.platform}] ${item.title}\nSummary: ${item.aiSummary}\nKey Takeaways: ${item.keyTakeaways}\nURL: ${item.url}`)
+        .map(
+          (item: any) =>
+            `[${item.platform}] ${item.title}\nSummary: ${item.aiSummary}\nKey Takeaways: ${item.keyTakeaways}\nURL: ${item.url}`,
+        )
         .join("\n\n---\n\n");
 
       const viralSummary = groupTemplates
@@ -207,9 +211,10 @@ export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: numb
         })
         .join("\n\n---\n\n");
 
-      // Calculate dynamic idea volume for this chunk (0.75 ratio, min 1, max 5)
-      const targetIdeaCount = Math.max(1, Math.min(5, Math.ceil(groupItems.length * 0.75)));
-      console.log(`  🎯 Targeting ${targetIdeaCount} ideas for ${pillar}`);
+      const targetIdeaCount = Math.max(
+        1,
+        Math.min(5, Math.ceil(groupItems.length * 0.75)),
+      );
 
       const synthesisPrompt = `You have two data sources. Your job is to CROSS-POLLINATE them to create tweet ideas for the content pillar: ${pillar}.
 
@@ -249,47 +254,77 @@ Return JSON:
   ]
 }`;
 
-      // ─── Step 5: Generate ideas via LLM ─────────────────────────
-
-      let generatedIdeas: any;
       try {
-        generatedIdeas = await generateJSON(
+        console.log(`📡 Calling OpenRouter for pillar: ${pillar}...`);
+        const generatedIdeas = await generateJSON(
           synthesisPrompt,
           SYNTHESIS_SYSTEM_PROMPT,
-          0.8, // Creative synthesis
+          0.8,
         );
-      } catch (err) {
-        console.error(`LLM synthesis failed for pillar ${pillar}:`, err);
-        continue;
+        if (generatedIdeas?.ideas && Array.isArray(generatedIdeas.ideas)) {
+          console.log(
+            `✨ LLM successfully synthesized ${generatedIdeas.ideas.length} ideas for ${pillar}.`,
+          );
+          return { pillar, groupItems, ideas: generatedIdeas.ideas };
+        }
+      } catch (err: any) {
+        console.error(
+          `❌ LLM synthesis failed for pillar ${pillar}:`,
+          err.message || err,
+        );
       }
+      return { pillar, groupItems, ideas: [] };
+    };
 
-      if (!generatedIdeas?.ideas || generatedIdeas.ideas.length === 0) {
-        console.log(`⚠️ LLM returned no ideas for pillar ${pillar}`);
-        continue;
-      }
+    // Process in batches of 3 to avoid overwhelming OpenRouter
+    const CONCURRENCY_LIMIT = 3;
+    const allEntries = Array.from(groups.entries());
+    const synthesisResults: GeneratedIdeaResult[] = [];
 
-      console.log(`  🧠 LLM generated ${generatedIdeas.ideas.length} ideas for pillar ${pillar}`);
-
-      // ─── Step 6: Write each idea to Ideas Bank ──────────────────
-
-      const scoutedLookup = new Map<string, string>(
-        groupItems.map((item: any) => [
-          item.title.toLowerCase().substring(0, 100),
-          item.pageId,
-        ]),
+    for (let i = 0; i < allEntries.length; i += CONCURRENCY_LIMIT) {
+      const batch = allEntries.slice(i, i + CONCURRENCY_LIMIT);
+      console.log(
+        `\n📦 Processing batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1}/${Math.ceil(allEntries.length / CONCURRENCY_LIMIT)} (${batch.map(([p]) => p).join(", ")})...`,
       );
+      const batchResults = await Promise.all(
+        batch.map(([pillar, groupItems]) =>
+          synthesizePillar(pillar, groupItems),
+        ),
+      );
+      synthesisResults.push(...batchResults);
+    }
 
-      for (const idea of generatedIdeas.ideas) {
+    // ─── Step 4: Write Generated Ideas Sequentially with Throttle ───────────
+    console.log("\n✍️ Starting sequential Notion database writes...");
+    let ideasCreated = 0;
+
+    for (const groupResult of synthesisResults) {
+      const { pillar, groupItems, ideas } = groupResult;
+      if (ideas.length === 0) continue;
+
+      console.log(`Writing ${ideas.length} ideas for pillar: ${pillar}...`);
+
+      for (const idea of ideas) {
         try {
           const validPillar = matchPillar(idea.pillar || pillar);
           const inspiredByScoutedIds: string[] = [];
+
           if (idea.sourcedFrom) {
-            for (const [titleKey, pageId] of scoutedLookup) {
-              if (
-                idea.sourcedFrom.toLowerCase().includes(titleKey) ||
-                titleKey.includes(idea.sourcedFrom.toLowerCase().substring(0, 50))
-              ) {
-                inspiredByScoutedIds.push(pageId);
+            const cleanSourced = cleanTitle(idea.sourcedFrom);
+            for (const item of groupItems) {
+              const cleanScouted = cleanTitle(item.title);
+              // Match length: check prefix similarity or direct inclusion
+              const minLength = Math.min(cleanScouted.length, cleanSourced.length);
+              const matchLength = Math.min(30, minLength);
+              const isMatch =
+                cleanSourced.includes(cleanScouted) ||
+                cleanScouted.includes(cleanSourced) ||
+                (matchLength >= 15 &&
+                  cleanSourced.substring(0, matchLength) ===
+                    cleanScouted.substring(0, matchLength));
+
+              if (isMatch) {
+                inspiredByScoutedIds.push(item.pageId);
               }
             }
           }
@@ -309,7 +344,9 @@ Return JSON:
           ].join("\n\n");
 
           const cleanLibraryId = idea.inspiredByLibraryId
-            ? idea.inspiredByLibraryId.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
+            ? idea.inspiredByLibraryId.match(
+                /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+              )?.[0]
             : undefined;
 
           await createIdea(
@@ -320,7 +357,7 @@ Return JSON:
             rawData,
             {
               priority: idea.priority as any,
-              formatIdea: formatMap[idea.format] as any || "Short",
+              formatIdea: (formatMap[idea.format] as any) || "Short",
               stealablePattern: idea.stealablePattern,
               tweetStructure: idea.tweetStructure,
               inspiredByScoutedIds:
@@ -334,13 +371,16 @@ Return JSON:
           console.log(
             `💡 Created idea: "${idea.title.substring(0, 60)}" [${validPillar}]`,
           );
-        } catch (err) {
-          console.error(`Failed to create idea "${idea.title?.substring(0, 60)}":`, err);
+        } catch (err: any) {
+          console.error(
+            `Failed to create idea "${idea.title?.substring(0, 60)}":`,
+            err.message || err,
+          );
         }
-      }
 
-      // Brief pause between chunks to respect OpenRouter rate limits
-      await new Promise(r => setTimeout(r, 1000));
+        // Throttle to respect Notion rate limits (~3 reqs/sec)
+        await new Promise((r) => setTimeout(r, 350));
+      }
     }
 
     console.log(`✅ Draft complete: ${ideasCreated} ideas written to Ideas Bank`);
@@ -452,4 +492,14 @@ function getPrimaryPillar(item: any): string {
   }
   // Default fallback
   return "AI Prompting & Tools";
+}
+
+function cleanTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/^\[(youtube|instagram|x)\]\s*/i, "")
+    .replace(/^(youtube|instagram|x)\s+post:\s*/i, "")
+    .replace(/^(youtube|instagram|x)\s+video:\s*/i, "")
+    .replace(/[\s\r\n]+/g, " ")
+    .trim();
 }
