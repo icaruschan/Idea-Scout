@@ -10,9 +10,8 @@ import {
 import {
   scrapeYouTubeChannel,
   scrapeInstagramReels,
-  scrapeTwitterProfiles,
 } from "../../lib/apify";
-import { getArticle } from "../../lib/twitter";
+import { searchCreatorPosts, getArticle } from "../../lib/twitter";
 import { processContent } from "./process-content";
 import type { RawContentItem } from "./process-content";
 import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
@@ -177,134 +176,129 @@ export const scoutContent = schedules.task({
 
     // ─── STEP 2C: Scrape Twitter (X) posts ──────────────────────
 
-    const xHandles = xCreators.map(c => c.handle).filter(Boolean) as string[];
-    
-    if (xHandles.length > 0) {
+    for (const creator of xCreators) {
+      if (!creator.handle) continue;
+
       try {
-        const tweets = await scrapeTwitterProfiles(xHandles, 10);
+        const { urls: existingUrls, titles: existingTitles } = await getScoutedItemsForCreator(creator.pageId, "X");
         
-        // Group tweets by creator handle
-        const tweetsByHandle = new Map<string, any[]>();
-        for (const tweet of tweets) {
-          // Attempt to match by exact handle or lowercased
-          const authorHandle = tweet.author?.userName || "";
-          const normAuthor = authorHandle.toLowerCase();
-          
-          let matchedCreator = xCreators.find(c => c.handle && c.handle.toLowerCase() === normAuthor);
-          // Sometimes author.userName might omit or include @
-          if (!matchedCreator && authorHandle) {
-             matchedCreator = xCreators.find(c => c.handle && c.handle.toLowerCase() === `@${normAuthor}`);
-          }
+        // Call the REST API search helper
+        const tweets = await searchCreatorPosts(creator.handle, 14);
 
-          if (matchedCreator && matchedCreator.handle) {
-             const list = tweetsByHandle.get(matchedCreator.handle) || [];
-             list.push(tweet);
-             tweetsByHandle.set(matchedCreator.handle, list);
-          }
-        }
+        const qualifiedTweets = tweets.filter((t: any) => {
+          const views = t.viewCount || t.viewsCount || t.views || 0;
+          return views >= TWITTER_FILTER_THRESHOLDS.MIN_VIEWS;
+        });
 
-        for (const creator of xCreators) {
-          if (!creator.handle) continue;
-          
-          const creatorTweets = tweetsByHandle.get(creator.handle) || [];
-          if (creatorTweets.length === 0) continue;
+        const nonDuplicateTweets = qualifiedTweets.filter((tweet: any) => {
+          const tweetUrl = tweet.url || `https://x.com/${creator.handle}/status/${tweet.id}`;
+          const cleanUrl = cleanContentUrl(tweetUrl);
+          const tweetTitle = (tweet.text || "").substring(0, 200);
+          const normTitle = tweetTitle.toLowerCase().trim();
 
-          const { urls: existingUrls, titles: existingTitles } = await getScoutedItemsForCreator(creator.pageId, "X");
+          return !(existingUrls.includes(cleanUrl) || existingTitles.some(t => 
+            t === normTitle || t.includes(normTitle) || normTitle.includes(t)
+          ));
+        });
 
-          const qualifiedTweets = creatorTweets.filter((t: any) => {
-            return (t.views || 0) >= TWITTER_FILTER_THRESHOLDS.MIN_VIEWS;
-          });
+        const recentTweets = nonDuplicateTweets.slice(0, 10);
+        console.log(`X @${creator.handle}: ${recentTweets.length} new tweets scraped (from ${tweets.length} original results)`);
 
-          const nonDuplicateTweets = qualifiedTweets.filter((tweet: any) => {
-            const cleanUrl = cleanContentUrl(tweet.url);
-            const tweetTitle = (tweet.text || "").substring(0, 200);
-            const normTitle = tweetTitle.toLowerCase().trim();
+        for (const tweet of recentTweets) {
+          let fullText = tweet.text || "";
+          const tweetUrl = tweet.url || `https://x.com/${creator.handle}/status/${tweet.id}`;
 
-            return !(existingUrls.includes(cleanUrl) || existingTitles.some(t => 
-              t === normTitle || t.includes(normTitle) || normTitle.includes(t)
-            ));
-          });
+          // Detect articles via flag, URL structure, or entities
+          const isArticle = tweet.article !== null && tweet.article !== undefined || 
+                           tweetUrl.includes('/article/') ||
+                           (tweet.entities?.urls || []).some((u: any) => u.expanded_url?.includes('/article/'));
 
-          const recentTweets = nonDuplicateTweets.slice(0, 10);
-          console.log(`X @${creator.handle}: ${recentTweets.length} new tweets scraped (from ${creatorTweets.length} original Apify results)`);
-
-          for (const tweet of recentTweets) {
-            let fullText = tweet.text || "";
-            const isArticle = tweet.url.includes('/article/');
-
-            if (isArticle && tweet.id) {
-              console.log(`📄 Detected X Article for @${creator.handle}, fetching full text via REST...`);
-              try {
-                const articleText = await getArticle(tweet.id);
-                if (articleText) fullText = articleText;
-              } catch(e) {
-                console.warn(`Failed to fetch article text for ${tweet.id}`);
-              }
+          if (isArticle && tweet.id) {
+            console.log(`📄 Detected X Article for @${creator.handle}, fetching full text via REST...`);
+            try {
+              const articleText = await getArticle(tweet.id);
+              if (articleText) fullText = articleText;
+            } catch (e) {
+              console.warn(`Failed to fetch article text for ${tweet.id}:`, e);
             }
-
-            allRawContent.push({
-              platform: "X",
-              creatorPageId: creator.pageId,
-              creatorName: creator.name,
-              title: fullText.substring(0, 200),
-              text: fullText,
-              url: tweet.url,
-              likes: tweet.likes || 0,
-              views: tweet.views || 0,
-              comments: tweet.replies || 0,
-              publishedDate: tweet.publishedDate || "",
-              transcript: "",
-            });
           }
 
-          processedCreatorIds.push(creator.pageId);
+          allRawContent.push({
+            platform: "X",
+            creatorPageId: creator.pageId,
+            creatorName: creator.name,
+            title: fullText.substring(0, 200),
+            text: fullText,
+            url: tweetUrl,
+            likes: tweet.likeCount || tweet.likesCount || tweet.likes || 0,
+            views: tweet.viewCount || tweet.viewsCount || tweet.views || 0,
+            comments: tweet.replyCount || tweet.repliesCount || tweet.replies || 0,
+            publishedDate: tweet.createdAt || tweet.created_at || tweet.publishedDate || "",
+            transcript: "",
+          });
         }
+
+        processedCreatorIds.push(creator.pageId);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        console.warn(`Failed bulk scraping X creators via Apify:`, err);
+        console.warn(`Failed to scrape X creator @${creator.handle}:`, err);
         failedCreators.push({
-          name: "All X Creators (Apify Batch)",
-          handle: "",
+          name: creator.name,
+          handle: creator.handle || "",
           platform: "X",
           error: errorMsg,
         });
       }
+
+      // Respect the 1 QPS free-tier limit of the REST API (5.5s delay between handles)
+      await new Promise((r) => setTimeout(r, 5500));
     }
 
     console.log(
       `📦 Total raw content items: ${allRawContent.length} from ${processedCreatorIds.length} creators`,
     );
 
-    // ─── STEP 3: Dispatch to process-content ────────────────────
+    // ─── STEP 3: Dispatch to process-content in Chunks of 15 ──────
     // Each content item gets AI-filtered and stored in Scouted Content DB
 
     const processResults: string[] = [];
     let processedCount = 0;
     let skippedCount = 0;
 
+    const CHUNK_SIZE = 15;
+
     if (allRawContent.length > 0) {
       try {
-        const batch = await processContent.batchTriggerAndWait(
-          allRawContent.map((item) => ({
-            payload: item,
-            options: {
-              idempotencyKey: `process-${item.platform}-${item.url?.replace(/\W/g, "").substring(0, 60) || Date.now()}`,
-            },
-          }))
-        );
+        for (let i = 0; i < allRawContent.length; i += CHUNK_SIZE) {
+          const chunkItems = allRawContent.slice(i, i + CHUNK_SIZE);
+          console.log(`📡 Triggering batch chunk ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(allRawContent.length / CHUNK_SIZE)} (${chunkItems.length} items)...`);
 
-        for (const res of batch.runs) {
-          if (res.ok && res.output?.scoutedContentId) {
-            processResults.push(res.output.scoutedContentId);
-            processedCount++;
-          } else {
-            skippedCount++;
+          const batch = await processContent.batchTriggerAndWait(
+            chunkItems.map((item) => ({
+              payload: item,
+              options: {
+                idempotencyKey: `process-${item.platform}-${item.url?.replace(/\W/g, "").substring(0, 60) || Date.now()}`,
+              },
+            }))
+          );
+
+          for (const res of batch.runs) {
+            if (res.ok && res.output?.scoutedContentId) {
+              processResults.push(res.output.scoutedContentId);
+              processedCount++;
+            } else {
+              skippedCount++;
+            }
+          }
+
+          // Small cooldown between chunks to allow platform actors to release connections
+          if (i + CHUNK_SIZE < allRawContent.length) {
+            console.log("⏸️ Cooldown between batch chunks...");
+            await new Promise((r) => setTimeout(r, 2000));
           }
         }
       } catch (err) {
         console.error("Batch processing failed:", err);
-        // We'll proceed with whatever was processed if it failed midway, 
-        // but batchTriggerAndWait usually throws if the batch itself fails
       }
     }
 

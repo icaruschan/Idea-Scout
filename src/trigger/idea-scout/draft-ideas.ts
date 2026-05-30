@@ -183,7 +183,7 @@ export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: numb
       const scoutedSummary = groupItems
         .map(
           (item: any) =>
-            `[${item.platform}] ${item.title}\nSummary: ${item.aiSummary}\nKey Takeaways: ${item.keyTakeaways}\nURL: ${item.url}`,
+            `[ID: ${item.pageId}] [${item.platform}] ${item.title}\nSummary: ${item.aiSummary}\nKey Takeaways: ${item.keyTakeaways}\nURL: ${item.url}`,
         )
         .join("\n\n---\n\n");
 
@@ -247,7 +247,8 @@ Return JSON:
       "priority": "🔥 Hot" | "💡 Good" | "📝 Maybe",
       "stealablePattern": "The viral format pattern being applied (from Source 2)",
       "tweetStructure": "Brief outline of the tweet structure",
-      "sourcedFrom": "Which scouted content item(s) inspired this",
+      "sourcedFrom": "Brief name or title of the scouted content source",
+      "inspiredByScoutedIds": ["exact [ID: ...] of the scouted content item(s) from Source 1 that inspired this"],
       "inspiredByLibraryId": "The [ID: ...] of the Viral Library post you used from Source 2 that inspired this format/pattern",
       "crossPollinationLogic": "Brief explanation of how Source 1 insight + Source 2 format = this idea"
     }
@@ -309,7 +310,23 @@ Return JSON:
           const validPillar = matchPillar(idea.pillar || pillar);
           const inspiredByScoutedIds: string[] = [];
 
-          if (idea.sourcedFrom) {
+          if (idea.inspiredByScoutedIds && Array.isArray(idea.inspiredByScoutedIds)) {
+            for (const idStr of idea.inspiredByScoutedIds) {
+              const matchedId = idStr.match(
+                /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+              )?.[0];
+              if (matchedId) {
+                // Verify the ID belongs to one of our group items
+                const exists = groupItems.some((item) => item.pageId === matchedId);
+                if (exists) {
+                  inspiredByScoutedIds.push(matchedId);
+                }
+              }
+            }
+          }
+
+          // Fallback: If no direct ID was matched, run the cleanTitle matching on sourcedFrom as a safety net
+          if (inspiredByScoutedIds.length === 0 && idea.sourcedFrom) {
             const cleanSourced = cleanTitle(idea.sourcedFrom);
             for (const item of groupItems) {
               const cleanScouted = cleanTitle(item.title);

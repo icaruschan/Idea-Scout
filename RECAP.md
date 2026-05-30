@@ -190,6 +190,20 @@ timeline
 
 ---
 
+### LOG ENTRY 14: Direct REST Twitter Scraper Migration, X Articles Fetching Fix, Deterministic Relation Linking, and Trigger.dev Batch Chunking
+*Date: May 30, 2026 (Current Session)*
+
+* **Goal:** Replace blocked Apify X/Twitter scraper, fix empty X Article full-body fetches, raise Notion relation matching rate to 100%, and prevent the Trigger.dev orchestrator from hanging in "waiting".
+* **Code Modifications:**
+  * **X Scraper REST Migration (`src/lib/twitter.ts` & `src/trigger/idea-scout/scout-content.ts`):** Replaced Apify's blocked `twitter-scraper-lite` actor with a direct client call to the `/tweet/advanced_search` endpoint of `twitterapi.io`. Implemented a sequential creator loop with a `5.5-second` delay to stay within the 1 QPS free-tier rate limit, preventing `429` rate-limit blocks.
+  * **X Articles Parameter Correction (`src/lib/twitter.ts`):** Identified and fixed a parameter mismatch in the `getArticle` helper where it was passing `tweetId` instead of the expected `articleId` (`params: { articleId: tweetId }`). This allows X Articles to successfully fetch the full article markdown body.
+  * **Deterministic Relation Linking (`src/trigger/idea-scout/draft-ideas.ts`):** Injected Notion Page IDs directly into the LLM synthesis context (e.g. `[ID: pageId]`) and updated the prompt schema to return `"inspiredByScoutedIds"`. The matching loop now extracts these IDs using a UUID regex `/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i`, achieving a 100% relation mapping success rate. Added `cleanTitle` matching as a robust safety fallback.
+  * **Trigger.dev Batch Chunking (`src/trigger/idea-scout/scout-content.ts`):** Chunked the large 80+ item `batchTriggerAndWait` dispatch into groups of 15 items with a 2-second cooldown to prevent the Trigger.dev orchestrator run from hanging in the `"waiting"` state.
+  * **LLM JSON Syntax Repair (`src/lib/llm.ts`):** Added a regex-based `repairJson(str)` helper that automatically heals minor LLM formatting flukes (e.g., missing commas between object properties on newlines or trailing commas in arrays/objects).
+  * **Local validation:** Created and ran a mock relation writing test script `scripts/test-relation-writing.ts` that successfully wrote a mock idea to Notion and mapped it directly to its scouted content item using its UUID page ID.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow

@@ -111,15 +111,44 @@ Respond only with pure JSON — no markdown fences, no explanation`,
   });
 
   const content = response.choices[0]?.message?.content || "";
+  const cleaned = content
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
   try {
-    // Sometimes models wrap json in markdown block
-    const cleaned = content
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
     return JSON.parse(cleaned);
   } catch (err) {
-    console.error("Failed to parse JSON response:", content);
-    throw new Error("LLM generated invalid JSON");
+    console.warn("⚠️ JSON.parse failed on direct LLM output. Attempting syntax repair...");
+    try {
+      const repaired = repairJson(cleaned);
+      const parsed = JSON.parse(repaired);
+      console.log("✅ JSON successfully repaired and parsed!");
+      return parsed;
+    } catch (repairErr) {
+      console.error("Failed to parse JSON response after repair attempt:", content);
+      throw new Error("LLM generated invalid JSON");
+    }
   }
+}
+
+/**
+ * A helper function to automatically correct common minor syntax flukes in JSON returned by LLMs.
+ * 1. Inserts missing commas between properties (e.g. "key": "val" "next_key": -> "key": "val", "next_key":)
+ * 2. Strips trailing commas before closing brackets/braces (e.g. {"a": 1, } -> {"a": 1})
+ */
+function repairJson(str: string): string {
+  let cleaned = str.trim();
+
+  // Fix missing commas between properties on newlines
+  // Matches: "key": "val" [newline] "next_key":
+  cleaned = cleaned.replace(
+    /("[^"]*"\s*:\s*(?:"(?:[^"\\]|\\.)*"|\d+|true|false|null|\[[\s\S]*?\]|{[\s\S]*?}))\s*\n\s*("[^"]*"\s*:)/g,
+    "$1,\n$2"
+  );
+
+  // Remove trailing commas in arrays/objects
+  cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
+
+  return cleaned;
 }

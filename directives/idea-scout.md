@@ -88,8 +88,8 @@ Trigger.dev Mon/Thu/Sat Cron
     │      ├── IG: Pulls newest 30 reels, selects 5 newest + 5 top-viewed,
     │      │       transcribes in chunks of 3 concurrent actors (apple_yang) with 2s delays
     │      ├── ⏸️ 5s cooldown
-    │      └── X: Queries recent tweets with 5.5s throttle, filters by views (>= TWITTER_MIN_VIEWS), and fetches full-text X Articles using the getArticle endpoint if /article/ url or isArticle flag is detected
-    ├── 3. Execute process-content via batchTriggerAndWait (queue concurrencyLimit: 5)
+    │      └── X: Queries recent tweets with a 5.5s throttle sequential loop using the direct REST API (twitterapi.io), filters by views (>= TWITTER_MIN_VIEWS), and fetches full-text X Articles using the getArticle endpoint (passing articleId: tweet.id) if tweet.article is present or URL contains /article/
+    ├── 3. Execute process-content in batches of 15 (Trigger.dev Batch Chunking) with a 2s delay between batches to prevent parent orchestrator hangs
     │      ├── A. Duplicate check: Verify URL/title does not clash with existing scouted content for that creator
     │      ├── B. Feed to LLM: Prepares up to 100,000 characters of content/transcript (expanded from 6,000 to prevent context truncation)
     │      ├── C. Relevance check: LLM checks content maps to 9 pillars (reject if < 0.6 confidence)
@@ -109,7 +109,7 @@ Trigger.dev Mon-Sat Cron
     ├── 2. Group scouted posts into buckets based on their "Niche" property in Notion (falling back to AI-Keyword Sorter regex matching if empty)
     ├── 3. Parallelize LLM synthesis across niche groups in concurrency-limited batches of 3 to avoid timeouts
     ├── 4. Gather and flatten all generated ideas
-    └── 5. Sequentially write the ideas to the Ideas Bank Notion database with a 350ms throttle delay, resolving Inspired By relations using the cleanTitle helper
+    └── 5. Sequentially write the ideas to the Ideas Bank Notion database with a 350ms throttle delay, resolving Inspired By relations using the unique Notion Page IDs matching loop (UUID regex) with cleanTitle title-substring matching as a fallback safety net
 ```
 
 ### Synthesis & Drafting Task (`draft-ideas`)
@@ -125,7 +125,7 @@ The synthesis engine runs independently on its scheduled days:
    - Instructs the LLM (via OpenRouter) to cross-pollinate the niche's raw insights with the matched templates.
 8. Gathers, flattens, and writes the synthesized ideas back to Notion:
    - Validates and fuzzy-maps the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults.
-   - Applies the `cleanTitle` matching logic to resolve and link the exact source content page to the newly created idea's `Inspired By (Scouted)` relation (handling flexible prefixes and lengths).
+   - Applies the deterministic UUID relation matching to extract the Notion Page ID from the LLM output's `"inspiredByScoutedIds"` and links the relation, falling back to `cleanTitle` string matching if empty.
    - Sequentially invokes Notion's API, introducing a `350ms` throttle pause between writes to strictly stay under Notion's rate limits.
    - The entries written contain:
      - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
@@ -146,6 +146,7 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 | :--- | :--- | :--- |
 | **Apify IG Transcripts** | Max 3 concurrent actors + 2s cooldown between chunks | Prevents 8192MB free-tier memory exhaustion (was causing 402 errors) |
 | **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` and `maxDuration: 300s` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter, with 5 min safety buffer |
+| **Trigger.dev Batch Chunking** | Chunk raw content items into groups of 15 with 2s cooldown | Prevents parent orchestrator from hanging indefinitely in "waiting" state |
 | **OpenAI/OpenRouter Client** | 120s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, increased from 60s to handle parallel synthesis workloads |
 | **LLM Synthesis Parallelization** | Concurrency limit of 3 | Processes 3 niche groups concurrently to prevent network/connection saturation while speeding up the pipeline |
 | **Notion batch reads** | `getScoutedContentByIds` chunks into batches of 5 + 350ms delay | Stays under Notion's 3 req/s rate limit |
@@ -157,6 +158,10 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 
 ## 6. Edge Cases & Learnings
 
+- **Apify X Scraper Migration to REST**: Switched X scraping to a direct REST API client (`twitterapi.io`) due to Free Plan account restrictions blocking execution of Apify actors. Uses a sequential creator loop with a 5.5s throttle delay to stay under the 1 QPS limit.
+- **X Articles Endpoint Parameter Fix**: The `/article` endpoint expects `articleId` as the query parameter. Restored and fixed this by changing `tweetId` to `articleId` (`params: { articleId: tweetId }`), enabling successful full-body fetches for long-form X Articles.
+- **Deterministic Notion Relation Mapping**: LLM synthesis output is instructed to return unique Notion Page IDs inside `"inspiredByScoutedIds"`. The code parses these via UUID regex, resulting in a 100% relation linking hit rate and bypassing LLM title paraphrasing glitches.
+- **Self-Healing JSON Parse**: Added a regex-based `repairJson(str)` helper that heals minor LLM JSON formatting omissions (such as missing commas on newlines).
 - **Scraper Failures Skip `Last Checked` Update:** If a scraper throws an error (Apify 402, network timeout, etc.), that creator is caught by the per-creator `try/catch` and excluded from `processedCreatorIds`. This ensures failed creators are retried on the next run rather than silently skipped.
 - **Notion Relation Failures:** Relation linking during `createIdea` can sometimes error with `validation_error` or `object_not_found`. The client catches this error and automatically retries the insert without the `Inspired By` relations to keep task executions green.
 - **Twitter API Rate Limits & Indexing:** We pull all recent tweets and programmatically filter them using `MIN_VIEWS` (default 1000) rather than using search parameter filters which suffer from search index delay. We do not apply bookmark filtering as high-signal viral tweets often have 0 bookmarks.
