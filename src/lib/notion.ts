@@ -984,3 +984,156 @@ export async function cleanRejectedIdeas(): Promise<number> {
     return 0;
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// VIRAL POST RESEARCH HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+export interface ViralPostInput {
+  postTitle: string;
+  postUrl: string;
+  author: string;
+  postContent: string;
+  shortDescription: string;
+  platform: string;
+  format: string;
+  hookType: string;
+  category: string[];
+  rating: string;
+  likes: number;
+  bookmarks: number;
+  retweets: number;
+  replies: number;
+  views: number;
+  whyItWorks: string;
+  stealablePattern: string;
+  tweetStructure: string;
+  addedDate?: string;
+}
+
+/**
+ * Fetch URLs of viral posts added to the library in the past N days.
+ * Used for deduplication.
+ */
+export async function getExistingViralPostUrls(
+  days: number = 30,
+): Promise<string[]> {
+  try {
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - days);
+    const sinceDateStr = sinceDate.toISOString().split("T")[0];
+
+    let hasMore = true;
+    let startCursor: string | undefined = undefined;
+    const urls: string[] = [];
+
+    while (hasMore) {
+      const response: any = await notion.dataSources.query({
+        data_source_id: NOTION_DATA_SOURCE_IDS.VIRAL_POST_LIBRARY,
+        filter: {
+          property: "Added Date",
+          date: { on_or_after: sinceDateStr },
+        },
+        page_size: 100,
+        ...(startCursor ? { start_cursor: startCursor } : {}),
+      });
+
+      for (const page of response.results) {
+        const urlVal = page.properties?.["Post URL"]?.url || "";
+        if (urlVal) {
+          urls.push(cleanContentUrl(urlVal));
+        }
+      }
+
+      hasMore = response.has_more;
+      startCursor = response.next_cursor || undefined;
+    }
+
+    return urls;
+  } catch (error) {
+    console.error("Error fetching existing viral post URLs:", error);
+    return [];
+  }
+}
+
+/**
+ * Write a new viral post entry to the 📚 Viral Post Library.
+ */
+export async function createViralPost(
+  input: ViralPostInput,
+): Promise<string> {
+  try {
+    const formattedAddedDate = input.addedDate || new Date().toISOString().split("T")[0];
+
+    const properties: Record<string, any> = {
+      "Post Title": {
+        title: [{ text: { content: safeString(input.postTitle).substring(0, 200) } }],
+      },
+      "Post URL": {
+        url: input.postUrl ? cleanContentUrl(input.postUrl) : null,
+      },
+      "Author": {
+        rich_text: splitIntoRichText(input.author),
+      },
+      "Post Content": {
+        rich_text: splitIntoRichText(input.postContent),
+      },
+      "Short Description": {
+        rich_text: splitIntoRichText(input.shortDescription),
+      },
+      "Platform": {
+        select: { name: input.platform || "X" },
+      },
+      "Format": {
+        select: { name: input.format || "Short" },
+      },
+      "Hook Type": {
+        select: { name: input.hookType || "Story" },
+      },
+      "Category": {
+        multi_select: (input.category || ["Tech/AI"]).map((cat) => ({ name: cat })),
+      },
+      "⭐ Rating": {
+        select: { name: input.rating || "⭐⭐⭐" },
+      },
+      "❤️ Likes": {
+        number: input.likes || 0,
+      },
+      "🔖 Bookmarks": {
+        number: input.bookmarks || 0,
+      },
+      "🔁 Retweets": {
+        number: input.retweets || 0,
+      },
+      "💬 Replies": {
+        number: input.replies || 0,
+      },
+      "👀 Views": {
+        number: input.views || 0,
+      },
+      "💡 Why It Works": {
+        rich_text: splitIntoRichText(input.whyItWorks),
+      },
+      "Steal-able Pattern": {
+        rich_text: splitIntoRichText(input.stealablePattern),
+      },
+      "Tweet Structure": {
+        rich_text: splitIntoRichText(input.tweetStructure),
+      },
+      "Added Date": {
+        date: { start: formattedAddedDate },
+      },
+    };
+
+    const response = await notion.pages.create({
+      parent: { database_id: NOTION_DATABASE_IDS.VIRAL_POST_LIBRARY },
+      properties,
+    });
+
+    return response.id;
+  } catch (error) {
+    console.error("Error creating Viral Post entry:", error);
+    throw error;
+  }
+}
+

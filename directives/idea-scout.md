@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday, Thursday, and Saturday at 8:30 AM UTC (9:30 AM local time), evaluates new uploads for relevance against 9 active content pillars, and saves summaries in Notion. A decoupled task running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library.
+Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday, Thursday, and Saturday at 8:30 AM UTC (9:30 AM local time), evaluates new uploads for relevance against 9 active content pillars, and saves summaries in Notion. A decoupled task running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library. Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
 
 ---
 
@@ -110,6 +110,20 @@ Trigger.dev Mon-Sat Cron
     ├── 3. Parallelize LLM synthesis across niche groups in concurrency-limited batches of 3 to avoid timeouts
     ├── 4. Gather and flatten all generated ideas
     └── 5. Sequentially write the ideas to the Ideas Bank Notion database with a 350ms throttle delay, resolving Inspired By relations using the unique Notion Page IDs matching loop (UUID regex) with cleanTitle title-substring matching as a fallback safety net
+
+Trigger.dev Manual Run
+│
+└── research-tweets (Runs on-demand | maxDuration: 14400s)
+    ├── 1. Gather active focus creators from Creators (X) database (up to 100)
+    ├── 2. Fetch clean URLs of posts added to Viral Post Library in the past 30 days for deduplication
+    ├── 3. Sequentially query creator tweets from past 30 days (5.5s delay between creators to respect REST 1 QPS rate limit)
+    ├── 4. Filter for tweets where views >= 3000 and bookmarks >= 10, excluding duplicates
+    ├── 5. Score virality: Score = (bookmarks * 10) + (retweets * 5) + (replies * 2) + Math.floor(views / 1000)
+    ├── 6. Slice top 150 tweets sorted by score descending
+    ├── 7. Sequentially analyze tweets:
+    │      ├── Fetch full text of X Articles if detected via getArticle REST API
+    │      ├── Prompt OpenRouter (xiaomi/mimo-v2.5-pro by default) with the Senior Content Strategist framework
+    │      └── Write the structured analysis to the Viral Post Library database with a 500ms delay to stay within Notion's write rate limits
 ```
 
 ### Synthesis & Drafting Task (`draft-ideas`)

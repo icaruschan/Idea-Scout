@@ -33,6 +33,14 @@ graph TD
         K --> H[Remix with Viral Post Library Patterns]
         H --> I[Write New Drafts to Ideas Bank DB]
     end
+
+    subgraph Viral Post Research (Manual Trigger)
+        M[Manual Run Trigger] --> N[Read X Creators from Notion]
+        N --> O[Scrape Tweets from last 30 days]
+        O --> P[Filter: views >= 3000, bookmarks >= 10]
+        P --> Q[AI Content Strategist Analysis]
+        Q --> R[Write analyzed templates to Viral Post Library]
+    end
 ```
 
 ---
@@ -213,10 +221,13 @@ src/
 │   └── constants.ts  — Stores Notion database IDs, source IDs, and content pillars list.
 │
 └── trigger/
-    └── idea-scout/
-        ├── scout-content.ts   — Orchestrator. Fetches creators and starts scrapers.
-        ├── process-content.ts — Filters content relevance and writes to Scouted Content.
-        └── draft-ideas.ts     — Remixes scouted posts with templates and writes to Ideas Bank.
+    ├── idea-scout/
+    │   ├── scout-content.ts   — Orchestrator. Fetches creators and starts scrapers.
+    │   ├── process-content.ts — Filters content relevance and writes to Scouted Content.
+    │   └── draft-ideas.ts     — Remixes scouted posts with templates and writes to Ideas Bank.
+    │
+    └── viral-library/
+        └── research-tweets.ts — Ported from n8n. Scrapes & analyzes top tweets to populate the Viral Post Library.
 ```
 
 ---
@@ -229,6 +240,7 @@ The system uses the following task registrations in Trigger.dev:
 | `scout-content` | `schedules.task` | Mon/Thu/Sat 8:30 AM UTC (`30 8 * * 1,4,6`) | 14400 seconds (4 hours) | 1 |
 | `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) |
 | `draft-ideas` | `schedules.task` | Mon-Sat 8:00 AM UTC (`0 8 * * 1-6`) | 180 seconds | 1 |
+| `research-tweets` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 |
 
 ---
 

@@ -204,6 +204,18 @@ timeline
 
 ---
 
+### LOG ENTRY 15: Ported Twitter Content Research Workflow to Trigger.dev
+*Date: May 31, 2026 (Current Session)*
+
+* **Goal:** Port the user's idle n8n workflow for scraping focus creators' viral tweets into a native manual task in the current workspace.
+* **Code Modifications:**
+  * **Notion Helper Additions (`src/lib/notion.ts`):** Added `getExistingViralPostUrls(days: number)` to fetch cleanup/dedupe lists (with full pagination via `next_cursor` loops). Added `createViralPost(input: ViralPostInput)` to write structured analyzed items to the `📚 Viral Post Library` database.
+  * **Manual Trigger.dev Task (`src/trigger/viral-library/research-tweets.ts`):** Created the task `research-tweets` to sequentially pull tweets for all focus creators from the last 30 days, filter by `views >= 3000` and `bookmarks >= 10`, deduplicate against existing library items, score virality, select the top 150 tweets, analyze them using OpenRouter (`xiaomi/mimo-v2.5-pro` by default), and write them to the Notion primary library database. Included sequential execution delays (5.5s for X REST API search, 500ms for Notion database writes) and full-text X Article fetching.
+  * **Local Test Suite (`scripts/test-viral-research-locally.ts`):** Created a script to test scraping and AI strategist prompts on a single handle without making any database writes.
+  * **Local validation:** Ran `npx tsc --noEmit` which verified type safety with 0 compile errors, and verified the local test script against creator `@levelsio` which fetched raw tweets and generated structured JSON strategic analyses perfectly.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow
@@ -349,6 +361,7 @@ src/
 | `scout-content` | `schedules.task` | `30 8 * * 1,4,6` (Mon/Thu/Sat 8:30 AM UTC) | 14400s | 1 | Active |
 | `process-content` | `task` | On-demand (Concurrent Batch) | 300s | 5 (queue limit) | Active |
 | `draft-ideas` | `schedules.task` | `0 8 * * 1-6` (Mon-Sat 8:00 AM UTC) | 180s | 1 | Active |
+| `research-tweets` | `task` | On-demand (Manual Run) | 14400s | 1 | Active |
 
 ---
 
