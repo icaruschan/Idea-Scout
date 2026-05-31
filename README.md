@@ -16,32 +16,12 @@ An automated agentic content scouting and idea remixing engine. This system moni
 
 ---
 
-## High-Level Pipeline Flow
+## Core Feature & Value Map
 
-```mermaid
-graph TD
-    subgraph Content Scouting (Mon/Thu/Sat 8:30 AM UTC)
-        A[Start Schedule] --> B[Read Creator lists from Notion]
-        B --> C[Scrape YT → 5s pause → IG → 5s pause → X]
-        C --> D[AI Relevance & Disambiguation Filter<br/>queue concurrency: 5]
-        D -->|Noise/False Positive| E[Ignore Post]
-        D -->|Match| G[Write to Scouted Content DB + Page Body Toggle]
-    end
+Here is the user-facing feature map for the **Idea Scout** agentic workspace. You can open and edit the interactive version using the link below:
+* ⬜ [Interactive Excalidraw Board](https://excalidraw.com/#json=R_wmTfjZZwW4SBD8_gxaj,7rnQ8w-FECXdNaHO7PhnNA)
 
-    subgraph Idea Drafting (Mon-Sat 8:00 AM UTC)
-        J[Start Schedule] --> K[Fetch Unused Scouted Content]
-        K --> H[Remix with Viral Post Library Patterns]
-        H --> I[Write New Drafts to Ideas Bank DB]
-    end
-
-    subgraph Viral Post Research (Manual Trigger)
-        M[Manual Run Trigger] --> N[Read X Creators from Notion]
-        N --> O[Scrape Tweets from last 30 days]
-        O --> P[Filter: views >= 3000, bookmarks >= 10]
-        P --> Q[AI Content Strategist Analysis]
-        Q --> R[Write analyzed templates to Viral Post Library]
-    end
-```
+![Idea Scout Feature Map](images/idea_scout_dark.png)
 
 ---
 
