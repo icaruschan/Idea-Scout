@@ -779,7 +779,7 @@ This workspace is connected to a live Trigger.dev consolidated automation pipeli
 2. **process-content (Processor — Concurrent Batch)**
    - Performs a 14-day title duplicate check to prevent reprocessing.
    - Runs a two-step LLM check:
-     - **Relevance**: Evaluates content match against the 9 active content pillars (rejects if confidence < 0.6).
+     - **Relevance**: Evaluates content match against the 8 active content pillars (rejects if confidence < 0.6).
      - **Disambiguation**: Filters out false positives (e.g. Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson) that are unrelated to tech or content creation.
    - Summarizes findings (2-3 sentences AI Summary, 3-5 key takeaways with `→` bullet styling).
    - Writes to the `Scouted Content` database, establishing relations to Creator profiles.
@@ -813,7 +813,7 @@ Every automation-generated idea in the Ideas Bank includes:
 | `OPENROUTER_API_KEY`     | OpenRouter LLM connection                                              |
 | `OPENROUTER_MODEL`       | LLM model override (defaults to `qwen/qwen3.6-plus`)                   |
 | `BACKUP_TWITTER_API_KEY` | TwitterAPI.io API key for creator monitoring                           |
-| `TWITTER_MIN_VIEWS`      | Programmatic view count threshold (defaults to 1000)                   |
+| `TWITTER_MIN_VIEWS`      | Programmatic view count threshold (defaults to 3000)                   |
 | `APIFY_TOKEN`            | Primary Apify scraper token                                            |
 | `BACKUP_APIFY_TOKEN`     | Failover Apify scraper token 1 (auto-rotates if primary token exhaust) |
 | `BACKUP_APIFY_TOKEN_2`   | Failover Apify scraper token 2                                         |

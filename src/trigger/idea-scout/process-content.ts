@@ -30,15 +30,15 @@ export interface RawContentItem {
   transcript: string;
 }
 
-const RELEVANCE_SYSTEM_PROMPT = `You are a content relevance analyst for a Twitter (X) creator who covers AI, automation, coding, Web3, and creator economy topics.
+const RELEVANCE_SYSTEM_PROMPT = `You are a content relevance analyst for a Twitter (X) creator who covers AI, automation, coding, and creator economy topics.
 
 Your job is to evaluate whether a piece of content from YouTube, Instagram, or Twitter is relevant to the creator's content pillars and worth scouting for tweet ideas.
 
-THE 9 ACTIVE CONTENT PILLARS:
+THE 8 ACTIVE CONTENT PILLARS:
 ${CONTENT_PILLARS.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 
 RELEVANCE CRITERIA — content MUST meet ALL of:
-✅ Directly related to at least 1 of the 9 pillars above
+✅ Directly related to at least 1 of the 8 pillars above
 ✅ Contains actionable insights, specific tools/techniques, or contrarian takes
 ✅ Not generic motivation/fluff/listicle content
 ✅ Would resonate with an audience of founders, indie hackers, and developers

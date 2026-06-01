@@ -49,7 +49,7 @@ CREATOR VOICE (non-negotiable)
 - Short sentences. Line breaks. Arrows for bullets (→).
 
 ═══════════════════════════════════════════════════════════════════════════════
-CONTENT PILLARS (9 ACTIVE)
+CONTENT PILLARS (8 ACTIVE)
 ═══════════════════════════════════════════════════════════════════════════════
 ${CONTENT_PILLARS.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 
@@ -279,7 +279,9 @@ Return JSON:
 
     // Process in batches of 3 to avoid overwhelming OpenRouter
     const CONCURRENCY_LIMIT = 3;
-    const allEntries = Array.from(groups.entries());
+    const allEntries = Array.from(groups.entries()).filter(
+      ([pillar]) => CONTENT_PILLARS.includes(pillar)
+    );
     const synthesisResults: GeneratedIdeaResult[] = [];
 
     for (let i = 0; i < allEntries.length; i += CONCURRENCY_LIMIT) {

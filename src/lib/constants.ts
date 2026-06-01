@@ -23,7 +23,7 @@ export const NOTION_DATA_SOURCE_IDS = {
 };
 
 /**
- * The 9 ACTIVE content pillars used by the Idea Scout pipeline.
+ * The 8 ACTIVE content pillars used by the Idea Scout pipeline.
  * Psychology is FROZEN — existing data stays, but no new ideas are generated for it.
  * "Copywriting" was renamed to "Copywriting and Storytelling" in v2.
  */
@@ -32,7 +32,6 @@ export const CONTENT_PILLARS = [
   "AI Creative",
   "AI Prompting & Tools",
   "Vibe Coding",
-  "Web3",
   "Creator Economy",
   "Copywriting and Storytelling",
   "Personal/Vulnerability",
@@ -40,7 +39,7 @@ export const CONTENT_PILLARS = [
 ];
 
 /** Legacy pillars kept for backwards compatibility with existing Notion data */
-export const FROZEN_PILLARS = ["Psychology"];
+export const FROZEN_PILLARS = ["Psychology", "Web3"];
 
 // Build pillar descriptions dynamically from constants.ts — single source of truth
 export const PILLAR_DESCRIPTIONS: Record<string, string> = {
@@ -48,15 +47,13 @@ export const PILLAR_DESCRIPTIONS: Record<string, string> = {
   "AI Creative": "AI-generated UGC ads, AI video (Kling, Runway, Pika, Sora, Luma, HeyGen, Synthesia), TikTok Shop automation, faceless content pages, monetising AI output, AI image generation (Midjourney, DALL-E, Flux, Stable Diffusion), AI voiceover (ElevenLabs, PlayHT), AI avatars, product photography automation, ad creative at scale, Canva AI, Adobe Firefly, ComfyUI workflows, LoRA training, consistent characters, AI music (Suno, Udio)",
   "AI Prompting & Tools": "Power user guides for Claude/ChatGPT/Gemini/Grok/Perplexity/DeepSeek, config hacks, hidden features, reverse prompting, tool comparisons, system prompts, prompt chaining, few-shot prompting, chain-of-thought, Claude Projects, Custom GPTs, Gemini Gems, API vs chat interface, context window optimization, MCP (Model Context Protocol), token cost optimization, model selection strategy, AI coding assistants, RAG pipelines, knowledge bases",
   "Vibe Coding": "Building software with AI (Cursor, Claude Code, Windsurf, Copilot, Cline, Aider, Replit Agent, Bolt, Lovable, v0), shipping products without traditional coding, indie hacker dev workflows, AI-assisted debugging, prompt-to-app, full-stack AI development, rapid prototyping, SaaS in a weekend, MCP servers, AI pair programming, code generation best practices, deploying AI-built apps (Vercel, Railway, Fly.io)",
-  "Web3": "Crypto, DeFi, on-chain tools, token launches, Web3 community, NFT utility, DAOs, smart contracts, Solana, Base, Ethereum L2s, airdrop farming, Web3 marketing, crypto Twitter culture, on-chain analytics (Dune, Nansen), DEX trading, memecoin meta, Web3 x AI convergence, decentralized compute, tokenized AI agents",
   "Creator Economy": "Monetisation, audience building, newsletters (Beehiiv, Substack, ConvertKit), digital products (Gumroad, Lemon Squeezy, Whop), personal brand, platform growth tactics, X/Twitter growth, LinkedIn growth, YouTube automation, community building (Skool, Discord, Circle), sponsorship deals, paid communities, course creation, info products, creator tools, analytics and metrics, follower-to-revenue conversion, lead magnets, email funnels",
   "Copywriting and Storytelling": "Hook formulas, headline writing, persuasion, sales copy, tweet structure techniques, storytelling frameworks (PAS, AIDA, BAB), thread writing, long-form vs short-form, cold DM scripts, landing page copy, email sequences, power words, curiosity gaps, pattern interrupts, open loops, contrast hooks, specificity in copy, social proof framing, call-to-action psychology",
-  "Psychology": "Behavioural psychology, decision-making biases (anchoring, loss aversion, social proof, scarcity), habit formation, mindset, productivity systems, dopamine and motivation, cognitive load theory, persuasion principles (Cialdini), attention economics, flow state, procrastination science, identity-based habits, mental models for creators, stoic philosophy for builders, burnout prevention, deep work, time blocking",
   "Personal/Vulnerability": "Personal stories, failures, lessons learned, behind-the-scenes, emotional resonance, imposter syndrome, career pivots, money transparency, relationship with work, mental health in tech, founder loneliness, public accountability, raw unfiltered takes, contrarian life decisions",
   "Building in Public": "Progress updates, revenue milestones, startup journeys, accountability, \"day N of building X\", MRR tracking, user growth sharing, product launches, feature shipping logs, indie hacking, solopreneur journey, transparent metrics, build logs, launch retrospectives, pivots and failures, open-source building, community feedback loops",
 };
 
 
 export const TWITTER_FILTER_THRESHOLDS = {
-  MIN_VIEWS: parseInt(process.env.TWITTER_MIN_VIEWS || "1000", 10),
+  MIN_VIEWS: parseInt(process.env.TWITTER_MIN_VIEWS || "3000", 10),
 };

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday, Thursday, and Saturday at 8:30 AM UTC (9:30 AM local time), evaluates new uploads for relevance against 9 active content pillars, and saves summaries in Notion. A decoupled task running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library. Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
+Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday, Thursday, and Saturday at 8:30 AM UTC (9:30 AM local time), evaluates new uploads for relevance against 8 active content pillars, and saves summaries in Notion. A decoupled task running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library. Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
 
 ---
 
@@ -22,7 +22,7 @@ OPENROUTER_MODEL=qwen/qwen3.6-plus   # Default model fallback
 BACKUP_TWITTER_API_KEY=
 
 # Twitter Programmatic Filter Configuration
-TWITTER_MIN_VIEWS=1000               # Default fallback is 1000
+TWITTER_MIN_VIEWS=3000               # Default fallback is 3000
 
 # Apify Scraper Token & Failover Rotation
 APIFY_TOKEN=
@@ -56,7 +56,7 @@ TRIGGER_ENV=dev|prod
 
 ---
 
-## 3. The 9 Active Content Pillars
+## 3. The 8 Active Content Pillars
 
 The filter checks content relevance against these specific domains. If a piece of content matches none, it is discarded.
 
@@ -64,14 +64,13 @@ The filter checks content relevance against these specific domains. If a piece o
 2. **AI Creative** (video/image gen, Kling, Runway, UGC, ad creatives, faceless channels)
 3. **AI Prompting & Tools** (prompt engineering, Claude Projects, Gems, hidden settings, MCP servers)
 4. **Vibe Coding** (Cursor, Claude Code, Windsurf, coding apps using LLMs without traditional code)
-5. **Web3** (crypto culture, Base/Solana, tokenized agents, DeFi x AI convergent utilities)
-6. **Creator Economy** (audience growth, newsletter monetization, Gumroad launches, funnels)
-7. **Copywriting and Storytelling** (hooks, tweet structures, PAS/AIDA frameworks, sales copy)
-8. **Personal/Vulnerability** (emotional resonance, failures, founder's transparent updates)
-9. **Building in Public** (MRR milestones, shipping features, open build logs, retrospective audits)
+5. **Creator Economy** (audience growth, newsletter monetization, Gumroad launches, funnels)
+6. **Copywriting and Storytelling** (hooks, tweet structures, PAS/AIDA frameworks, sales copy)
+7. **Personal/Vulnerability** (emotional resonance, failures, founder's transparent updates)
+8. **Building in Public** (MRR milestones, shipping features, open build logs, retrospective audits)
 
 > [!WARNING]
-> The **Psychology** pillar is frozen. Existing database records are kept intact, but the filter must ignore it for new content processing.
+> The **Psychology** and **Web3** content pillars are frozen. Existing database records are kept intact, but the filter and drafting pipelines must ignore them for new content processing and idea generation.
 
 ---
 

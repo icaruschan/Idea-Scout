@@ -1,6 +1,7 @@
 import { Client } from "@notionhq/client";
 import dotenv from "dotenv";
 import { NOTION_DATABASE_IDS, NOTION_DATA_SOURCE_IDS } from "./constants";
+import { filterCategoryList } from "./pillar-utils";
 dotenv.config({ override: true });
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -127,18 +128,33 @@ export async function getTwitterCreators(
       sorts: [
         { property: "Last Checked", direction: "ascending" },
       ],
-      page_size: limit,
+      page_size: 100, // Fetch a larger batch to support programmatic filtering
     });
 
-    return response.results.map((page: any) => {
+    const creators = response.results.map((page: any) => {
       const p = page.properties || {};
+      const niches: string[] = p["Niche"]?.multi_select?.map((s: any) => s.name) || [];
       return {
         pageId: page.id,
         name: p["Handle"]?.title?.[0]?.plain_text || "",
         handle: (p["Handle"]?.title?.[0]?.plain_text || "").replace(/^@/, ""),
         lastChecked: p["Last Checked"]?.date?.start || null,
+        niches,
       };
     });
+
+    // Programmatically filter out any creators whose niches contain "Web3" (case-insensitive)
+    const filtered = creators.filter((c) => {
+      return !c.niches.some((n) => n.toLowerCase().includes("web3"));
+    });
+
+    // Return up to the requested limit
+    return filtered.slice(0, limit).map(({ pageId, name, handle, lastChecked }) => ({
+      pageId,
+      name,
+      handle,
+      lastChecked,
+    }));
   } catch (error) {
     console.error("Error fetching Twitter creators:", error);
     return [];
@@ -297,7 +313,7 @@ export async function createScoutedContent(
         ...creatorRelation,
         ...(input.pillars && input.pillars.length > 0 ? {
           "Niche": {
-            multi_select: input.pillars.map((p) => ({ name: p })),
+            multi_select: filterCategoryList(input.pillars).map((p) => ({ name: p })),
           },
         } : {}),
       },
@@ -670,7 +686,7 @@ export async function createIdea(
         select: { name: source },
       },
       Category: {
-        multi_select: [{ name: pillar }],
+        multi_select: filterCategoryList([pillar]).map((p) => ({ name: p })),
       },
       "Hook Angle": {
         rich_text: [{ text: { content: hookAngle.substring(0, 2000) } }],
@@ -1091,7 +1107,7 @@ export async function createViralPost(
         select: { name: input.hookType || "Story" },
       },
       "Category": {
-        multi_select: (input.category || ["Tech/AI"]).map((cat) => ({ name: cat })),
+        multi_select: filterCategoryList(input.category || ["Tech/AI"]).map((cat) => ({ name: cat })),
       },
       "⭐ Rating": {
         select: { name: input.rating || "⭐⭐⭐" },

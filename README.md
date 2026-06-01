@@ -118,7 +118,7 @@ The idea remixing engine runs as an independent task scheduled 6 times a week (M
 ### Step 6: Write to "Ideas Bank" Database
 The generated tweet drafts are written directly to the **Ideas Bank** database.
 * **Deterministic Source Tracking**: The draft links back to its scouted catalyst page. To guarantee a 100% linking success rate, unique Notion Page IDs (e.g. `[ID: pageId]`) are passed to the LLM and returned in `"inspiredByScoutedIds"`. The code parses these via UUID regex, completely bypassing any LLM title-paraphrasing discrepancies (falling back to a title clean/substring match only if needed).
-* **Robust Pillar Mapping**: Generated pillars are passed through a validation check (`matchPillar()` in `src/lib/pillar-utils.ts`). It performs exact match, fuzzy substring checks, and custom heuristics to match the AI output with one of the 9 active pillars, preventing write validation errors or silent fallback to "Automation".
+* **Robust Pillar Mapping**: Generated pillars are passed through a validation check (`matchPillar()` in `src/lib/pillar-utils.ts`). It performs exact match, fuzzy substring checks, and custom heuristics to match the AI output with one of the 8 active pillars, preventing write validation errors or silent fallback to "Unknown".
 * **Error Prevention**: If the relation schema has changed or is missing, the script catches the error and saves the idea anyway, preventing data loss.
 
 ---
@@ -237,7 +237,7 @@ OPENROUTER_MODEL=qwen/qwen3.6-plus
 
 # X (Twitter) Scraper wrapper
 TWITTER_API_KEY=your-twitterapi-io-key
-TWITTER_MIN_VIEWS=1000
+TWITTER_MIN_VIEWS=3000
 
 # Apify Scraper Keys (Rotates automatically to share credit loads)
 APIFY_TOKEN=primary-apify-token
@@ -261,7 +261,7 @@ TRIGGER_ENV=dev
    - `OPENROUTER_MODEL` (e.g. `qwen/qwen3.6-plus`)
    - `APIFY_TOKEN` + `BACKUP_APIFY_TOKEN` through `BACKUP_APIFY_TOKEN_4`
    - `BACKUP_TWITTER_API_KEY`
-   - `TWITTER_MIN_VIEWS` (default: `1000`)
+   - `TWITTER_MIN_VIEWS` (default: `3000`)
 2. **Run Deploy Command:** Run this in your terminal to sync your workers to production:
    ```bash
    npx trigger.dev@latest deploy

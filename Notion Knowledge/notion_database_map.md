@@ -336,7 +336,7 @@ WEEKLY (Mon/Thu/Sat 8:30 AM) — Idea Scout Pipeline:
     │             and pulls full-text X Articles using the getArticle endpoint if /article/ is detected
     ├── 3. Execute process-content in a concurrent batch:
     │      ├── Check duplicates (all-time URL deduplication check)
-    │      ├── Relevance check (maps to 9 active content pillars, conf >= 0.6)
+    │      ├── Relevance check (maps to 8 active content pillars, conf >= 0.6)
     │      ├── Disambiguation check (filters false positives)
     │      ├── Extract summaries & takeaways
     │      └── Create entry in 📡 Scouted Content (linked to source creator, saving Matched Pillars to "Niche" field)

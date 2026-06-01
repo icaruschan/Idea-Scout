@@ -216,6 +216,34 @@ timeline
 
 ---
 
+### LOG ENTRY 16: Content Pillar Hardening, Sorting, and Web3 Deprecation
+*Date: June 1, 2026 (Current Session)*
+
+* **Goal:** Harden content pillar classification to fix fuzzy-matching bugs (AI Tools -> Automation), sort keyword aliases by length descending to prevent substring collisions, deprecate the Web3 pillar, and wire test scripts.
+* **Code Modifications:**
+  * **Pillar Utilities (`src/lib/pillar-utils.ts`):** Created a comprehensive static alias map (`PILLAR_ALIASES`) for canonical pillars. Pre-sorted alias entries by key length descending (`SORTED_PILLAR_ALIASES`) before running the substring matching loop to fix order-dependence. Updated fallback from `"Automation"` to `"Unknown"`.
+  * **Notion Integration (`src/lib/notion.ts`):** Modified `getTwitterCreators()` to programmatically exclude X creators whose niche contains `"Web3"` (case-insensitive) from active monitoring.
+  * **Constants Setup (`src/lib/constants.ts`):** Moved `"Web3"` from `CONTENT_PILLARS` to `FROZEN_PILLARS`. Removed legacy `"Psychology"` description from `PILLAR_DESCRIPTIONS` to prevent configuration drift.
+  * **Prompts & Logic (`process-content.ts` & `draft-ideas.ts`):** Adjusted active pillars count from 9 to 8 and removed Web3 from topics lists and prompts.
+  * **Script & Test Wiring (`package.json`):** Linked `"test:pillars"` script to `scripts/test-pillar-matching.ts` and wired it into `"test"` script.
+  * **Documentation Updates (`directives/idea-scout.md`, `README.md`, `RECAP.md`, and Notion manual):** Updated active pillars count to 8, designated Web3 as frozen, and set default views threshold to 3000.
+* **Local validation:** Executed `npm test` verifying that compilation was clean (no tsc errors) and both URL normalization and content pillar matching tests (including sorted edge-cases like `"growth and vibe coding"`) passed with 100% success.
+
+---
+
+### LOG ENTRY 17: Notion Category Write Filtering & Web3 Alias Deletion
+*Date: June 1, 2026 (Current Session)*
+
+* **Goal:** Clean up the Web3 aliases, implement Category mitigation (B) to filter out unrecognized/fallback tags before writing to Notion (including `createViralPost`), and align the test suite assertions.
+* **Code Modifications:**
+  * **Pillar Utilities (`src/lib/pillar-utils.ts`):** Removed Web3 keyword mappings (`"web3"`, `"crypto"`, `"solana"`, `"base"`, `"defi"`) from `PILLAR_ALIASES` so they resolve to `"Unknown"`. Added a testable helper function `filterCategoryList()` that dynamically filters out any pillars in `FROZEN_PILLARS` (from `constants.ts`) and `"Unknown"`.
+  * **Constants Setup (`src/lib/constants.ts`):** Removed `"Web3"` from the `PILLAR_DESCRIPTIONS` mapping to maintain consistency with the frozen pillars.
+  * **Notion Integration (`src/lib/notion.ts`):** Updated `createIdea()`, `createScoutedContent()`, and `createViralPost()` to use the new `filterCategoryList()` helper. This strips out `"Unknown"`, `"Web3"`, and `"Psychology"` from properties payloads, leaving category fields cleanly empty in the Notion database.
+  * **Testing (`scripts/test-pillar-matching.ts`):** Updated assertions to expect `"Unknown"` for Web3 and its keywords (e.g., solana, crypto). Added a new suite of category mitigation tests to verify that `filterCategoryList()` correctly filters fallback/frozen pillars while leaving valid active ones intact.
+* **Local validation:** Executed `npm test` verifying that compilation is clean and all 23 matching, 4 category mitigation, and 9 URL normalization tests (36 total) pass successfully.
+
+---
+
 # SECTION 2: System Reference & Current Architecture
 
 ### 1. The Unified Idea Scout Flow
@@ -382,7 +410,7 @@ TWITTER_API_KEY=
 BACKUP_TWITTER_API_KEY=
 
 # Twitter Programmatic Filter Configuration
-TWITTER_MIN_VIEWS=1000
+TWITTER_MIN_VIEWS=3000
 
 # Apify Scraper Token & Failover Rotation
 APIFY_TOKEN=
