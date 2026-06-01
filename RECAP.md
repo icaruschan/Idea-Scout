@@ -1,6 +1,6 @@
 # Agentic Workflows — Chronological Project Log & Reference Manual
 
-> **Last Updated:** May 27, 2026  
+> **Last Updated:** June 1, 2026  
 > **Project:** Ultimate Creator Brain — Unified Idea Scout Pipeline  
 > **Platform:** Trigger.dev v3 (TypeScript), Notion API v5, OpenRouter (Qwen 3.6 Plus)
 
@@ -241,6 +241,19 @@ timeline
   * **Notion Integration (`src/lib/notion.ts`):** Updated `createIdea()`, `createScoutedContent()`, and `createViralPost()` to use the new `filterCategoryList()` helper. This strips out `"Unknown"`, `"Web3"`, and `"Psychology"` from properties payloads, leaving category fields cleanly empty in the Notion database.
   * **Testing (`scripts/test-pillar-matching.ts`):** Updated assertions to expect `"Unknown"` for Web3 and its keywords (e.g., solana, crypto). Added a new suite of category mitigation tests to verify that `filterCategoryList()` correctly filters fallback/frozen pillars while leaving valid active ones intact.
 * **Local validation:** Executed `npm test` verifying that compilation is clean and all 23 matching, 4 category mitigation, and 9 URL normalization tests (36 total) pass successfully.
+
+---
+
+### LOG ENTRY 18: Curator-Analyst Voice Integration & Intentional Voice Ratio Framing
+*Date: June 1, 2026 (Current Session)*
+
+* **Goal:** Integrate a secondary high-leverage Curator-Analyst (third-person reverse-engineering deconstruction) voice alongside the default "Smart Friend" peer retrospective, avoid accidental LLM defaults, and track voice selection in Notion.
+* **Code Modifications:**
+  - **LLM System Prompt (`src/lib/llm.ts`):** Added a comprehensive system prompt section for the `"CURATOR-ANALYST"` voice detailing its key characteristics (third-person spotlight, metric-heavy proof, reverse-engineering deconstruction, actionable replicability, and lowercase "i" rules). Set an intentional bias: Smart Friend remains the default, with Curator-Analyst having a floor of at least 2 out of 5 ideas generated when scouted content spotlights external builders or tools.
+  - **Synthesis Task Prompt (`src/trigger/idea-scout/draft-ideas.ts`):** Mirrored the identical dual-voice block and ratio guidelines into `SYNTHESIS_SYSTEM_PROMPT`.
+  - **JSON Schema Output (`src/trigger/idea-scout/draft-ideas.ts`):** Injected the `"voiceMode"` property into the output JSON schema so the model explicitly declares which voice mode it picked for each generated idea (`"Smart Friend"` vs. `"Curator-Analyst"`).
+  - **Notion Idea Writing (`src/trigger/idea-scout/draft-ideas.ts`):** Extended `rawData` assembly to include and prefix the selected voice mode (`🎙️ Voice: ${idea.voiceMode || "Smart Friend"}`), publishing the record to the Notion Ideas Bank for easy monitoring.
+* **Local validation:** Ran `npx tsc --noEmit` and verified compile type safety with zero errors.
 
 ---
 
