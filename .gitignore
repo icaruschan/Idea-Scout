@@ -21,6 +21,22 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Other unneeded files
-nomad.jpg
+# Personal AI agent configs
+AGENTS.md
+CLAUDE.md
+GEMINI.md
 .agent/
+
+# Internal reference & planning docs
+Apify actors/
+Notion Knowledge/
+execution/
+RECAP.md
+implementation_plan.md
+implementation_plan (UPDATED).md
+wireframe_diagram.md
+trigger-ref.md
+nomad.jpg
+
+# Legacy workflow exports
+🔍 Twitter Content Research (n8n worflow).json
