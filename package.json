@@ -10,6 +10,7 @@
     "test:twitter": "tsx scripts/test-twitter.ts",
     "test:disambiguation": "tsx scripts/test-disambiguation.ts",
     "test:url-normalization": "tsx scripts/test-url-normalization.ts",
+    "build:voice": "tsx scripts/parse-my-tweets.ts && tsx scripts/scrape-creator-voice.ts && tsx scripts/generate-voice-dna.ts",
     "dev": "npx trigger dev"
   },
   "keywords": [],

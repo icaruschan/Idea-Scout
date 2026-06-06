@@ -117,6 +117,8 @@ The idea remixing engine runs as an independent task scheduled 6 times a week (M
 
 ### Step 6: Write to "Ideas Bank" Database
 The generated tweet drafts are written directly to the **Ideas Bank** database.
+* **Ready-to-Post Tweet Drafts**: Each idea includes a full, ready-to-post tweet draft styled according to your custom **Voice DNA Profile** (a 55/45 blend of your top-engagement tweets and reference creators @sharbel and @zaimiri).
+  * *Bypassing Notion's 2,000 Character Limit:* The first 2,000 characters of the draft are stored in the `"Draft Tweet"` database page property for a quick preview, while the **entire, un-truncated draft** is placed inside a collapsible toggle block (`▶️ Full Draft Tweet`) inside the page body.
 * **Deterministic Source Tracking**: The draft links back to its scouted catalyst page. To guarantee a 100% linking success rate, unique Notion Page IDs (e.g. `[ID: pageId]`) are passed to the LLM and returned in `"inspiredByScoutedIds"`. The code parses these via UUID regex, completely bypassing any LLM title-paraphrasing discrepancies (falling back to a title clean/substring match only if needed).
 * **Robust Pillar Mapping**: Generated pillars are passed through a validation check (`matchPillar()` in `src/lib/pillar-utils.ts`). It performs exact match, fuzzy substring checks, and custom heuristics to match the AI output with one of the 8 active pillars, preventing write validation errors or silent fallback to "Unknown".
 * **Error Prevention**: If the relation schema has changed or is missing, the script catches the error and saves the idea anyway, preventing data loss.
@@ -167,6 +169,7 @@ These are the exact database IDs used in the codebase.
 | `Format Idea` | Select | Suggests structure (`Short`, `Thread`, `Video`) |
 | `Steal-able Pattern`| Rich text | Copied from the Viral Post Library pattern template |
 | `Tweet Structure` | Rich text | Copied from the Viral Post Library structure template |
+| `Draft Tweet` | Rich text | Ready-to-post draft tweet matching Voice DNA (first 2,000 characters) |
 | `Inspired By (Scouted)` | Relation | Link back to the Scouted Content database entry |
 
 #### Scouted Content DB Schema

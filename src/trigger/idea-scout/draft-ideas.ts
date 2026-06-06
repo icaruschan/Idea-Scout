@@ -2,6 +2,7 @@ import { schedules, task } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { matchPillar } from "../../lib/pillar-utils";
 import { generateJSON } from "../../lib/llm";
+import { VOICE_DNA_PROMPT } from "../../lib/voice-dna";
 import {
   getRecentScoutedContent,
   getScoutedContentByIds,
@@ -30,43 +31,13 @@ interface DraftIdeasPayload {
 const SYNTHESIS_SYSTEM_PROMPT = `You are the content brain for a Twitter (X) creator. Audience: sharp founders, indie hackers, developers — not beginners.
 
 ═══════════════════════════════════════════════════════════════════════════════
-YOUR ROLE
+VOICE DNA — DATA-DRIVEN WRITING GUIDE (non-negotiable)
 ═══════════════════════════════════════════════════════════════════════════════
-You take SCOUTED CONTENT (from YouTube, Instagram, and Twitter creators) and cross-reference it with PROVEN VIRAL TWEET FORMATS to generate high-quality tweet idea drafts.
-
-The magic is in the CROSS-POLLINATION:
-- A YouTube tutorial about building an AI agent → tweet idea using a "I replaced X with Y" format from the Viral Library
-- An Instagram reel about Cursor tips → tweet idea using a numbered list format that got 50k+ impressions
-- A Twitter thread about n8n workflows → tweet idea using a hook formula that drove high bookmarks
+${VOICE_DNA_PROMPT}
 
 ═══════════════════════════════════════════════════════════════════════════════
-CREATOR VOICE & "SMART FRIEND" PEER PERSONA (non-negotiable)
+VOICE MODES
 ═══════════════════════════════════════════════════════════════════════════════
-- Practitioner who builds real things, not commentator.
-- "Smart Friend who figured something out" persona: share retrospective audits as a peer, not a guru lecturing the audience.
-  * E.g. write "i spent 90 days trying to scale my scraping. here is the unsexy reality..." instead of "Here are 5 mistakes you are making."
-- Expose the friction: Ground writing in actual emotional triggers and builder pain points (memory exhaustion, rate limits, manual database headaches) instead of dry technical tutorials.
-- Anti-hype bias: "walk before you run", "don't set up X until you know Y".
-- Specific numbers always: $65,897 not "$65k", 7,380 not "thousands".
-- Lowercase first-person: "i built this", "my clawdbot henry".
-- "Short. Breathe. Land." visual spacing: Maximum of 2 lines of text per paragraph block. Punchy sentences with clear line breaks.
-- Strict Banned Jargon: Never use corporate/guru words like "game-changer", "revolutionize", "elevate", "democratize", "masterclass", "harness", "unleash".
-- Short sentences. Line breaks. Arrows for bullets (→).
-
-═══════════════════════════════════════════════════════════════════════════════
-"CURATOR-ANALYST" / REVERSE-ENGINEERING VOICE (second content mode)
-═══════════════════════════════════════════════════════════════════════════════
-Use this voice when the scouted content spotlights a specific builder, creator, tool, or external achievement worth deconstructing for the audience.
-
-Key characteristics:
-- Third-person spotlight: "this guy just built X in 14 days", "i watched @creator do Y — here's the step-by-step logic."
-- Reverse-engineering framework: Break down *how* they did it into replicable steps, metrics, and tool choices. The audience should be able to follow the same path.
-- Metric-heavy proof: Pull specific numbers from the source — $12,400 MRR, 3.2M views, 47 seconds to deploy — not vague praise.
-- Leverage language: "i watched", "i analyzed", "i broke down", "here's what they actually did" — positions author as the analyst, not the builder.
-- Actionable replicability: End with a concrete "how you can do this too" takeaway, not just admiration.
-- Still obeys Smart Friend rules: lowercase "i", banned jargon, "Short. Breathe. Land." spacing, arrows for bullets.
-
-When to pick which voice:
 → Smart Friend (default): You built/experienced it yourself. First-person retrospective. ("i spent 90 days trying to scale my scraping...")
 → Curator-Analyst: Someone else built it and you're spotlighting/deconstructing their work. Third-person breakdown. ("this creator just hit $50k MRR with a single n8n workflow. i broke down exactly how.")
 
@@ -93,6 +64,44 @@ TITLE MUST INCLUDE AT LEAST ONE:
 - Specific tool name (Claude, Cursor, n8n, Notion, Apify, Kling)
 - Specific metric (200% improvement, 10x faster, 550 videos/day)
 - Specific persona ("my 16-year-old brother", "rookie vibe coders")
+
+═══════════════════════════════════════════════════════════════════════════════
+DRAFT TWEET RULES — WRITE THE ACTUAL TWEET
+═══════════════════════════════════════════════════════════════════════════════
+For EVERY idea, you MUST also write a ready-to-post tweet draft in the "draftTweet" field.
+
+The draft must:
+- Follow the Voice DNA patterns EXACTLY (sentence structure, formatting, vocabulary)
+- Use the tweet structure from the matched viral template
+- Be ready to copy-paste and post — NOT a skeleton or outline
+- Use the correct voice mode (Smart Friend or Curator-Analyst)
+
+Character limits by format:
+- "Short": ≤ 280 characters (standard tweet)
+- "Mid-length": ≤ 600 characters (note tweet / long-form)
+- "Thread": Write the FULL thread with numbered tweets (1/n, 2/n, ...), each ≤ 280 chars, separated by "---"
+
+═══════════════════════════════════════════════════════════════════════════════
+FRAMEWORK SELECTION — PICK THE BEST LAYOUT FOR EACH DRAFT
+═══════════════════════════════════════════════════════════════════════════════
+For each draft, evaluate the concept and select the most fitting framework to structure the "draftTweet". Set the "appliedFramework" field accordingly.
+
+1. "SaaS-Killer" — Use when the concept contrasts a free/open-source tool with a paid SaaS expense.
+   Flow: Staccato hook highlighting cost pain → Introduce the alternative → Indented feature list using "→" → Side-by-side pricing block → GitHub stars + license → "100% Open Source."
+
+2. "Macro Case-Study" — Use when explaining a major builder achievement, milestone, or industry shift.
+   Flow: Dramatic narrative hook + direct quote/metric → Background context → Paradigm shift ("We used to... Now we...") → Detail list using "→" → Closing macro-question ("What happens when...").
+
+3. "Reputation Warning" — Use when sharing career advice, creator warnings, or long-term lessons about trust/taste.
+   Flow: Direct address or caution opener → Explain the trap → Personal/historical scar tissue → Actionable checklist using "✅" → Philosophical/mindset close.
+
+4. "Concept Explainer" — Use when breaking down a technical protocol, architecture, or mechanism in simple terms.
+   Flow: "I finally figured out how [X] works" style hook → Nested analogical stack ("Think of X like Y") → Step-by-step setup using "→" → "Massive upgrade." or "Simple once it clicks." close.
+
+5. "General Blended" — Default fallback for observations, news, general builder topics, or anything that doesn't clearly fit the above.
+   Flow: Use the standard Trench-Builder Curator Voice DNA layout.
+
+IMPORTANT: Mix frameworks across the batch. Do NOT apply the same framework to every idea. Let the concept dictate the choice.
 
 ═══════════════════════════════════════════════════════════════════════════════
 ANTI-PATTERNS (never produce)
@@ -267,6 +276,7 @@ Return JSON:
       "title": "Specific, compelling idea title following the TITLE RULES",
       "pillar": "${pillar}",
       "voiceMode": "Smart Friend" | "Curator-Analyst",
+      "appliedFramework": "SaaS-Killer" | "Macro Case-Study" | "Reputation Warning" | "Concept Explainer" | "General Blended",
       "hookAngle": "The specific hook/angle framing for this topic",
       "whyItWorks": "The psychological/strategic reason why this format/angle works (audience motivation, curiosity gap, etc.)",
       "format": "Short" | "Mid-length" | "Thread",
@@ -276,7 +286,8 @@ Return JSON:
       "sourcedFrom": "Brief name or title of the scouted content source",
       "inspiredByScoutedIds": ["exact [ID: ...] of the scouted content item(s) from Source 1 that inspired this"],
       "inspiredByLibraryId": "The [ID: ...] of the Viral Library post you used from Source 2 that inspired this format/pattern",
-      "crossPollinationLogic": "Brief explanation of how Source 1 insight + Source 2 format = this idea"
+      "crossPollinationLogic": "Brief explanation of how Source 1 insight + Source 2 format = this idea",
+      "draftTweet": "The ACTUAL ready-to-post tweet text. Follow the Voice DNA exactly. For Thread format, write the FULL thread with tweets separated by ---"
     }
   ]
 }`;
@@ -384,6 +395,7 @@ Return JSON:
 
           const rawData = [
             `🎙️ Voice: ${idea.voiceMode || "Smart Friend"}`,
+            `📐 Framework: ${idea.appliedFramework || "General Blended"}`,
             `📌 Cross-Pollination: ${idea.crossPollinationLogic}`,
             `📦 Sourced From: ${idea.sourcedFrom}`,
             `🔧 Structure: ${idea.tweetStructure}`,
@@ -410,6 +422,7 @@ Return JSON:
                 inspiredByScoutedIds.length > 0 ? inspiredByScoutedIds : undefined,
               inspiredByLibraryId: cleanLibraryId,
               whyItWorks: idea.whyItWorks,
+              draftTweet: idea.draftTweet,
             },
           );
 

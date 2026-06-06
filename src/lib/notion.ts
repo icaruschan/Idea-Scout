@@ -25,6 +25,7 @@ export interface CreateIdeaOptions {
   stealablePattern?: string;
   tweetStructure?: string;
   whyItWorks?: string;
+  draftTweet?: string;
 }
 
 export interface ScoutedContentInput {
@@ -723,6 +724,11 @@ export async function createIdea(
         ],
       };
     }
+    if (options.draftTweet) {
+      properties["Draft Tweet"] = {
+        rich_text: splitIntoRichText(options.draftTweet.substring(0, 2000)),
+      };
+    }
 
     // Inspired By (Library) — single relation
     const uuidRegex =
@@ -763,6 +769,17 @@ export async function createIdea(
             rich_text: [{ text: { content: rawData.substring(0, 2000) } }],
           },
         },
+        // Draft Tweet section (if provided)
+        ...(options.draftTweet ? [
+          {
+            object: "block" as const,
+            type: "toggle" as const,
+            toggle: {
+              rich_text: [{ text: { content: "▶️ Full Draft Tweet" } }],
+              children: splitIntoParagraphBlocks(options.draftTweet),
+            },
+          },
+        ] : []),
       ],
     };
 
