@@ -392,7 +392,7 @@ export function cleanContentUrl(url: string): string {
       ];
       trackerParams.forEach((param) => parsed.searchParams.delete(param));
     }
-    
+
     // Normalize youtu.be to youtube.com/watch?v=
     if (parsed.hostname === "youtu.be") {
       const videoId = parsed.pathname.substring(1);
@@ -400,7 +400,7 @@ export function cleanContentUrl(url: string): string {
       parsed.pathname = "/watch";
       parsed.searchParams.set("v", videoId);
     }
-    
+
     let normalized = parsed.toString();
     if (normalized.endsWith("/")) {
       normalized = normalized.slice(0, -1);
@@ -568,10 +568,10 @@ export async function getRecentScoutedContent(
 
     return response.results.map((page: any) => {
       const p = page.properties || {};
-      const creatorPageId = 
-        p["YouTube Creators"]?.relation?.[0]?.id || 
-        p["Instagram Creators"]?.relation?.[0]?.id || 
-        p["👤 Twitter Creators"]?.relation?.[0]?.id || 
+      const creatorPageId =
+        p["YouTube Creators"]?.relation?.[0]?.id ||
+        p["Instagram Creators"]?.relation?.[0]?.id ||
+        p["👤 Twitter Creators"]?.relation?.[0]?.id ||
         "";
       return {
         pageId: page.id,
@@ -628,10 +628,10 @@ export async function getScoutedContentByIds(
             if (!prop?.rich_text) return "";
             return prop.rich_text.map((r: any) => r.plain_text || "").join("");
           };
-          const creatorPageId = 
-            p["YouTube Creators"]?.relation?.[0]?.id || 
-            p["Instagram Creators"]?.relation?.[0]?.id || 
-            p["👤 Twitter Creators"]?.relation?.[0]?.id || 
+          const creatorPageId =
+            p["YouTube Creators"]?.relation?.[0]?.id ||
+            p["Instagram Creators"]?.relation?.[0]?.id ||
+            p["👤 Twitter Creators"]?.relation?.[0]?.id ||
             "";
           return {
             pageId: page.id,
@@ -1169,4 +1169,5 @@ export async function createViralPost(
     throw error;
   }
 }
+
 
