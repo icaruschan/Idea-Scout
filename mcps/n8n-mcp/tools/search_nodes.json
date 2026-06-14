@@ -1,0 +1,52 @@
+{
+  "name": "search_nodes",
+  "description": "Search nodes. Pass query (string). Example: {\"query\": \"webhook\"}",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "String keyword like \"webhook\" or \"database\""
+      },
+      "limit": {
+        "type": "number",
+        "description": "Optional number, default 20",
+        "default": 20
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "OR",
+          "AND",
+          "FUZZY"
+        ],
+        "description": "OR=any word, AND=all words, FUZZY=typo-tolerant",
+        "default": "OR"
+      },
+      "includeExamples": {
+        "type": "boolean",
+        "description": "Include top 2 real-world configuration examples from popular templates (default: false)",
+        "default": false
+      },
+      "includeOperations": {
+        "type": "boolean",
+        "default": false,
+        "description": "Include resource/operation tree per node. Adds ~100-300 tokens per result but saves a get_node round-trip."
+      },
+      "source": {
+        "type": "string",
+        "enum": [
+          "all",
+          "core",
+          "community",
+          "verified"
+        ],
+        "description": "Filter by node source: all=everything (default), core=n8n base nodes, community=community nodes, verified=verified community nodes only",
+        "default": "all"
+      }
+    },
+    "required": [
+      "query"
+    ]
+  }
+}

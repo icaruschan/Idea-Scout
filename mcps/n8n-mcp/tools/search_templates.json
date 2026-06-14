@@ -1,0 +1,112 @@
+{
+  "name": "search_templates",
+  "description": "Search workflow templates with multiple modes. Use searchMode=\"keyword\" for text search, searchMode=\"by_nodes\" to find by node types, searchMode=\"by_task\" for task-based templates, searchMode=\"by_metadata\" for filtering. Example: {\"query\": \"chatbot\"} or {\"searchMode\": \"by_task\", \"task\": \"webhook_processing\"}",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "searchMode": {
+        "type": "string",
+        "enum": [
+          "keyword",
+          "by_nodes",
+          "by_task",
+          "by_metadata",
+          "patterns"
+        ],
+        "description": "Optional: \"keyword\" (default), \"by_nodes\", \"by_task\", \"by_metadata\"",
+        "default": "keyword"
+      },
+      "query": {
+        "type": "string",
+        "description": "For searchMode=\"keyword\": string keyword like \"chatbot\""
+      },
+      "fields": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "id",
+            "name",
+            "description",
+            "author",
+            "nodes",
+            "views",
+            "created",
+            "url",
+            "metadata"
+          ]
+        },
+        "description": "For searchMode=keyword: fields to include in response. Default: all fields."
+      },
+      "nodeTypes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "For searchMode=\"by_nodes\": array like [\"n8n-nodes-base.httpRequest\"]"
+      },
+      "task": {
+        "type": "string",
+        "enum": [
+          "ai_automation",
+          "data_sync",
+          "webhook_processing",
+          "email_automation",
+          "slack_integration",
+          "data_transformation",
+          "file_processing",
+          "scheduling",
+          "api_integration",
+          "database_operations"
+        ],
+        "description": "For searchMode=\"by_task\": task like \"webhook_processing\", \"ai_automation\""
+      },
+      "category": {
+        "type": "string",
+        "description": "For searchMode=by_metadata: filter by category (e.g., \"automation\", \"integration\")"
+      },
+      "complexity": {
+        "type": "string",
+        "enum": [
+          "simple",
+          "medium",
+          "complex"
+        ],
+        "description": "For searchMode=by_metadata: filter by complexity level"
+      },
+      "maxSetupMinutes": {
+        "type": "number",
+        "description": "For searchMode=by_metadata: maximum setup time in minutes",
+        "minimum": 5,
+        "maximum": 480
+      },
+      "minSetupMinutes": {
+        "type": "number",
+        "description": "For searchMode=by_metadata: minimum setup time in minutes",
+        "minimum": 5,
+        "maximum": 480
+      },
+      "requiredService": {
+        "type": "string",
+        "description": "For searchMode=by_metadata: filter by required service (e.g., \"openai\", \"slack\")"
+      },
+      "targetAudience": {
+        "type": "string",
+        "description": "For searchMode=by_metadata: filter by target audience (e.g., \"developers\", \"marketers\")"
+      },
+      "limit": {
+        "type": "number",
+        "description": "Optional number, default 20",
+        "default": 20,
+        "minimum": 1,
+        "maximum": 100
+      },
+      "offset": {
+        "type": "number",
+        "description": "Pagination offset. Default 0.",
+        "default": 0,
+        "minimum": 0
+      }
+    }
+  }
+}

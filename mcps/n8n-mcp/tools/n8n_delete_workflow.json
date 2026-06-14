@@ -1,0 +1,16 @@
+{
+  "name": "n8n_delete_workflow",
+  "description": "Permanently delete a workflow. This action cannot be undone.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Workflow ID to delete"
+      }
+    },
+    "required": [
+      "id"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "n8n_audit_instance",
+  "description": "Security audit of n8n instance. Combines n8n's built-in audit API (credentials, database, nodes, instance, filesystem risks) with deep workflow scanning (hardcoded secrets via 50+ regex patterns, unauthenticated webhooks, error handling gaps, data retention risks). Returns actionable markdown report with remediation steps using n8n_manage_credentials and n8n_update_partial_workflow.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "categories": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "credentials",
+            "database",
+            "nodes",
+            "instance",
+            "filesystem"
+          ]
+        },
+        "description": "Built-in audit categories to check (default: all 5)"
+      },
+      "includeCustomScan": {
+        "type": "boolean",
+        "description": "Run deep workflow scanning for secrets, webhooks, error handling (default: true)"
+      },
+      "daysAbandonedWorkflow": {
+        "type": "number",
+        "description": "Days threshold for abandoned workflow detection (default: 90)"
+      },
+      "customChecks": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "hardcoded_secrets",
+            "unauthenticated_webhooks",
+            "error_handling",
+            "data_retention"
+          ]
+        },
+        "description": "Specific custom checks to run (default: all 4)"
+      }
+    }
+  }
+}

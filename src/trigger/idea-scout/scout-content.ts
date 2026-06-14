@@ -29,7 +29,7 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 export const scoutContent = task({
   id: "scout-content",
   maxDuration: 14400, // 4 hours — accounts for Apify actor wait times
-  run: async (payload) => {
+  run: async (payload: any) => {
     const runTimestamp = payload?.timestamp ?? new Date().toISOString();
     console.log(`🔍 Idea Scout starting at ${runTimestamp}`);
 

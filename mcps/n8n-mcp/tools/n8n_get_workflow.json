@@ -1,0 +1,28 @@
+{
+  "name": "n8n_get_workflow",
+  "description": "Get workflow by ID with different detail levels. n8n has a draft/publish model: the workflow body holds the draft (latest edits); use mode='active' to see the published graph that is actually running. Modes: 'full' (draft + metadata), 'details' (full + execution stats), 'active' (published graph only), 'structure' (nodes/connections topology), 'minimal' (id/name/active/tags).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Workflow ID"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "full",
+          "details",
+          "structure",
+          "minimal",
+          "active"
+        ],
+        "default": "full",
+        "description": "Detail level: full=draft + metadata (activeVersionId pointer kept, heavy activeVersion payload stripped), details=full+execution stats, active=published graph (errors if workflow has no live version), structure=nodes/connections topology, minimal=metadata only"
+      }
+    },
+    "required": [
+      "id"
+    ]
+  }
+}

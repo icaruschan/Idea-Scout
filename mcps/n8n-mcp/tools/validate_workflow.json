@@ -1,0 +1,49 @@
+{
+  "name": "validate_workflow",
+  "description": "Validate workflow structure, connections, and expressions. Pass workflow object. MUST have: {\"workflow\": {\"nodes\": [array of node objects], \"connections\": {object with node connections}}}. Each node needs: name, type, typeVersion, position.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "workflow": {
+        "type": "object",
+        "description": "Object with two required fields: nodes (array) and connections (object). Example: {\"nodes\": [{\"name\": \"Webhook\", \"type\": \"n8n-nodes-base.webhook\", \"typeVersion\": 2, \"position\": [250, 300], \"parameters\": {}}], \"connections\": {}}"
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "validateNodes": {
+            "type": "boolean",
+            "description": "Validate individual node configurations. Default true.",
+            "default": true
+          },
+          "validateConnections": {
+            "type": "boolean",
+            "description": "Validate node connections and flow. Default true.",
+            "default": true
+          },
+          "validateExpressions": {
+            "type": "boolean",
+            "description": "Validate n8n expressions syntax and references. Default true.",
+            "default": true
+          },
+          "profile": {
+            "type": "string",
+            "enum": [
+              "minimal",
+              "runtime",
+              "ai-friendly",
+              "strict"
+            ],
+            "description": "Validation profile for node validation. Default \"runtime\".",
+            "default": "runtime"
+          }
+        },
+        "description": "Optional object. Example: {\"validateNodes\": true, \"validateConnections\": true, \"validateExpressions\": true, \"profile\": \"runtime\"}"
+      }
+    },
+    "required": [
+      "workflow"
+    ],
+    "additionalProperties": false
+  }
+}

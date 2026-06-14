@@ -1170,4 +1170,46 @@ export async function createViralPost(
   }
 }
 
+/**
+ * Update an existing idea in the Ideas Bank.
+ */
+export async function updateIdea(pageId: string, updates: Partial<CreateIdeaOptions>) {
+  try {
+    const properties: Record<string, any> = {};
+
+    if (updates.draftTweet) {
+      properties["Draft Tweet"] = {
+        rich_text: splitIntoRichText(updates.draftTweet.substring(0, 2000)),
+      };
+      // Once it's drafted by the Writer Actor, we update the status so it moves across the kanban board.
+      properties["Status"] = { select: { name: "📝 Drafted" } };
+    }
+
+    if (Object.keys(properties).length > 0) {
+      await notion.pages.update({
+        page_id: pageId,
+        properties,
+      });
+    }
+
+    if (updates.draftTweet) {
+      await notion.blocks.children.append({
+        block_id: pageId,
+        children: [
+          {
+            object: "block" as const,
+            type: "toggle" as const,
+            toggle: {
+              rich_text: [{ text: { content: "▶️ Full Draft Tweet" } }],
+              children: splitIntoParagraphBlocks(updates.draftTweet),
+            },
+          },
+        ]
+      });
+    }
+  } catch (error) {
+    console.error(`Error updating Idea ${pageId}:`, error);
+    throw error;
+  }
+}
 

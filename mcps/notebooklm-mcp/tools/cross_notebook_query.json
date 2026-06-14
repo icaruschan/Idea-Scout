@@ -1,0 +1,46 @@
+{
+  "name": "cross_notebook_query",
+  "description": "Query multiple notebooks and get aggregated answers with per-notebook citations.\n\nSpecify notebooks by name, by tags, or use all=True for all notebooks.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Question to ask across notebooks"
+      },
+      "notebook_names": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Comma-separated notebook names or IDs (e.g. \"AI Research, Dev Tools\")"
+      },
+      "tags": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Comma-separated tags to select notebooks (e.g. \"ai,mcp\")"
+      },
+      "all": {
+        "default": false,
+        "type": "boolean",
+        "description": "Query ALL notebooks (use with caution — rate limits apply)"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "type": "object"
+  }
+}

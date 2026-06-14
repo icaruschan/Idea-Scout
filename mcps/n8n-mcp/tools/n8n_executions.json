@@ -1,0 +1,96 @@
+{
+  "name": "n8n_executions",
+  "description": "Manage workflow executions: get details, list, or delete. Use action='get' with id for execution details, action='list' for listing executions, action='delete' to remove execution record.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "get",
+          "list",
+          "delete"
+        ],
+        "description": "Operation: get=get execution details, list=list executions, delete=delete execution"
+      },
+      "id": {
+        "type": "string",
+        "description": "Execution ID (required for action=get or action=delete)"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "preview",
+          "summary",
+          "filtered",
+          "full",
+          "error"
+        ],
+        "description": "For action=get: preview=structure only, summary=2 items (default), filtered=custom, full=all data, error=optimized error debugging"
+      },
+      "nodeNames": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "For action=get with mode=filtered: filter to specific nodes by name"
+      },
+      "itemsLimit": {
+        "type": "number",
+        "description": "For action=get with mode=filtered: items per node (0=structure, 2=default, -1=unlimited)"
+      },
+      "includeInputData": {
+        "type": "boolean",
+        "description": "For action=get: include input data in addition to output (default: false)"
+      },
+      "errorItemsLimit": {
+        "type": "number",
+        "description": "For action=get with mode=error: sample items from upstream node (default: 2, max: 100)"
+      },
+      "includeStackTrace": {
+        "type": "boolean",
+        "description": "For action=get with mode=error: include full stack trace (default: false, shows truncated)"
+      },
+      "includeExecutionPath": {
+        "type": "boolean",
+        "description": "For action=get with mode=error: include execution path leading to error (default: true)"
+      },
+      "fetchWorkflow": {
+        "type": "boolean",
+        "description": "For action=get with mode=error: fetch workflow for accurate upstream detection (default: true)"
+      },
+      "limit": {
+        "type": "number",
+        "description": "For action=list: number of executions to return (1-100, default: 100)"
+      },
+      "cursor": {
+        "type": "string",
+        "description": "For action=list: pagination cursor from previous response"
+      },
+      "workflowId": {
+        "type": "string",
+        "description": "For action=list: filter by workflow ID"
+      },
+      "projectId": {
+        "type": "string",
+        "description": "For action=list: filter by project ID (enterprise feature)"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error",
+          "waiting"
+        ],
+        "description": "For action=list: filter by execution status"
+      },
+      "includeData": {
+        "type": "boolean",
+        "description": "For action=list: include execution data (default: false)"
+      }
+    },
+    "required": [
+      "action"
+    ]
+  }
+}

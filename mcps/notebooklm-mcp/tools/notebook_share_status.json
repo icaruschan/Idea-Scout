@@ -1,0 +1,17 @@
+{
+  "name": "notebook_share_status",
+  "description": "Get current sharing settings and collaborators.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      }
+    },
+    "required": [
+      "notebook_id"
+    ],
+    "type": "object"
+  }
+}

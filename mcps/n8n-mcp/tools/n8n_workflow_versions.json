@@ -1,0 +1,51 @@
+{
+  "name": "n8n_workflow_versions",
+  "description": "Manage workflow version history, rollback, and cleanup. Versions are scoped to your n8n instance. Five modes:\n- list: Show version history for a workflow\n- get: Get details of specific version\n- rollback: Restore workflow to previous version (creates backup first)\n- delete: Delete specific version or all versions for a workflow\n- prune: Manually trigger pruning to keep N most recent versions\nOld backups are also pruned automatically (10 most recent per workflow, plus an age-based retention window).",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "list",
+          "get",
+          "rollback",
+          "delete",
+          "prune"
+        ],
+        "description": "Operation mode"
+      },
+      "workflowId": {
+        "type": "string",
+        "description": "Workflow ID (required for list, rollback, delete, prune)"
+      },
+      "versionId": {
+        "type": "number",
+        "description": "Version ID (required for get mode and single version delete, optional for rollback)"
+      },
+      "limit": {
+        "type": "number",
+        "default": 10,
+        "description": "Max versions to return in list mode"
+      },
+      "validateBefore": {
+        "type": "boolean",
+        "default": true,
+        "description": "Validate workflow structure before rollback"
+      },
+      "deleteAll": {
+        "type": "boolean",
+        "default": false,
+        "description": "Delete all versions for workflow (delete mode only)"
+      },
+      "maxVersions": {
+        "type": "number",
+        "default": 10,
+        "description": "Keep N most recent versions (prune mode only)"
+      }
+    },
+    "required": [
+      "mode"
+    ]
+  }
+}

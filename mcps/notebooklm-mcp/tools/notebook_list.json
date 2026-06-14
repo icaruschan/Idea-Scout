@@ -1,0 +1,15 @@
+{
+  "name": "notebook_list",
+  "description": "List all notebooks.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "max_results": {
+        "default": 100,
+        "type": "integer",
+        "description": "Maximum number of notebooks to return (default: 100)"
+      }
+    },
+    "type": "object"
+  }
+}

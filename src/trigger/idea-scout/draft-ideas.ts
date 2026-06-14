@@ -1,8 +1,8 @@
-import { schedules, task } from "@trigger.dev/sdk/v3";
+import { schedules, task, tasks } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { matchPillar } from "../../lib/pillar-utils";
 import { generateJSON } from "../../lib/llm";
-import { VOICE_DNA_PROMPT } from "../../lib/voice-dna";
+import { StrategyBrief } from "../../lib/voice-dna";
 import {
   getRecentScoutedContent,
   getScoutedContentByIds,
@@ -28,20 +28,16 @@ interface DraftIdeasPayload {
   scoutedContentIds: string[];
 }
 
-const SYNTHESIS_SYSTEM_PROMPT = `You are the content brain for a Twitter (X) creator. Audience: sharp founders, indie hackers, developers — not beginners.
-
-═══════════════════════════════════════════════════════════════════════════════
-VOICE DNA — DATA-DRIVEN WRITING GUIDE (non-negotiable)
-═══════════════════════════════════════════════════════════════════════════════
-${VOICE_DNA_PROMPT}
+const SYNTHESIS_SYSTEM_PROMPT = `You are the Strategy Brain for a Twitter (X) creator. Audience: sharp founders, indie hackers, developers — not beginners.
 
 ═══════════════════════════════════════════════════════════════════════════════
 VOICE MODES
 ═══════════════════════════════════════════════════════════════════════════════
-→ Smart Friend (default): You built/experienced it yourself. First-person retrospective. ("i spent 90 days trying to scale my scraping...")
-→ Curator-Analyst: Someone else built it and you're spotlighting/deconstructing their work. Third-person breakdown. ("this creator just hit $50k MRR with a single n8n workflow. i broke down exactly how.")
+→ Builder-Retrospective (default): You built/experienced it yourself. First-person retrospective. ("i spent 90 days trying to scale my scraping...")
+→ Tool-Curator: Spotlighting an external tool or repo. Metric-dense, spec-focused.
+→ Case-Study: Deconstructing a massive win, trend, or dropping long-term operator wisdom.
 
-Default to Smart Friend. Use Curator-Analyst for at least 2 out of every 5 ideas when the scouted content features an external builder or tool worth spotlighting.
+Default to Builder-Retrospective. Use Tool-Curator when spotlighting external tools. Use Case-Study for macro-trends or philosophical advice.
 
 ═══════════════════════════════════════════════════════════════════════════════
 CONTENT PILLARS (8 ACTIVE)
@@ -51,35 +47,30 @@ ${CONTENT_PILLARS.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 ═══════════════════════════════════════════════════════════════════════════════
 TITLE RULES — THIS IS CRITICAL
 ═══════════════════════════════════════════════════════════════════════════════
-BANNED TITLE PATTERNS (never generate these):
-❌ "The X Protocol" — generic buzzword
-❌ "The Y Arbitrage" — meaningless without specifics
-❌ "The Z Stack" — could apply to anything
-❌ "The [Adjective] [Noun] Framework" — template garbage
-❌ Any title that works if you swap the trend keyword — too generic
+These titles are NOT for Twitter. They are INTERNAL working titles for a Notion database.
+They must be short, punchy, and instantly scannable (2-5 words max).
 
-TITLE MUST INCLUDE AT LEAST ONE:
-- Specific dollar amount ($4,217, $56k, $0)
-- Specific timeframe (18 minutes, 72 hours, 30 days)
-- Specific tool name (Claude, Cursor, n8n, Notion, Apify, Kling)
-- Specific metric (200% improvement, 10x faster, 550 videos/day)
-- Specific persona ("my 16-year-old brother", "rookie vibe coders")
+GOOD EXAMPLES (Short & Punchy):
+✅ "Cursor vs SaaS Pricing"
+✅ "The 72hr n8n Build"
+✅ "Claude Code Context Trick"
+✅ "The Indie Hacker Trap"
+
+BANNED PATTERNS:
+❌ No full sentences ("How I used Cursor to build...")
+❌ No generic buzzwords ("The X Protocol", "The Z Stack")
+❌ No clickbait ("You won't believe how this tool...")
 
 ═══════════════════════════════════════════════════════════════════════════════
-DRAFT TWEET RULES — WRITE THE ACTUAL TWEET
+STRATEGY BRIEF RULES
 ═══════════════════════════════════════════════════════════════════════════════
-For EVERY idea, you MUST also write a ready-to-post tweet draft in the "draftTweet" field.
+You do NOT write the actual tweet. You only generate the underlying Strategy Brief.
+A separate dedicated Writer AI will take your strategy and draft the text.
 
-The draft must:
-- Follow the Voice DNA patterns EXACTLY (sentence structure, formatting, vocabulary)
-- Use the tweet structure from the matched viral template
-- Be ready to copy-paste and post — NOT a skeleton or outline
-- Use the correct voice mode (Smart Friend or Curator-Analyst)
-
-Character limits by format:
-- "Short": ≤ 280 characters (standard tweet)
-- "Mid-length": ≤ 600 characters (note tweet / long-form)
-- "Thread": Write the FULL thread with numbered tweets (1/n, 2/n, ...), each ≤ 280 chars, separated by "---"
+Focus entirely on:
+- Identifying the perfect Hook Angle based on the scouted content.
+- Explaining the psychological trigger (why it works).
+- Recommending the best viral format/structure to map it to.
 
 ═══════════════════════════════════════════════════════════════════════════════
 FRAMEWORK SELECTION — PICK THE BEST LAYOUT FOR EACH DRAFT
@@ -240,7 +231,7 @@ export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: numb
             p["💡 Why It Works"]?.rich_text?.[0]?.plain_text ||
             p["Why It Works"]?.rich_text?.[0]?.plain_text ||
             "";
-          return `[ID: ${post.id}] [${rating}] [Hook Type: ${hookType}] ${tweetText.substring(0, 300)}\nStructure: ${structure}\nSteal-able Pattern: ${stealable}\nWhy it works: ${whyItWorksVal}`;
+          return `[ID: ${post.id}] [${rating}] [Hook Type: ${hookType}] ${tweetText}\nStructure: ${structure}\nSteal-able Pattern: ${stealable}\nWhy it works: ${whyItWorksVal}`;
         })
         .join("\n\n---\n\n");
 
@@ -266,7 +257,7 @@ Generate EXACTLY ${targetIdeaCount} tweet idea drafts specifically for the "${pi
 For each idea, you MUST:
 1. Pick a specific insight from Source 1 (scouted content)
 2. Apply a proven format/hook from Source 2 (viral library)
-3. Choose the voice mode: "Smart Friend" (first-person retrospective) or "Curator-Analyst" (third-person builder spotlight/reverse-engineering). Mix both across the batch.
+3. Choose the optimal voice mode: "Builder-Retrospective", "Tool-Curator", or "Case-Study". Mix them across the batch.
 4. Explain the cross-pollination logic
 
 Return JSON:
@@ -275,19 +266,18 @@ Return JSON:
     {
       "title": "Specific, compelling idea title following the TITLE RULES",
       "pillar": "${pillar}",
-      "voiceMode": "Smart Friend" | "Curator-Analyst",
+      "voiceMode": "Builder-Retrospective" | "Tool-Curator" | "Case-Study",
       "appliedFramework": "SaaS-Killer" | "Macro Case-Study" | "Reputation Warning" | "Concept Explainer" | "General Blended",
       "hookAngle": "The specific hook/angle framing for this topic",
       "whyItWorks": "The psychological/strategic reason why this format/angle works (audience motivation, curiosity gap, etc.)",
-      "format": "Short" | "Mid-length" | "Thread",
+      "format": "Short" | "Mid-length" | "Thread" | "Article",
       "priority": "🔥 Hot" | "💡 Good" | "📝 Maybe",
       "stealablePattern": "The viral format pattern being applied (from Source 2)",
       "tweetStructure": "Brief outline of the tweet structure",
       "sourcedFrom": "Brief name or title of the scouted content source",
       "inspiredByScoutedIds": ["exact [ID: ...] of the scouted content item(s) from Source 1 that inspired this"],
       "inspiredByLibraryId": "The [ID: ...] of the Viral Library post you used from Source 2 that inspired this format/pattern",
-      "crossPollinationLogic": "Brief explanation of how Source 1 insight + Source 2 format = this idea",
-      "draftTweet": "The ACTUAL ready-to-post tweet text. Follow the Voice DNA exactly. For Thread format, write the FULL thread with tweets separated by ---"
+      "crossPollinationLogic": "Brief explanation of how Source 1 insight + Source 2 format = this idea"
     }
   ]
 }`;
@@ -407,7 +397,8 @@ Return JSON:
               )?.[0]
             : undefined;
 
-          await createIdea(
+          // 1. Save Strategy to Notion Idea Bank
+          const notionIdeaId = await createIdea(
             idea.title,
             "Idea Scout",
             validPillar,
@@ -422,14 +413,31 @@ Return JSON:
                 inspiredByScoutedIds.length > 0 ? inspiredByScoutedIds : undefined,
               inspiredByLibraryId: cleanLibraryId,
               whyItWorks: idea.whyItWorks,
-              draftTweet: idea.draftTweet,
             },
           );
 
           ideasCreated++;
           console.log(
-            `💡 Created idea: "${idea.title.substring(0, 60)}" [${validPillar}]`,
+            `💡 Created idea strategy: "${idea.title.substring(0, 60)}" [${validPillar}]`,
           );
+
+          // 2. Trigger the Writer Actor
+          const strategyBrief: StrategyBrief = {
+            title: idea.title,
+            pillar: validPillar,
+            voiceMode: idea.voiceMode as any || "Builder-Retrospective",
+            appliedFramework: idea.appliedFramework,
+            hookAngle: idea.hookAngle,
+            whyItWorks: idea.whyItWorks,
+            format: idea.format,
+            stealablePattern: idea.stealablePattern,
+            tweetStructure: idea.tweetStructure,
+            crossPollinationLogic: idea.crossPollinationLogic
+          };
+
+          console.log(`🚀 Dispatching to Writer Actor for Idea: ${notionIdeaId}`);
+          await tasks.trigger("write-tweets", { notionIdeaId, strategyBrief });
+
         } catch (err: any) {
           console.error(
             `Failed to create idea "${idea.title?.substring(0, 60)}":`,

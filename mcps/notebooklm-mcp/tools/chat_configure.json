@@ -1,0 +1,39 @@
+{
+  "name": "chat_configure",
+  "description": "Configure notebook chat settings.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "goal": {
+        "default": "default",
+        "type": "string",
+        "description": "default|learning_guide|custom"
+      },
+      "custom_prompt": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Required when goal=custom (max 10000 chars)"
+      },
+      "response_length": {
+        "default": "default",
+        "type": "string",
+        "description": "default|longer|shorter"
+      }
+    },
+    "required": [
+      "notebook_id"
+    ],
+    "type": "object"
+  }
+}

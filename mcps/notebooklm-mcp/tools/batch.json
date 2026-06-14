@@ -1,0 +1,92 @@
+{
+  "name": "batch",
+  "description": "Perform batch operations across multiple notebooks.\n\nActions:\n- query: Query multiple notebooks with the same question\n- add_source: Add the same source URL to multiple notebooks\n- create: Create multiple notebooks at once\n- delete: Delete multiple notebooks (IRREVERSIBLE, requires confirm=True)\n- studio: Generate studio artifacts across multiple notebooks",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "action": {
+        "type": "string",
+        "description": "Operation to perform (query, add_source, create, delete, studio)"
+      },
+      "query": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Question to ask (for action=query)"
+      },
+      "source_url": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "URL to add (for action=add_source)"
+      },
+      "titles": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Comma-separated notebook titles (for action=create)"
+      },
+      "artifact_type": {
+        "default": "audio",
+        "type": "string",
+        "description": "Artifact type (for action=studio): audio, video, report, etc."
+      },
+      "notebook_names": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Comma-separated notebook names or IDs"
+      },
+      "tags": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Comma-separated tags to select notebooks"
+      },
+      "all": {
+        "default": false,
+        "type": "boolean",
+        "description": "Apply to ALL notebooks"
+      },
+      "confirm": {
+        "default": false,
+        "type": "boolean",
+        "description": "Must be True for delete action"
+      }
+    },
+    "required": [
+      "action"
+    ],
+    "type": "object"
+  }
+}

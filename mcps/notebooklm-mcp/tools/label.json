@@ -1,0 +1,98 @@
+{
+  "name": "label",
+  "description": "Manage source labels in a notebook. Unified tool for all label operations.\n\nLabels let you organize sources into thematic categories. Requires 5+ sources\nfor auto-labeling. Sources can belong to multiple labels simultaneously.\n\nSupports: auto, list, reorganize, create, rename, set_emoji, move_source, delete",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "action": {
+        "type": "string",
+        "description": "Operation to perform:\n- auto: AI auto-labels all sources into thematic categories\n- list: List current labels (triggers AI if none exist)\n- reorganize: Force AI re-categorization (requires confirm=True unless unlabeled_only=True)\n- create: Create a new empty label (requires name)\n- rename: Rename a label (requires label_id, name)\n- set_emoji: Set or clear emoji on a label (requires label_id, emoji)\n- move_source: Assign a source to a label (requires label_id, source_id)\n- delete: Delete label(s) permanently (requires label_id or label_ids, confirm=True)"
+      },
+      "label_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Label UUID (required for rename, set_emoji, move_source, delete)"
+      },
+      "label_ids": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "List of label UUIDs for batch delete (alternative to label_id)"
+      },
+      "name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Label display name (required for create and rename)"
+      },
+      "emoji": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Emoji character for set_emoji (e.g. \"📊\"), or \"\" to clear"
+      },
+      "source_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Source UUID to assign (required for move_source)"
+      },
+      "unlabeled_only": {
+        "default": false,
+        "type": "boolean",
+        "description": "For reorganize: if True, only label sources not yet in any label.\nIf False (default), replaces ALL existing labels from scratch (requires confirm=True)."
+      },
+      "confirm": {
+        "default": false,
+        "type": "boolean",
+        "description": "Must be True for delete action and for reorganize with unlabeled_only=False"
+      }
+    },
+    "required": [
+      "notebook_id",
+      "action"
+    ],
+    "type": "object"
+  }
+}

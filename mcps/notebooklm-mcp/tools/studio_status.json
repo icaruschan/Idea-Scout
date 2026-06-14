@@ -1,0 +1,46 @@
+{
+  "name": "studio_status",
+  "description": "Check studio content generation status and get URLs, or rename an artifact.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "action": {
+        "default": "status",
+        "type": "string",
+        "description": "Action to perform:\n- status (default): List all artifacts with their status and URLs\n- rename: Rename an artifact (requires artifact_id and new_title)\n- list_types: List all supported artifact types with their options"
+      },
+      "artifact_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Required for action=\"rename\" - the artifact UUID to rename"
+      },
+      "new_title": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Required for action=\"rename\" - the new title for the artifact"
+      }
+    },
+    "required": [
+      "notebook_id"
+    ],
+    "type": "object"
+  }
+}

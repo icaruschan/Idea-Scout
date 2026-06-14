@@ -1,0 +1,56 @@
+{
+  "name": "research_status",
+  "description": "Poll research progress. Blocks until complete or timeout.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "poll_interval": {
+        "default": 30,
+        "type": "integer",
+        "description": "Seconds between polls (default: 30)"
+      },
+      "max_wait": {
+        "default": 300,
+        "type": "integer",
+        "description": "Max seconds to wait (default: 300, 0=single poll)"
+      },
+      "compact": {
+        "default": true,
+        "type": "boolean",
+        "description": "If True (default), truncate report and limit sources shown to save tokens.\n    Use compact=False to get full details."
+      },
+      "task_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional Task ID to poll for a specific research task."
+      },
+      "query": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional query text for fallback matching when task_id changes (deep research).\nContributed by @saitrogen (PR #15)."
+      }
+    },
+    "required": [
+      "notebook_id"
+    ],
+    "type": "object"
+  }
+}

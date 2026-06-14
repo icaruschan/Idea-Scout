@@ -1,0 +1,34 @@
+{
+  "name": "n8n_update_partial_workflow",
+  "description": "Update workflow incrementally with diff operations. Types: addNode, removeNode, updateNode, patchNodeField, moveNode, enable/disableNode, addConnection, removeConnection, updateSettings, updateName, add/removeTag, activate/deactivateWorkflow, transferWorkflow. patchNodeField requires fieldPath (dot path, e.g. \"parameters.jsCode\") and patches: [{find, replace}]. See tools_documentation(\"n8n_update_partial_workflow\", \"full\") for details.",
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Workflow ID to update"
+      },
+      "operations": {
+        "type": "array",
+        "description": "Array of diff operations to apply. Each operation must have a \"type\" field and relevant properties for that operation type.",
+        "items": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "validateOnly": {
+        "type": "boolean",
+        "description": "If true, only validate operations without applying them"
+      },
+      "continueOnError": {
+        "type": "boolean",
+        "description": "If true, apply valid operations even if some fail (best-effort mode). Returns applied and failed operation indices. Default: false (atomic)"
+      }
+    },
+    "required": [
+      "id",
+      "operations"
+    ]
+  }
+}

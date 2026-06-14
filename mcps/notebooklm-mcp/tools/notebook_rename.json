@@ -1,0 +1,22 @@
+{
+  "name": "notebook_rename",
+  "description": "Rename a notebook.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "new_title": {
+        "type": "string",
+        "description": "New title"
+      }
+    },
+    "required": [
+      "notebook_id",
+      "new_title"
+    ],
+    "type": "object"
+  }
+}

@@ -1,0 +1,297 @@
+2026-06-08T03:30:33.070Z TRACE Attempt 1 (0 milliseconds)
+2026-06-08T03:30:33.076Z TRACE run() (0.1 milliseconds)
+2026-06-08T03:30:33.076Z INFO 💡 Draft Ideas starting — all recent scouted items to synthesize
+2026-06-08T03:30:35.317Z INFO Context loaded → Scouted: 50, Viral: 30, Existing ideas: 100
+2026-06-08T03:30:35.317Z INFO Underserved pillars: Vibe Coding, Copywriting and Storytelling, Personal/Vulnerability, Building in Public
+2026-06-08T03:30:35.317Z INFO Pillar groups created: Building in Public: 2, Vibe Coding: 1, Automation: 11, Personal/Vulnerability: 4, AI Prompting & Tools: 16, AI Creative: 9, Creator Economy: 7
+2026-06-08T03:30:35.318Z INFO 🧠 Starting parallel LLM synthesis across all pillar groups...
+2026-06-08T03:30:35.318Z INFO 
+📦 Processing batch 1/3 (Building in Public, Vibe Coding, Automation)...
+2026-06-08T03:30:35.318Z INFO 📡 Calling OpenRouter for pillar: Building in Public...
+2026-06-08T03:30:35.320Z INFO 📡 Calling OpenRouter for pillar: Vibe Coding...
+2026-06-08T03:30:35.320Z INFO 📡 Calling OpenRouter for pillar: Automation...
+2026-06-08T03:32:29.665Z INFO ✨ LLM successfully synthesized 2 ideas for Building in Public.
+2026-06-08T03:32:48.357Z INFO ✨ LLM successfully synthesized 1 ideas for Vibe Coding.
+2026-06-08T03:33:06.208Z INFO ✨ LLM successfully synthesized 5 ideas for Automation.
+2026-06-08T03:33:06.208Z INFO 
+📦 Processing batch 2/3 (Personal/Vulnerability, AI Prompting & Tools, AI Creative)...
+2026-06-08T03:33:06.208Z INFO 📡 Calling OpenRouter for pillar: Personal/Vulnerability...
+2026-06-08T03:33:06.209Z INFO 📡 Calling OpenRouter for pillar: AI Prompting & Tools...
+2026-06-08T03:33:06.209Z INFO 📡 Calling OpenRouter for pillar: AI Creative...
+2026-06-08T03:34:58.813Z INFO ✨ LLM successfully synthesized 3 ideas for Personal/Vulnerability.
+2026-06-08T03:35:45.049Z INFO ✨ LLM successfully synthesized 5 ideas for AI Prompting & Tools.
+2026-06-08T03:35:48.036Z INFO ✨ LLM successfully synthesized 5 ideas for AI Creative.
+2026-06-08T03:35:48.036Z INFO 
+📦 Processing batch 3/3 (Creator Economy)...
+2026-06-08T03:35:48.036Z INFO 📡 Calling OpenRouter for pillar: Creator Economy...
+2026-06-08T03:38:33.896Z INFO ✨ LLM successfully synthesized 5 ideas for Creator Economy.
+2026-06-08T03:38:33.897Z INFO 
+✍️ Starting sequential Notion database writes...
+2026-06-08T03:38:33.897Z INFO Writing 2 ideas for pillar: Building in Public...
+2026-06-08T03:38:34.060Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '42d99a49-6f46-4c4a-87e4-93745a0a94aa'
+}
+2026-06-08T03:38:34.060Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:35.409Z ERROR Failed to create idea "12 hours/day streamed, $0 infra fees, 1 spark loop": Draft Tweet is not a property that exists.
+2026-06-08T03:38:35.886Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '9d482c17-f7da-4d47-8e26-1afbd561c457'
+}
+2026-06-08T03:38:35.886Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:35.887Z ERROR Failed to create idea "$0 vs $4k/mo suites: the spark OS blueprint": Draft Tweet is not a property that exists.
+2026-06-08T03:38:36.237Z INFO Writing 1 ideas for pillar: Vibe Coding...
+2026-06-08T03:38:36.364Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '70062b49-5027-4071-9cb3-272a8e22c6d9'
+}
+2026-06-08T03:38:36.364Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:36.365Z ERROR Failed to create idea "72 hours of cursor flow at $0: the alan watts stack i tested": Draft Tweet is not a property that exists.
+2026-06-08T03:38:36.716Z INFO Writing 5 ideas for pillar: Automation...
+2026-06-08T03:38:36.846Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '6f42077f-1d78-46b0-a88f-f35e8b888aa8'
+}
+2026-06-08T03:38:36.847Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:36.847Z ERROR Failed to create idea "Adobe Acrobat Pro ($239/yr) vs Local OCR Pipeline": Draft Tweet is not a property that exists.
+2026-06-08T03:38:37.326Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'a6190136-dc7e-4e60-a296-8bc742d7000b'
+}
+2026-06-08T03:38:37.326Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:37.327Z ERROR Failed to create idea "Anthropic Security Guide: 3 Rules for Safe Agents": Draft Tweet is not a property that exists.
+2026-06-08T03:38:37.804Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'f511237e-7013-41f0-a62f-4e4f6eb7ce31'
+}
+2026-06-08T03:38:37.805Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:37.805Z ERROR Failed to create idea "Polymarket Data Queries in 0 Lines of SQL": Draft Tweet is not a property that exists.
+2026-06-08T03:38:38.292Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'eddc19e4-82c2-4c77-b7a0-1b7757effdc2'
+}
+2026-06-08T03:38:38.292Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:38.293Z ERROR Failed to create idea "Codex Sites: 4 Save Gates for Self-Updating Apps": Draft Tweet is not a property that exists.
+2026-06-08T03:38:38.785Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '2103e1a9-9cef-4115-ac69-7ac8d0539770'
+}
+2026-06-08T03:38:38.785Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:38.785Z ERROR Failed to create idea "Yale AI Data: 0 Unemployment Impact, 100 Workflow Shifts": Draft Tweet is not a property that exists.
+2026-06-08T03:38:39.136Z INFO Writing 3 ideas for pillar: Personal/Vulnerability...
+2026-06-08T03:38:39.265Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '07fb86a0-5768-4473-a257-5785cd8f9545'
+}
+2026-06-08T03:38:39.265Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:39.265Z ERROR Failed to create idea "$0 calendar invites vs 40 hours blocked: the 72-hour constra": Draft Tweet is not a property that exists.
+2026-06-08T03:38:39.757Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '33b4b7d2-8e2d-48b2-9a8b-b4785b4484d1'
+}
+2026-06-08T03:38:39.757Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:39.758Z ERROR Failed to create idea "1 Anthropic exit vs 3 agent safety rules: the 48-hour risk a": Draft Tweet is not a property that exists.
+2026-06-08T03:38:40.243Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '3653926b-ff27-4b98-911a-61903f85b457'
+}
+2026-06-08T03:38:40.243Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:40.244Z ERROR Failed to create idea "$100k corporate exit vs 20 failed launches: the 11-day pivot": Draft Tweet is not a property that exists.
+2026-06-08T03:38:40.593Z INFO Writing 5 ideas for pillar: AI Prompting & Tools...
+2026-06-08T03:38:40.725Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '48f54bc6-ab58-4bc6-979d-77ee8533f93d'
+}
+2026-06-08T03:38:40.726Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:40.726Z ERROR Failed to create idea "$200 wasted on api calls: the tiered routing loop": Draft Tweet is not a property that exists.
+2026-06-08T03:38:41.196Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'f97ac38d-4567-493d-bc99-9fe72d124b32'
+}
+2026-06-08T03:38:41.196Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:41.197Z ERROR Failed to create idea "3 broken prompt habits fixed by clarity concept mapping": Draft Tweet is not a property that exists.
+2026-06-08T03:38:41.680Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '10b349e5-5921-48c5-89d9-8acab6411c22'
+}
+2026-06-08T03:38:41.681Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:41.681Z ERROR Failed to create idea "80% of anthropic code is now ai generated: the shift": Draft Tweet is not a property that exists.
+2026-06-08T03:38:42.160Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '7566339e-51cf-46d4-b5f4-e67bd8f177ee'
+}
+2026-06-08T03:38:42.161Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:42.161Z ERROR Failed to create idea "$240 saved yearly with hermes local agent setup": Draft Tweet is not a property that exists.
+2026-06-08T03:38:42.638Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '61f0e4ca-89b5-4d90-8845-3092aea31441'
+}
+2026-06-08T03:38:42.639Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:42.639Z ERROR Failed to create idea "11 markdown files for unbreakable claude system prompts": Draft Tweet is not a property that exists.
+2026-06-08T03:38:42.989Z INFO Writing 5 ideas for pillar: AI Creative...
+2026-06-08T03:38:43.121Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'e63def62-7e98-4373-a6a5-23ad212fabc1'
+}
+2026-06-08T03:38:43.121Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:43.123Z ERROR Failed to create idea "$1 AI vs $500 UGC: The 3-Tool Video Pipeline I Built in 20 M": Draft Tweet is not a property that exists.
+2026-06-08T03:38:43.617Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '29a98425-138f-409f-96b9-413eff00b8f8'
+}
+2026-06-08T03:38:43.617Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:43.617Z ERROR Failed to create idea "550 Videos per Day: The Claude + TikTok Funnel I Reverse-Eng": Draft Tweet is not a property that exists.
+2026-06-08T03:38:44.088Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '89f99ba4-b873-49a9-9f36-d4b57f3ed844'
+}
+2026-06-08T03:38:44.088Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:44.089Z ERROR Failed to create idea "14 Days of Failed Renders: The ChatGPT + Seedance Prompt Loo": Draft Tweet is not a property that exists.
+2026-06-08T03:38:44.573Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'd6599f81-ee90-4896-8536-11cf5ce7e7ed'
+}
+2026-06-08T03:38:44.573Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:44.573Z ERROR Failed to create idea "$500 for 10 Videos in 35 Minutes: The Local Business AI Play": Draft Tweet is not a property that exists.
+2026-06-08T03:38:45.047Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '7d228baa-5021-4ce1-b289-1be4fd1b2d2f'
+}
+2026-06-08T03:38:45.048Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:45.048Z ERROR Failed to create idea "11 Hour Grind Weekends vs 30 Minute Touch Grass: The AI Crea": Draft Tweet is not a property that exists.
+2026-06-08T03:38:45.398Z INFO Writing 5 ideas for pillar: Creator Economy...
+2026-06-08T03:38:45.535Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'fec64817-af72-4230-b213-ee679bf54bc6'
+}
+2026-06-08T03:38:45.535Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:45.536Z ERROR Failed to create idea "180 days, 4 hours daily: the exact outreach protocol i stres": Draft Tweet is not a property that exists.
+2026-06-08T03:38:46.025Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '202ebdd1-99ea-4889-bf88-36d65f7d45ca'
+}
+2026-06-08T03:38:46.025Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:46.025Z ERROR Failed to create idea "15% platform extraction fees vs 0: why creators must own the": Draft Tweet is not a property that exists.
+2026-06-08T03:38:46.512Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '789fa43b-faae-4862-9013-3c0b50ea9409'
+}
+2026-06-08T03:38:46.512Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:46.512Z ERROR Failed to create idea "0 attribution cost vs 4 viral formats: the exact repurposing": Draft Tweet is not a property that exists.
+2026-06-08T03:38:46.984Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: '4e350c41-c222-4e1e-bc9f-516fa7db6260'
+}
+2026-06-08T03:38:46.984Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:46.985Z ERROR Failed to create idea "$0 ad spend vs 1.2M signups: the 3-step creator referral mat": Draft Tweet is not a property that exists.
+2026-06-08T03:38:47.455Z WARN @notionhq/client warn: request fail {
+  code: 'validation_error',
+  message: 'Draft Tweet is not a property that exists.',
+  attempt: 0,
+  requestId: 'bf91aa58-a876-4f0c-bad5-2a8f19b876c5'
+}
+2026-06-08T03:38:47.455Z ERROR Error creating Idea in Notion: APIResponseError: Draft Tweet is not a property that exists.
+    at buildRequestError (file:///node_modules/@notionhq/client/src/errors.ts:311:12)
+    at _Client.executeSingleRequest (file:///node_modules/@notionhq/client/src
+2026-06-08T03:38:47.456Z ERROR Failed to create idea "48 hours of settlement delays vs instant: why i switched my ": Draft Tweet is not a property that exists.
+2026-06-08T03:38:47.806Z INFO ✅ Draft complete: 0 ideas written to Ideas Bank

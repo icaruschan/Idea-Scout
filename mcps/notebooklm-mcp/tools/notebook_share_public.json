@@ -1,0 +1,22 @@
+{
+  "name": "notebook_share_public",
+  "description": "Enable or disable public link access.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "is_public": {
+        "default": true,
+        "type": "boolean",
+        "description": "True to enable public link, False to disable (default: True)"
+      }
+    },
+    "required": [
+      "notebook_id"
+    ],
+    "type": "object"
+  }
+}

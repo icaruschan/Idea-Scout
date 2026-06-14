@@ -1,0 +1,26 @@
+{
+  "name": "get_template",
+  "description": "Get template by ID. Pass templateId (number). Example: {\"templateId\": 1234}",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "templateId": {
+        "type": "number",
+        "description": "Number ID like 1234"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "nodes_only",
+          "structure",
+          "full"
+        ],
+        "description": "Optional: \"full\" (default), \"nodes_only\", \"structure\"",
+        "default": "full"
+      }
+    },
+    "required": [
+      "templateId"
+    ]
+  }
+}

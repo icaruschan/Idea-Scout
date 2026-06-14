@@ -1,0 +1,39 @@
+{
+  "name": "export_artifact",
+  "description": "Export a NotebookLM artifact to Google Docs or Sheets.\n\nSupports:\n- Data Tables → Google Sheets\n- Reports (Briefing Doc, Study Guide, Blog Post) → Google Docs",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "artifact_id": {
+        "type": "string",
+        "description": "Artifact UUID to export"
+      },
+      "export_type": {
+        "type": "string",
+        "description": "\"docs\" or \"sheets\""
+      },
+      "title": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Title for exported document (optional)"
+      }
+    },
+    "required": [
+      "notebook_id",
+      "artifact_id",
+      "export_type"
+    ],
+    "type": "object"
+  }
+}

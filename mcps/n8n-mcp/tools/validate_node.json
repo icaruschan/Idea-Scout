@@ -1,0 +1,42 @@
+{
+  "name": "validate_node",
+  "description": "Validate n8n node config. Pass nodeType (string) and config (object). Use mode=\"full\" for comprehensive validation, mode=\"minimal\" for quick check. Example: {\"nodeType\": \"nodes-base.slack\", \"config\": {\"resource\": \"channel\", \"operation\": \"create\"}}",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "nodeType": {
+        "type": "string",
+        "description": "String value like \"nodes-base.slack\""
+      },
+      "config": {
+        "type": "object",
+        "description": "Object value like {\"resource\": \"channel\", \"operation\": \"create\"} or empty object {}"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "full",
+          "minimal"
+        ],
+        "description": "Optional string: \"full\" (default) or \"minimal\"",
+        "default": "full"
+      },
+      "profile": {
+        "type": "string",
+        "enum": [
+          "strict",
+          "runtime",
+          "ai-friendly",
+          "minimal"
+        ],
+        "description": "Optional string: \"minimal\" or \"runtime\" or \"ai-friendly\" or \"strict\"",
+        "default": "ai-friendly"
+      }
+    },
+    "required": [
+      "nodeType",
+      "config"
+    ],
+    "additionalProperties": false
+  }
+}

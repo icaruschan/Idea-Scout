@@ -1,0 +1,27 @@
+{
+  "name": "studio_delete",
+  "description": "Delete studio artifact. IRREVERSIBLE. Requires confirm=True.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "notebook_id": {
+        "type": "string",
+        "description": "Notebook UUID"
+      },
+      "artifact_id": {
+        "type": "string",
+        "description": "Artifact UUID (from studio_status)"
+      },
+      "confirm": {
+        "default": false,
+        "type": "boolean",
+        "description": "Must be True after user approval"
+      }
+    },
+    "required": [
+      "notebook_id",
+      "artifact_id"
+    ],
+    "type": "object"
+  }
+}

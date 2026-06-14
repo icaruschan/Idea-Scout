@@ -1,0 +1,22 @@
+{
+  "name": "n8n_health_check",
+  "description": "Check n8n instance health and API connectivity. Use mode='diagnostic' for detailed troubleshooting with env vars and tool status.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "status",
+          "diagnostic"
+        ],
+        "description": "Mode: \"status\" (default) for quick health check, \"diagnostic\" for detailed debug info including env vars and tool status",
+        "default": "status"
+      },
+      "verbose": {
+        "type": "boolean",
+        "description": "Include extra details in diagnostic mode (default: false)"
+      }
+    }
+  }
+}

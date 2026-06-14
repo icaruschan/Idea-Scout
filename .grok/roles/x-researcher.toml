@@ -1,0 +1,4 @@
+description = "General-purpose X (Twitter) research agent"
+default_capability_mode = "read-only"
+model = "grok-build"
+prompt_file = ".grok/prompts/x-researcher.md"

@@ -1,0 +1,17 @@
+{
+  "name": "notebook_query_status",
+  "description": "Check the status of an async notebook query started with notebook_query_start.\n\nReturns the query result when completed, or current status if still in progress.\nPoll this tool every few seconds until status is 'completed' or 'error'.",
+  "inputSchema": {
+    "additionalProperties": false,
+    "properties": {
+      "query_id": {
+        "type": "string",
+        "description": "The query ID returned by notebook_query_start"
+      }
+    },
+    "required": [
+      "query_id"
+    ],
+    "type": "object"
+  }
+}
