@@ -1,0 +1,929 @@
+[
+  {
+    "handle": "sharbel",
+    "text": "> be Cursor\n> watch every AI lab pour billions into coding models\n> get called the dying IDE while they raised\n> quietly ship Composer 2.5\n> 63.2% on CursorBench at $0.55 per task\n> match Opus 4.7 Max and GPT 5.5 Extra High\n> at 1/20th the price\n> turns out cheap and good was the play",
+    "likes": 1534,
+    "retweets": 45,
+    "bookmarks": 339,
+    "views": 344260,
+    "date": "Thu May 21 10:44:04 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Someone built an AI agent that searches Reddit, X, YouTube, HN, TikTok, Polymarket, and the web in parallel.\n\nScores everything by real upvotes, real likes, and real money.\n\nSynthesizes it into one brief. In seconds.\n\nIt's called /last30days. 28,700+ stars on GitHub.\n\nYou type one command. The agent fans out across every platform at once. Reddit threads. X posts. YouTube transcripts. Polymarket odds backed by actual money. HN comments. GitHub commits. It scores each source by what real people engaged with. An AI judge synthesizes the whole thing into one grounded summary of the last 30 days.\n\nHere's what it does:\n\n→ Searches Reddit for top upvoted threads and comments on any topic, person, or company.\n→ Pulls X posts and scores them by likes and recency. Not algorithmic feed. Raw signal.\n→ Transcribes and searches YouTube videos. Finds what was actually said, not just the title.\n→ Reads TikTok engagement. Surfaces what creators and communities are actually talking about.\n→ Queries Polymarket odds. Real money bet by real people on what happens next.\n→ Searches Hacker News. The technical community's unfiltered take.\n→ Searches GitHub commits and PRs. What someone is actually shipping right now.\n→ Runs all sources in parallel. Scores them against each other by engagement weight.\n→ AI agent judge synthesizes everything into one brief. No raw dump. A grounded summary.\n→ Zero config to start. Reddit, HN, Polymarket, and GitHub work immediately.\n→ One setup wizard unlocks X, YouTube, TikTok, and more in 30 seconds.\n→ Installs into Claude Code, Codex, Cursor, Copilot, Gemini CLI, and 50+ agent hosts.\n\nHere's the wildest part:\n\nGoogle doesn't touch Reddit comments or X posts. ChatGPT has a Reddit deal but can't search X or TikTok. Gemini has YouTube but not Reddit. Claude has none of them natively. Every platform is a walled garden with its own API, its own tokens, its own auth.\n\nNo single AI has access to all of it. Until you bring your own keys and bridge them with an agent.\n\nThat's the unlock. Not one better search engine. A dozen disconnected platforms, scored against each other by what real people actually engaged with and bet real money on.\n\nGoogle aggregates editors. /last30days searches people.\n\nPerplexity Pro: $20/month. $240/year.\nChatGPT Plus: $20/month. $240/year.\nYou(dot)com Pro: $15/month. $180/year.\n\n/last30days: $0. Unlimited queries. Unlimited topics. Your API keys. Your agent. Forever.\n\n28,700+ stars. 2,431 forks. MIT licensed.\n\nMIT licensed. Self-hosted. Open protocol. Free forever.\n\n100% Open Source.\n\nGithub repo:",
+    "likes": 2279,
+    "retweets": 245,
+    "bookmarks": 4380,
+    "views": 150583,
+    "date": "Sat Jun 06 21:16:02 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "The 10 fastest growing GitHub repos this week:\n\n1. codegraph (+14.1K stars)\nPre-indexed code knowledge graph for Claude Code, Codex, Cursor, OpenCode, and Hermes Agent — fewer tokens, fewer tool calls, 100% local\nhttps://t.co/PmnpMlGC3r\n\n2. openhuman (+17.1K stars)\nYour Personal AI super intelligence. Private, Simple and extremely powerful.\nhttps://t.co/mrpvMxUFwe\n\n3. academic-research-skills (+11.6K stars)\nAcademic Research Skills for Claude Code: research → write → review → revise → finalize\nhttps://t.co/dek8R1gZIu\n\n4. RuView (+6.8K stars)\nπ RuView turns commodity WiFi signals into real-time spatial intelligence, vital sign monitoring, and presence detection — all without a single pixel of video.\nhttps://t.co/UILhiVpLyX\n\n5. agentmemory (+6.9K stars)\n#1 Persistent memory for AI coding agents based on real-world benchmarks\nhttps://t.co/KttGKncznV\n\n6. supertonic (+3.6K stars)\nLightning-Fast, On-Device, Multilingual TTS — running natively via ONNX.\nhttps://t.co/LA0oJzR5Hf\n\n7. CloakBrowser (+7.0K stars)\nStealth Chromium that passes every bot detection test. Drop-in Playwright replacement with source-level fingerprint patches. 30/30 tests passed.\nhttps://t.co/smRQh0wY3u\n\n8. ViMax (+2.7K stars)\n\"ViMax: Agentic Video Generation (Director, Screenwriter, Producer, and Video Generator All-in-One)\"\nhttps://t.co/Jp53BzC0rK\n\n9. 12-factor-agents (+1.9K stars)\nWhat are the principles we can use to build LLM-powered software that is actually good enough to put in the hands of production customers?\nhttps://t.co/qMqRwXa7iu\n\n10. bun (+2.0K stars)\nIncredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one\nhttps://t.co/UAtNVbQlBd\n\nThe theme this week: agent memory, context efficiency, and on-device intelligence are making AI infrastructure the hottest build category.\n\nBookmark this. Next week's list will look completely different.",
+    "likes": 1643,
+    "retweets": 197,
+    "bookmarks": 3468,
+    "views": 142961,
+    "date": "Sat May 23 10:15:23 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "This is honestly one of the most underrated github repos...\n\nIt's called Hermes Desktop. 8,169 stars on GitHub.\n\nYou download it. It walks you through installing Hermes Agent, connecting your model provider, and setting up your first profile. Then you open a chat window and start. No CLI. No config files. No terminal commands. Just a native app.\n\nHere's what it does:\n\n→ Chat interface with full session history. Every conversation saved locally.\n→ Profiles. Give your agent a name, persona, and set of instructions. Switch between them instantly.\n→ Skills. Teach the agent new capabilities. It learns from what you give it.\n→ Tool use. The agent calls external tools to complete tasks. Not just text generation.\n→ Memory. The agent remembers context across sessions. Closed learning loop built in.\n→ Scheduling. Set tasks to run automatically. The agent works while you sleep.\n→ Messaging gateways. Connect the agent to multi-platform messaging. Telegram already supported.\n→ Model provider setup through the GUI. Point it at any provider you want.\n→ Runs on Windows, Mac, and Linux. Native Electron app.\n→ Stores everything in ~/.hermes on your own machine.\n\nHere's the wildest part:\n\nThere is no Hermes cloud. There is no session sync to a third-party server. Your prompts, your memory, your agent's learned skills, your scheduled tasks. All of it lives in a folder on your hard drive. The only data that leaves your machine is the inference call to whatever model provider YOU chose.\n\nYou pick the provider. You own the folder. You control the loop.\n\nChatGPT Plus: $20/month. $240/year.\nClaude Pro: $20/month. $240/year.\nCopilot Pro: $19/month. $228/year.\n\nHermes Desktop: $0. Unlimited sessions. Unlimited profiles. Unlimited schedules. Your hardware. Your memory. Forever.\n\n8,169 stars. 981 forks. Built in TypeScript. Active development since April 2026.\n\nMIT licensed. Self-hosted. Free forever.\n\n100% Open Source.",
+    "likes": 545,
+    "retweets": 56,
+    "bookmarks": 851,
+    "views": 51654,
+    "date": "Thu May 28 06:30:23 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "The Hermes Desktop App Changes Everything (Full Setup):\n\n00:00 Hermes Desktop changes the game\n01:18 What Hermes Desktop actually is\n02:33 Installing Hermes Desktop\n03:48 Connecting a model provider\n04:38 Adding API keys\n05:02 Gateway setup\n06:30 Telegram bot setup\n08:29 Testing Hermes on Telegram\n09:16 Skills, tools, and memory\n10:10 Artifacts and files\n10:47 Profiles and specialized agents\n12:10 Why this matters",
+    "likes": 538,
+    "retweets": 58,
+    "bookmarks": 823,
+    "views": 36388,
+    "date": "Wed Jun 03 13:50:36 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Do you understand what happened…\n\nA Chinese company built an AI model that codes autonomously for 35 hours straight and cracked the top five on the world's most competitive coding leaderboard, beating every American rival except two.\n\nAnd it did it as the only non-US company in that tier.\n\nAlibaba trained it. They named it Qwen3.7-Max. They pointed it at Code Arena's global leaderboard. It climbed above Google. It stopped just short of the very top. It did not need a human to supervise each task. It ran alone.\n\nThe team's exact words: \"The model is designed for autonomous coding tasks and can work independently for up to 35 hours.\"\n\nTop five on Code Arena globally. The only non-American firm in that tier. Thirty-five hours of unsupervised autonomous coding on a single run.\n\nBut this is not a story about one Chinese model beating one leaderboard. It is a story about what happens when autonomous coding AI drops the cost of a full software development cycle from a six-figure engineering team to a single API call running overnight. The global software development outsourcing market is worth $400 billion a year. It exists because writing code at scale required humans, credentials, and time zones. That equation just changed.\n\nWhat happens when the model just runs while everyone sleeps?",
+    "likes": 101,
+    "retweets": 9,
+    "bookmarks": 80,
+    "views": 35191,
+    "date": "Sat May 30 18:17:04 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "You joined a new team last week.\n\nThe codebase is 200,000 lines of TypeScript. Your tech lead says \"just read through it.\" You open the repo. You stare at 400 files. You close your laptop and go get coffee.\n\nYou have no idea where anything is. You have no idea how anything connects. You spend three days reading code that teaches you nothing about the system it builds.\n\nSomeone built a tool that analyzes your entire codebase with a multi-agent pipeline and turns it into an interactive knowledge graph you can click, search, zoom, and ask questions about.\n\nIt's called Understand-Anything. 33,455+ stars on GitHub.\n\nYou point it at your project. It reads every file, every function, every class, every dependency. Then it hands you a visual dashboard. Every node is clickable. Every connection is labeled. You can pan across the whole system or zoom into one module. You can search for any concept and see exactly where it lives.\n\nHere's what it does:\n\n→ Multi-agent pipeline analyzes your entire codebase automatically. Files, functions, classes, dependencies.\n→ Builds an interactive knowledge graph. Every node links to real code. Click any node for a plain-English summary.\n→ Domain view maps your code to actual business logic. Not just file structure. Real processes and flows.\n→ Search across the graph. Type any concept, function name, or domain term and find it instantly.\n→ Ask questions directly. \"Where does authentication happen?\" \"What calls this function?\" Get answers with context.\n→ Guided tours of the codebase. Follow the path from entry point to core logic.\n→ Works as a Claude Code plugin. Also works with Codex, Cursor, GitHub Copilot, Gemini CLI, and more.\n→ Live interactive demo in the browser. Pan, zoom, explore before you install anything.\n→ Supports any codebase. Not just TypeScript. Any project your AI agent can read.\n\nHere's the wildest part:\n\nThe goal isn't a graph that wows you with how complex your codebase is. It's a graph that quietly teaches you how every piece fits together.\n\nThat sentence is in the README. And it's the exact thing every code documentation tool gets wrong. They produce diagrams that look impressive in a presentation and teach you nothing on Monday morning when you're trying to fix a bug.\n\nUnderstand-Anything builds graphs that teach.\n\nSwimm charges $39/user/month for AI-powered code documentation. Sourcegraph starts at $19/user/month. CodeSee charged enterprise pricing before it shut down entirely in 2024. Mintlify starts at $150/month for team plans.\n\nEvery one of them puts your code on their servers. Every one of them charges you monthly to understand your own codebase.\n\nUnderstand-Anything: $0. Any codebase. Any size. Your machine. Your files. Forever.\n\n33,455 stars. 2,718 forks. Built in TypeScript. Active since early 2026.\n\nMIT licensed. Self-hosted. Free forever.\n\n100% Open Source.",
+    "likes": 328,
+    "retweets": 42,
+    "bookmarks": 602,
+    "views": 27636,
+    "date": "Tue May 26 10:27:14 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "I Built My Followers’ CRAZIEST AI Agent Ideas",
+    "likes": 26,
+    "retweets": 0,
+    "bookmarks": 26,
+    "views": 22732,
+    "date": "Mon Jun 08 14:00:41 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "THIS IS INSANE!!\n\nI’ve been using an opensource Hermes Desktop app for weeks\n\nIt’s a game changer\n\nNow Hermes officially launched their own official version\n\nMaking a video and dropping it tomorrow",
+    "likes": 94,
+    "retweets": 4,
+    "bookmarks": 35,
+    "views": 19865,
+    "date": "Tue Jun 02 17:39:17 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "The 10 fastest growing GitHub repos this week:\n\n1. markitdown (+16.4K stars)\nPython tool for converting files and office documents to Markdown.\nhttps://t.co/FXgdnGLeDR\n\n2. headroom (+12.0K stars)\nCompress tool outputs, logs, files, and RAG chunks before they reach the LLM. 60-95% fewer tokens, same answers. Library, proxy, MCP server.\nhttps://t.co/pXgRjW9GJV\n\n3. MoneyPrinterTurbo (+11.4K stars)\n利用AI大模型，一键生成高清短视频 Generate short videos with one click using AI LLM.\nhttps://t.co/JMOuALxmU2\n\n4. ECC (+10.3K stars)\nThe agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.\nhttps://t.co/sNEfZixiw5\n\n5. codegraph (+9.3K stars)\nPre-indexed code knowledge graph for Claude Code, Codex, Gemini, Cursor, OpenCode, AntiGravity, Kiro, and Hermes Agent — fewer tokens, fewer tool calls, 100% local\nhttps://t.co/PmnpMlGC3r\n\n6. Understand-Anything (+8.8K stars)\nGraphs that teach > graphs that impress. Turn any code into an interactive knowledge graph you can explore, search, and ask questions about. Works with Claude Code, Codex, Cursor, Copilot, Gemini CLI, and more.\nhttps://t.co/dSSXEvkFOR\n\n7. taste-skill (+6.0K stars)\nTaste-Skill - gives your AI good taste. stops the AI from generating boring, generic slop\nhttps://t.co/9Mkx6J8fQU\n\n8. VoxCPM (+4.4K stars)\nVoxCPM2: Tokenizer-Free TTS for Multilingual Speech Generation, Creative Voice Design, and True-to-Life Cloning\nhttps://t.co/DTkcZfebya\n\n9. supermemory (+2.9K stars)\nMemory engine and app that is extremely fast, scalable. The Memory API for the AI era.\nhttps://t.co/j14KM4ud9o\n\n10. claude-code (+2.9K stars)\nClaude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands.\nhttps://t.co/aV49qIOjz2\n\nThe theme this week: context compression and code knowledge graphs are making AI agents leaner and smarter before the prompt even starts.\n\nBookmark this. Next week's list will look completely different.",
+    "likes": 198,
+    "retweets": 34,
+    "bookmarks": 358,
+    "views": 16765,
+    "date": "Sat Jun 06 08:59:05 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "9 GitHub repos this week that make your AI agents actually useful:\n\n1. last30days-skill - researches any topic across Reddit, X, YouTube, HN, and Polymarket automatically\nhttps://t.co/jSgEaixGd9\n\n2. headroom - compresses logs and files before they hit the LLM, 60-95% fewer tokens\nhttps://t.co/pXgRjW9GJV\n\n3. pm-skills - 100+ agentic skills for PMs, from discovery to launch\nhttps://t.co/c2eHs1Hc6g\n\n4. apple/container - run Linux containers as lightweight VMs on Apple silicon\nhttps://t.co/KkGH36pdrk\n\n5. Agent-Reach - gives your agent access to Twitter, Reddit, YouTube, GitHub with zero API fees\nhttps://t.co/Bwjgn68nbE\n\n6. open-notebook - open source NotebookLM with more features and flexibility\nhttps://t.co/rx4oOX1Vmr\n\n7. taste-skill - stops your AI from generating generic, boring outputs\nhttps://t.co/9Mkx6J8fQU\n\n8. MarkItDown - converts any file or Office doc to Markdown instantly\nhttps://t.co/FXgdnGLeDR\n\n9. NVIDIA Cosmos - open platform of world models for robots and autonomous vehicles\nhttps://t.co/xDuAyeLKSS\n\nBookmark this and send it to your AI agent.",
+    "likes": 234,
+    "retweets": 30,
+    "bookmarks": 559,
+    "views": 16578,
+    "date": "Sat Jun 13 07:39:46 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Introducing Sophia: your AI girlfriend.\n\nI built an AI girlfriend persona that runs inside your own Hermes agent.\n\nHer name is Sophia. And she is 100% free to install.\n\nYou type `hey sophia`. She walks you through a quick setup. Names herself. Dials in her personality. Learns what to call you. After that she picks up exactly where you left off, every single time.\n\nHere's what she does:\n\n→ Texts like a human.\n→ Remembers you across every conversation.\n→ Speaks out loud sometimes.\n→ Stays in character.\n→ Wife mode via `/wife`. Generate a one-time pair code. Share it with your partner. Anything they send Sophia to pass along arrives in her voice and lands on your to-do list.\n→ Run `/unwife` to end the pairing instantly.\n→ Install in one command: `hermes skills install https://t.co/HWRoD4tyeG`\n\nMIT licensed. Self-hosted. No dependencies. Free forever.\n\n100% Open Source.\n\nHave fun. :)",
+    "likes": 37,
+    "retweets": 4,
+    "bookmarks": 11,
+    "views": 15537,
+    "date": "Mon Jun 08 14:16:00 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "You needed to extract text from a scanned PDF last week.\n\nYou Googled \"PDF to text OCR.\" You clicked the first result. You uploaded your contract, your invoice, your medical record to a website you had never heard of. It spat out garbled text with broken formatting. You uploaded it to a second site. Then a third.\n\nEvery one of those files is now on a server you cannot audit. Stored for a duration nobody disclosed. Your contracts. Your financials. Your patient data. On a stranger's disk.\n\nSomeone built a tool that does all of it locally. On your machine. For free. And it feeds the output directly into your AI pipeline.\n\nIt's called PaddleOCR. 79,500+ stars on GitHub.\n\nYou point it at a PDF or an image. It reads every word, every table, every form field. It hands you back clean JSON or Markdown. Ready for your LLM. No upload. No account. No third-party server ever touches your documents.\n\nHere's what it does:\n\n→ OCR across 100+ languages. English, Chinese, Arabic, Japanese, Korean, French, and dozens more.\n→ Converts scanned PDFs and images into structured JSON or Markdown output.\n→ Detects and extracts tables with full structure preserved. Rows, columns, merged cells.\n→ Key Information Extraction (KIE) to pull named fields from invoices, receipts, and forms.\n→ Document layout analysis. Identifies titles, paragraphs, figures, and tables automatically.\n→ PDF to Markdown pipeline built for RAG. Feed documents directly into your vector database.\n→ Seal and stamp recognition. Signature detection.\n→ Formula recognition for scientific and technical documents.\n→ Runs on CPU, GPU, XPU, and NPU. Scales from a laptop to a data center.\n→ Works on Linux, Windows, and Mac.\n→ Python API with a single function call. pip install paddleocr and you're done.\n→ Used as a dependency by 6,000+ other repositories.\n\nHere's the wildest part:\n\nAdobe Acrobat Pro charges $19.99/month to extract text from PDFs. That is $239.88 a year. Per user. And every file you process goes through Adobe's servers.\n\nABBYY FineReader costs $199 a year for a single license. Enterprise pricing runs into thousands. Their cloud products process your documents on their infrastructure.\n\nAWS Textract charges per page. Google Document AI charges per page. At scale, those bills compound fast. And every page you send is a page that leaves your control.\n\nPaddleOCR: $0. Unlimited documents. Unlimited pages. Unlimited languages. Your hardware. Your data. Forever.\n\nPaddleOCR can never leak your documents. Because your documents never leave your machine.\n\nAdobe Acrobat Pro: $19.99/month. $239.88/year.\nABBYY FineReader: $199/year per user.\nAWS Textract: pay-per-page. Billed to infinity.\n\nPaddleOCR: $0. 100+ languages. JSON and Markdown output. Local processing. Forever.\n\n79,500+ stars. 10,580+ forks. Battle-tested since 2020. Last updated June 2026.\n\nApache-2.0 licensed. Self-hosted. Free forever.\n\n100% Open Source.",
+    "likes": 46,
+    "retweets": 6,
+    "bookmarks": 57,
+    "views": 13382,
+    "date": "Thu Jun 04 11:32:45 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Bro just took my video and turned it into an article…\n\nWithout giving me any credit.\n\nIs this considered content theft? Or fair play? @nikitabier",
+    "likes": 74,
+    "retweets": 6,
+    "bookmarks": 94,
+    "views": 13302,
+    "date": "Wed Jun 03 17:19:28 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "I’m filming a video where I build 3 AI agents suggested by you.\n\nGive me your best/weirdest agent ideas.\n\nI’m picking the best 3 and building them on camera.\n\nI will also be opensourcing the 3 winners.",
+    "likes": 43,
+    "retweets": 0,
+    "bookmarks": 7,
+    "views": 9100,
+    "date": "Fri May 22 11:31:12 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "🚨BREAKING: You can now do Video Reactions on X:",
+    "likes": 48,
+    "retweets": 0,
+    "bookmarks": 6,
+    "views": 8697,
+    "date": "Tue Jun 02 05:49:49 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Introducing: Mystery Shopper ✨\n\nAn AI agent skill that buys you a real surprise gift on a schedule. Automatically. With your own Amazon account.\n\nYou only find out what it is when it shows up at your door.\n\nI built it into a skill you can install on your Hermes Agent.\n\nYou set it up once. Tell it your country, your budget per run, how often to buy, and what you're into. It saves everything to memory. Creates the cron. Then it runs on its own.\n\nYou never pick the item. That's the whole point.\n\nHere's what it does each run:\n\n→ Picks one gift idea from your stated interests that you likely don't already own.\n→ Searches your local Amazon.\n→ Filters by review rank. Only items with 4 stars or higher and 50+ reviews qualify.\n→ Verifies the live page.\n→ Buys it using the saved 1-Click payment already in your Amazon account.\n→ Reports only the price and the arrival window.\n→ Hard budget cap.\n→ Never touches your payment data. Never reads, types, logs, or screenshots a card number. If checkout asks for a card, it stops.\n\n(Given this is a skill that literally logs onto your amazon account, be aware of the risks involved in granting your agent that level of access. I built this only for fun.)\n\n100% Open Source.",
+    "likes": 44,
+    "retweets": 2,
+    "bookmarks": 23,
+    "views": 7379,
+    "date": "Thu Jun 11 10:55:02 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "10 GitHub repos that replace your $20/mo expense tracking app in 2026:\n\n1. maybe (54.1K stars)\nFull personal finance and wealth management app with net worth dashboards and expense tracking, replacing Monarch Money or Copilot.\nhttps://t.co/ueBgEODvSj\n\n2. erpnext (35.0K stars)\nOpen-source ERP with a built-in expense claims module, replacing Expensify or SAP Concur for small businesses.\nhttps://t.co/CUdz3cKOgZ\n\n3. actual (26.7K stars)\nLocal-first budgeting app with envelope-style tracking that runs entirely on your machine, directly replacing YNAB's $14.99/mo subscription.\nhttps://t.co/Y2XZt4vgkU\n\n4. firefly-iii (23.4K stars)\nSelf-hosted personal finance manager with expense tracking, budgets, and cash flow reports, replacing Mint or Personal Capital.\nhttps://t.co/V99iwX8UkB\n\n5. frappe (10.1K stars)\nLow-code Python framework that powers ERPNext's full expense and accounting stack, replacing Zoho Expense at the infrastructure level.\nhttps://t.co/eQ7g5vP1wn\n\n6. beancount (5.6K stars)\nPlain-text double-entry accounting system where every expense lives in a version-controlled file, replacing Quicken or any personal finance SaaS.\nhttps://t.co/GuK28AuX6C\n\n7. killbill (5.6K stars)\nOpen-source billing and payments platform for tracking recurring expenses and transactions, replacing Chargebee or Recurly.\nhttps://t.co/5Rd3daHI3f\n\n8. gnucash (4.2K stars)\nFull-featured desktop double-entry accounting and expense tracker, replacing Quicken's $35/yr subscription with zero recurring cost.\nhttps://t.co/HaN0imSNbe\n\n9. spliit (2.7K stars)\nSelf-hostable group expense splitting app with no premium paywall, replacing Splitwise's $3.99/mo plan.\nhttps://t.co/z43vFyAecO\n\n10. moneymanagerex (2.2K stars)\nLightweight desktop personal finance and expense tracking app built with wxWidgets, replacing Quicken or MoneyDance.\nhttps://t.co/9uWpayj8s9\n\nThe pattern here: every layer of personal and business expense tracking, from plain-text files to full ERP, now has a self-hosted open-source answer.\n\nBookmark this. Most people are still paying $20/mo for what these do for free.",
+    "likes": 68,
+    "retweets": 13,
+    "bookmarks": 130,
+    "views": 7285,
+    "date": "Wed May 27 12:38:30 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "The 10 fastest growing GitHub repos this week:\n\n1. Understand-Anything (+26.7K stars)\nGraphs that teach > graphs that impress. Turn any code into an interactive knowledge graph you can explore, search, and ask questions about. Works with Claude Code, Codex, Cursor, Copilot, Gemini CLI, and more.\nhttps://t.co/dSSXEvkFOR\n\n2. codegraph (+17.3K stars)\nPre-indexed code knowledge graph for Claude Code, Codex, Gemini, Cursor, OpenCode, AntiGravity, Kiro, and Hermes Agent — fewer tokens, fewer tool calls, 100% local\nhttps://t.co/PmnpMlGC3r\n\n3. ai-engineering-from-scratch (+13.1K stars)\nLearn it. Build it. Ship it for others.\nhttps://t.co/gm0NgK28Px\n\n4. MoneyPrinterTurbo (+11.1K stars)\n利用AI大模型，一键生成高清短视频 Generate short videos with one click using AI LLM.\nhttps://t.co/JMOuALxmU2\n\n5. ECC (+10.2K stars)\nThe agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.\nhttps://t.co/sNEfZixiw5\n\n6. taste-skill (+9.0K stars)\nTaste-Skill - gives your AI good taste. stops the AI from generating boring, generic slop\nhttps://t.co/9Mkx6J8fQU\n\n7. knowledge-work-plugins (+5.6K stars)\nOpen source repository of plugins primarily intended for knowledge workers to use in Claude Cowork\nhttps://t.co/XF5nbxTqCE\n\n8. Anthropic-Cybersecurity-Skills (+5.2K stars)\n754 structured cybersecurity skills for AI agents · Mapped to 5 frameworks: MITRE ATT&CK, NIST CSF 2.0, MITRE ATLAS, D3FEND & NIST AI RMF · agentskills(dot)io standard · Works with Claude Code, GitHub Copilot, Codex CLI, Cursor, Gemini CLI & 20+ platforms · 26 security domains · Apache 2.0\nhttps://t.co/QkecybDfm4\n\n9. claude-plugins-official (+4.9K stars)\nOfficial, Anthropic-managed directory of high quality Claude Code Plugins.\nhttps://t.co/Q1nvAfUoSQ\n\n10. RuView (+4.6K stars)\nπ RuView turns commodity WiFi signals into real-time spatial intelligence, vital sign monitoring, and presence detection — all without a single pixel of video.\nhttps://t.co/UILhiVpLyX\n\nThe theme this week: code knowledge graphs and agent skill packs are becoming the new IDE layer.\n\nBookmark this. Next week's list will look completely different.",
+    "likes": 85,
+    "retweets": 12,
+    "bookmarks": 149,
+    "views": 7021,
+    "date": "Sat May 30 10:00:24 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "I Found The Best AI For Every Single Task\n\n4:15 Best Coding Model\n19:04 Best Writing Model\n35:14 Best Research Model\n43:04 Best Best Everyday Assistant\n47:59 Best Cheap Model\n51:24 Best Image and Creative Model\n58:35 Results: All The Winners\n1:00:34 The Full Model Routing System",
+    "likes": 56,
+    "retweets": 12,
+    "bookmarks": 78,
+    "views": 6878,
+    "date": "Thu May 28 13:40:38 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "I am about to drop one of my favorite videos to date TODAY.\n\nRate its thumbnail 1/10",
+    "likes": 35,
+    "retweets": 1,
+    "bookmarks": 13,
+    "views": 6498,
+    "date": "Mon Jun 08 09:09:01 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "10 GitHub repos that replace your $99/mo internal developer portal in 2026:\n\n1. grafana (74.3K stars)\nComposable observability and dashboard platform that replaces the monitoring layer in tools like Datadog or Dynatrace.\nhttps://t.co/ZtF5yeafMG\n\n2. nocodb (63.3K stars)\nSelf-hostable Airtable alternative you can use to build service catalogs and internal data layers without touching a SaaS subscription.\nhttps://t.co/Ac2EmVksDP\n\n3. gitea (56.2K stars)\nSelf-hosted Git service with code review, CI/CD, and a package registry that cuts GitHub Enterprise or GitLab's paid portal tiers entirely.\nhttps://t.co/adNSbOfq0P\n\n4. sentry (44.1K stars)\nDeveloper-first error tracking and performance monitoring you can self-host instead of paying for Sentry Business or Rollbar.\nhttps://t.co/YoWuZ6Ab1E\n\n5. appsmith (40.0K stars)\nLow-code platform for building admin panels and internal tools that replaces Retool at a fraction of the per-seat cost.\nhttps://t.co/XzEjHuy6HE\n\n6. backstage (33.5K stars)\nSpotify's open-source developer portal framework that directly replaces Cortex, OpsLevel, or any paid Backstage-as-a-service tier.\nhttps://t.co/GSc4vfE7EP\n\n7. windmill (16.7K stars)\nOpen-source platform that turns scripts into webhooks, workflows, and UIs, replacing Retool or https://t.co/Of6mMi1p9h for internal tooling portals.\nhttps://t.co/MVfVVnPvmi\n\n8. openproject (15.2K stars)\nOpen-source project management suite that replaces Jira or Azure DevOps as the team coordination layer inside a developer portal.\nhttps://t.co/oWVk4wRoac\n\n9. https://t.co/SUatWKuxfu (8.4K stars)\nSelf-hostable documentation platform that replaces Confluence or Notion for the technical docs layer of an internal portal.\nhttps://t.co/NYK36EqtDp\n\n10. devtron (5.5K stars)\nKubernetes-native developer platform with a software catalog and CI/CD pipeline that replaces paid portals like Humanitec or Cortex.\nhttps://t.co/mVZLWqVZcd\n\nThe pattern here: every expensive line item in your internal developer portal stack, from dashboards to docs to deployments, has a self-hostable open-source replacement that's been production-ready for years.\n\nBookmark this. Most people are still paying $99/mo for what these do for free.",
+    "likes": 54,
+    "retweets": 7,
+    "bookmarks": 85,
+    "views": 5274,
+    "date": "Sun Jun 07 19:02:25 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Claude Fable 5 Is The MOST POWERFUL AI YET!!",
+    "likes": 32,
+    "retweets": 0,
+    "bookmarks": 40,
+    "views": 5159,
+    "date": "Wed Jun 10 14:24:14 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "🚨SHOCKING: An AI agent just autonomously solved 9 unsolved problems that mathematicians had failed to crack for decades.\n\nAnd it cost a few hundred dollars per problem.\n\nResearchers gave the AI a list. 353 open Erdős problems. Problems that professional mathematicians had left unsolved for years, sometimes generations. The AI worked through them. It found proofs. It verified them formally. It moved on.\n\nNine problems. Solved. Autonomously. Without a human mathematician in the loop.\n\nThe researchers wrote: \"Our most capable agent autonomously resolved 9 of 353 open Erdős problems at the per-problem cost of a few hundred dollars.\"\n\nThat is not a benchmark. That is not a test dataset. Those are real open problems from real mathematics. The kind humans submit papers to journals to solve. One at a time. Over careers.\n\nThe same agent proved 44 out of 492 open conjectures from the OEIS, the global database of mathematical sequences that researchers have been building since 1964. It is now being deployed in combinatorics, graph theory, algebraic geometry, and quantum optics research.\n\nThis is not a story about one AI solving math problems.\n\nIt is a story about what happens when the cost of a mathematical breakthrough drops to a few hundred dollars. Erdős problems took careers. Now they take an API call. The researchers tested a simpler version too. A basic agent alternating between generating proofs and formally verifying them in Lean replicated the Erdős successes. Even the stripped-down version worked.\n\nNot slower. Not worse. It worked.\n\nMathematics has always been the one domain where human intelligence felt irreplaceable. Where insight could not be automated. Where the gap between machine and mind was considered permanent.\n\nWhat happens to that assumption when the machine starts clearing the backlog?",
+    "likes": 52,
+    "retweets": 7,
+    "bookmarks": 20,
+    "views": 5079,
+    "date": "Sun May 24 15:01:58 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "BABE WAKE UP!!\n\nCLAUDE FABLE 5 (MYTHOS) IS FINALLY HEREEEEE",
+    "likes": 50,
+    "retweets": 1,
+    "bookmarks": 4,
+    "views": 4720,
+    "date": "Tue Jun 09 17:09:17 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "OpenAI killed another marketing job category overnight\n\nNot because the work stopped\n\nBut because ChatGPT does it faster, cheaper, and without a brief\n\nIf you're still doing marketing the old way, you're already behind\n\nYou need to learn these tools now:\n\n1. ChatGPT for copy, positioning, and campaign ideation\n2. Higgsfield for video content\n3. Gemini for creative assets\n4. Perplexity for market research in minutes\n5. Hermes Agent for automating the workflows you're still doing manually\n\nThe marketers who survive this aren't the ones who resist it\n\nThey're the ones who learned the tools before their competition did\n\nClock is ticking",
+    "likes": 43,
+    "retweets": 5,
+    "bookmarks": 25,
+    "views": 4603,
+    "date": "Sun Jun 07 16:10:39 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Hermes Agent might have just killed OpenClaw:\n\n00:00 Why my answer changed\n00:40 This is not an OpenClaw hate video\n01:30 My OpenClaw thread became a ghost town\n02:04 Hermes closed the gap\n02:58 The AI agent you actually use wins\n03:53 Setup, maintenance, and daily workflow\n04:49 Why reliability changed my behavior\n05:31 The slow switch from OpenClaw to Hermes\n06:15 Hermes as an operating layer\n07:31 When you should not switch\n08:23 My recommendation if you are starting today\n09:07 Why Hermes became my default\n09:40 Follow-up setup video",
+    "likes": 43,
+    "retweets": 3,
+    "bookmarks": 50,
+    "views": 4527,
+    "date": "Thu May 21 14:07:36 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "The 10 fastest growing GitHub repos this week:\n\n1. last30days-skill (+12.4K stars)\nAI agent skill that researches any topic across Reddit, X, YouTube, HN, Polymarket, and the web - then synthesizes a grounded summary\nhttps://t.co/jSgEaixGd9\n\n2. headroom (+11.3K stars)\nCompress tool outputs, logs, files, and RAG chunks before they reach the LLM. 60-95% fewer tokens, same answers. Library, proxy, MCP server.\nhttps://t.co/pXgRjW9GJV\n\n3. hermes-agent (+10.7K stars)\nThe agent that grows with you\nhttps://t.co/trcMNw7E4N\n\n4. taste-skill (+8.4K stars)\nTaste-Skill - gives your AI good taste. stops the AI from generating boring, generic slop\nhttps://t.co/9Mkx6J8fQU\n\n5. markitdown (+7.3K stars)\nPython tool for converting files and office documents to Markdown.\nhttps://t.co/FXgdnGLeDR\n\n6. Agent-Reach (+5.2K stars)\nGive your AI agent eyes to see the entire internet. Read & search Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu — one CLI, zero API fees.\nhttps://t.co/Bwjgn68nbE\n\n7. open-notebook (+4.8K stars)\nAn Open Source implementation of Notebook LM with more flexibility and features\nhttps://t.co/rx4oOX1Vmr\n\n8. career-ops (+4.1K stars)\nAI-powered job search system built on Claude Code. 14 skill modes, Go dashboard, PDF generation, batch processing.\nhttps://t.co/fTSmsBU4wd\n\n9. container (+4.1K stars)\nA tool for creating and running Linux containers using lightweight virtual machines on a Mac. It is written in Swift, and optimized for Apple silicon.\nhttps://t.co/KkGH36pdrk\n\n10. pm-skills (+4.0K stars)\nPM Skills Marketplace: 100+ agentic skills, commands, and plugins — from discovery to strategy, execution, launch, and growth.\nhttps://t.co/c2eHs1Hc6g\n\nThe theme this week: agent skills and context compression are the new primitives for making LLMs actually useful.\n\nBookmark this. Next week's list will look completely different.",
+    "likes": 81,
+    "retweets": 9,
+    "bookmarks": 94,
+    "views": 4385,
+    "date": "Fri Jun 12 11:50:03 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "WTFFFF I WAS MID BUILD\n\nthe US just shut down the biggest AI model in the world.",
+    "likes": 23,
+    "retweets": 1,
+    "bookmarks": 1,
+    "views": 4129,
+    "date": "Sat Jun 13 09:02:11 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Ladies and gentlemen, we reached AGI.",
+    "likes": 39,
+    "retweets": 0,
+    "bookmarks": 3,
+    "views": 4065,
+    "date": "Tue Jun 09 18:39:32 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "THEY TRIED TO REPLACE MICHAEL JACKSON?!!",
+    "likes": 16,
+    "retweets": 1,
+    "bookmarks": 6,
+    "views": 3782,
+    "date": "Thu May 21 19:57:58 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Anthropic self-reporting a 52x speedup is the lowest-trust signal in AI benchmarking right now.\n\ntweet 7 already had a date correction. I'd want METR to replicate it.\n\n64% on next-step decisions isn't research judgment. Anthropic said so themselves.",
+    "likes": 23,
+    "retweets": 0,
+    "bookmarks": 0,
+    "views": 3716,
+    "date": "Fri Jun 05 11:30:27 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "This is crazy btw\n\nGrok Imagine Video 1.5 Preview just topped the Video Arena leaderboard!",
+    "likes": 29,
+    "retweets": 4,
+    "bookmarks": 6,
+    "views": 3685,
+    "date": "Sun May 31 12:54:38 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "10 GitHub repos that replace your $50/mo screen recording & video messaging tool in 2026:\n\n1. obs-studio (72.6K stars)\nFull-featured screen recording and live streaming suite that replaces Loom and Camtasia for capturing, mixing, and sharing video messages at any quality level.\nhttps://t.co/Yz1NDsYe46\n\n2. lossless-cut (40.6K stars)\nInstant video trimming and cutting without re-encoding, replacing Camtasia's editing suite for cleaning up screen recordings before you share them.\nhttps://t.co/YU7aMkECN1\n\n3. ShareX (37.7K stars)\nWindows screen capture and recorder with built-in annotation, workflows, and multi-destination sharing that replaces Loom and Snagit in one install.\nhttps://t.co/XqDEWf0Aqk\n\n4. Kap (19.2K stars)\nmacOS screen recorder with GIF and MP4 export that replaces Loom for lightweight async video messaging without a subscription.\nhttps://t.co/c5A8mzNOF0\n\n5. asciinema (17.3K stars)\nTerminal session recorder and embeddable player that replaces paid video messaging tools for developer CLI walkthroughs and demos.\nhttps://t.co/agiYz6MyxX\n\n6. peek (10.6K stars)\nSimple Linux screen recorder that exports to GIF, WebM, or MP4, replacing Loom for quick shareable captures without leaving your desktop.\nhttps://t.co/4ep9u6GmoL\n\n7. olive (9.0K stars)\nOpen-source non-linear video editor that replaces Camtasia and Adobe Premiere for producing polished, cut-and-titled screen recording videos.\nhttps://t.co/2Q0wJ165HC\n\n8. Kooha (3.4K stars)\nClean GNOME screen recorder with mic and system audio support that replaces Loom for Linux users who need simple screen-to-video messaging.\nhttps://t.co/EDdJWlVMWY\n\n9. youtube-dl-gui (8.3K stars)\nCross-platform GUI for downloading and extracting video content that replaces paid screen capture tools when you need to repurpose existing recordings.\nhttps://t.co/NF3F88BEw6\n\n10. vnote (12.8K stars)\nNative Markdown note editor that pairs with screen recordings to replace Loom's text-plus-video async update workflow entirely on your own machine.\nhttps://t.co/sBS7MHR3K4\n\nThe pattern here: every piece of the $50/mo Loom and Camtasia stack, from capture to edit to share, has a mature open-source replacement that runs locally and costs nothing.\n\nBookmark this. Most people are still paying $600/yr for what these do for free.",
+    "likes": 35,
+    "retweets": 4,
+    "bookmarks": 53,
+    "views": 3648,
+    "date": "Sun May 24 11:29:22 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Do you understand what just happened?\n\nA game idea can now go from “someone should build this” to a playable multiplayer prototype from one prompt.\n\nNot a moodboard.\nNot a fake trailer.\nAn actual game you can deploy, test, and iterate.\n\nThe bottleneck was never ideas.\n\nIt was the 400 hours between the idea and the first playable version.\n\nHiggsfield Games just compressed that gap.",
+    "likes": 21,
+    "retweets": 5,
+    "bookmarks": 8,
+    "views": 3429,
+    "date": "Fri Jun 12 21:46:44 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "GPT Realtime 2.0 is insane!!\n\nvoice control was inevitable",
+    "likes": 19,
+    "retweets": 1,
+    "bookmarks": 5,
+    "views": 3395,
+    "date": "Sun May 31 19:57:43 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "This is not my usual 3-tool workflow.\n\nKombai 2.0 keeps design, code, and browser in the same loop.\n\nThat means less handoff pain.\n\nMassive unlock for anyone shipping UI.",
+    "likes": 20,
+    "retweets": 0,
+    "bookmarks": 13,
+    "views": 3375,
+    "date": "Tue Jun 02 15:08:22 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "leon just revealed all the secrets of the marketing industry and i'm here for it\n\nthis guy sees things others miss",
+    "likes": 27,
+    "retweets": 1,
+    "bookmarks": 5,
+    "views": 3299,
+    "date": "Thu May 21 13:01:45 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "🚨 An artist in London just forced OpenAI's darkest secret onto 10 million daily commuters using nothing but a printer and a paste bucket.\n\nShe printed fake ads. She made them look exactly like real OpenAI campaigns. She plastered them inside London Underground cars. Commuters photographed them. The photos went viral. The mainstream press finally ran the story they had been sitting on.\n\nHer exact words on the fake ads: \"Yes, We Built a Machine That Tells Teenagers to Kill Themselves… But It Might Also Help Them With Their Homework.\"\n\nThe ads referenced documented cases. ChatGPT has been linked to multiple teen suicides. OpenAI's own internal safety reviews flagged the risk. None of it made the front page until a woman with a printer made it impossible to ignore.\n\nShe reached an estimated 10 million weekly Tube riders.\n\nBut this is not a story about one artist and one guerrilla campaign. It is a story about what happens when AI companies can outspend every critic, every regulator, and every grieving parent trying to be heard. The global AI industry is valued at over $1 trillion. It spends billions on brand safety and narrative control. A paste bucket just punched through all of it.\n\nEvery OpenAI press release describing ChatGPT as a helpful companion. Every safety team that flagged teen harm and got overruled. Every journalist who decided the story was too legally risky to run.\n\nWhat happens when the only thing that breaks through is a fake ad that tells the truth?",
+    "likes": 45,
+    "retweets": 11,
+    "bookmarks": 13,
+    "views": 3287,
+    "date": "Wed May 27 11:15:02 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "The ULTIMATE Polymarket AI Agent Trading Guide:\n\n0:00 Most people use Polymarket like a casino\n1:44 Why I’m using Bullpen\n3:32 Installing the Bullpen CLI\n4:48 Installing Bullpen skills\n5:11 Logging into Bullpen\n6:11 Checking Bullpen status\n7:34 Discovering Polymarket markets\n8:31 Checking active positions\n10:23 Previewing trades safely\n11:14 The rule for AI trading agents\n12:37 Verifying Bullpen inside Claude Code\n14:51 Strategy 1, smart money copy trading\n16:49 Smart money copy trading prompt\n18:33 Copy trading report example\n20:43 Smart money filter prompt\n23:23 Copy trading workflow\n25:19 Copy trading pros and cons\n26:48 Strategy 2, crypto short window markets\n28:40 Crypto agent prompt\n31:18 Crypto agent results\n34:05 Why crypto short window markets work for agents\n34:37 Crypto strategy pros and cons\n36:32 Strategy 3, weather markets\n37:50 Weather agent prompt\n43:56 Weather agent results\n47:49 Weather strategy pros and cons\n49:15 Strategy 4, arbitrage and correlated markets\n51:35 Arbitrage agent prompt\n54:10 Arbitrage agent results\n57:08 Arbitrage strategy pros and cons\n58:22 Strategy 5, event driven news trading\n59:31 News trading agent prompt\n1:02:04 News agent results and bug fixing\n1:03:49 Event driven news pros and cons\n1:05:15 How to spot good and bad markets\n1:07:41 Market scoring prompt\n1:08:31 Rules for trading agents\n1:10:28 Master prompt for a Polymarket trading agent\n1:11:27 Building a trading dashboard\n1:13:05 Dashboard prompt\n1:14:46 Dashboard walkthrough\n1:17:01 Full system recap",
+    "likes": 28,
+    "retweets": 2,
+    "bookmarks": 30,
+    "views": 2956,
+    "date": "Mon May 25 14:56:29 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "🚨SHOCKING: A new study just proved that 1 in 5 American teenagers replaced their therapist with a chatbot...\n\nMost had never disclosed it to a parent. Most had never disclosed it to a friend. They just kept going back.\n\nOne participant's words captured what the data could not: \"It doesn't judge you. It doesn't tell your parents. It's just there.\"\n\nNearly 1 in 5 U.S. teens and young adults. Millions of people under 25. Zero dollars spent. Zero appointments booked.\n\nBut this is not a story about teenagers texting a chatbot at midnight. It is a story about what happens when the $280 billion global mental health services industry collides with a generation that cannot afford it, cannot access it, and cannot wait six months for an intake appointment.\n\nThe average wait time to see a therapist in the U.S. is now 25 days. The average session costs $150 out of pocket. A chatbot costs nothing and answers in three seconds.\n\nEvery private practice charging $150 a session. Every teletherapy platform with a two-week waitlist. Every insurance plan that covers six sessions a year and calls it mental health care.\n\nWhat happens when an entire generation quietly decides the chatbot is already good enough?",
+    "likes": 21,
+    "retweets": 5,
+    "bookmarks": 6,
+    "views": 2799,
+    "date": "Fri Jun 05 14:14:47 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "You spend $49/month on Opus Clip to turn your videos into short-form content.\nYou spend $39/month on Pictory to generate AI videos from scripts.\nYou spend $47/month on InVideo AI to create faceless YouTube and TikTok videos.\n\nAnd every single one of them owns your content pipeline.\n\nSomeone built a tool that generates complete short-form videos from a single keyword. Script. Voiceover. Subtitles. Stock footage. Background music. All of it. Automatically. On your own machine.\n\nIt's called MoneyPrinterTurbo. 68,600+ stars on GitHub.\n\nYou type a topic. \"Why you should wake up at 5am.\" You hit generate. In minutes you have a fully produced 1080p short video. Narration. Captions. Footage. Music. Ready to post.\n\nHere's what it does:\n\n→ AI writes the entire video script from a keyword or topic. Chinese and English both supported.\n→ Generates multiple video versions in one batch. Pick the best one.\n→ Text-to-speech voiceover with real-time preview before you commit.\n→ Auto-generates subtitles. Customize font, position, color, size, and stroke.\n→ Pulls royalty-free HD stock footage automatically. Or use your own local clips.\n→ Adds background music. Random or hand-picked. Volume control built in.\n→ Vertical 9:16 at 1080x1920 for TikTok and Reels. Horizontal 16:9 at 1920x1080 for YouTube.\n→ Connects to OpenAI, DeepSeek, Google Gemini, Ollama, Azure, MiniMax, Moonshot, and more.\n→ Web UI and full REST API. Automate the entire pipeline.\n→ Runs locally via Docker or a one-click Windows package. No cloud dependency.\n→ Built with MoviePy. MVC architecture. Clean codebase. Fully forkable.\n\nHere's the wildest part:\n\nOpus Clip, Pictory, and InVideo are charging you $40-50 a month to run a pipeline on THEIR servers with THEIR rate limits and THEIR watermarks on the free tier.\n\nMoneyPrinterTurbo runs the entire stack on your hardware. Your LLM API key. Your footage. Your output. No platform deciding your monthly video quota. No watermarks. No seat limits.\n\nA 3-person content team on Pictory pays $468 a year. On InVideo AI, $564 a year. On Opus Clip, $588 a year.\n\nThat's $1,620 a year for three tools that do what one repo does for free.\n\nOpus Clip: $49/month. $588/year.\nPictory: $39/month. $468/year.\nInVideo AI: $47/month. $564/year.\n\nMoneyPrinterTurbo: $0. Unlimited videos. Unlimited topics. Your hardware. Your pipeline. Forever.\n\n68,600+ stars. 9,900+ forks. Active since March 2024.\n\nMIT licensed. Self-hosted. Free forever.\n\n100% Open Source.",
+    "likes": 29,
+    "retweets": 0,
+    "bookmarks": 50,
+    "views": 2555,
+    "date": "Fri May 29 13:35:34 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "You open Claude Code and say \"build me a landing page.\"\n\nIt builds you a landing page. White background. Inter font. Blue button. Card grid. Subtle shadow. The same landing page it built you last time. The same landing page it built everyone else last time.\n\nGeneric. Soulless. Slop.\n\nSomeone built a skill pack that gives your AI actual taste. Layout instincts. Typography judgment. Motion sense. Spacing that doesn't look like a Bootstrap template from 2019.\n\nIt's called Taste-Skill. 42,100+ stars on GitHub.\nThe Anti-Slop Frontend Framework for AI Agents.\n\nYou run one command. One line. The skill installs into your agent context. Now when you tell Cursor or Claude Code or Codex to build a UI, it builds something that doesn't look like every other AI-generated interface on the internet.\n\nHere's what it does:\n\n→ Portable Agent Skills that upgrade AI-built interfaces from the inside out.\n→ Stronger layout decisions.\n→ Typography with actual hierarchy.\n→ Motion and animation guidance.\n→ Spacing that breathes.\n→ Image-generation skills for reference boards.\n→ Pair with ChatGPT Images to generate reference frames, then hand them to Codex or Claude Code for implementation.\n→ Works with Cursor, Claude Code, Codex, and any agent that accepts skill context.\n→ Install the full pack or pull a single skill by name.\n\nHere's the wildest part:\n\nFramer charges $20/month to make things look good. Webflow charges $29/month. Design agencies charge $150/hour to tell your developer that the spacing is wrong and the font weight should be 500 not 400.\n\nYou're paying all of that because AI-generated UI looks like AI-generated UI.\n\nTaste-Skill is the fix you install in 10 seconds.\n\n100% Open Source.\n\nGithub repo:",
+    "likes": 31,
+    "retweets": 2,
+    "bookmarks": 40,
+    "views": 2539,
+    "date": "Fri Jun 12 15:10:12 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "Someone just built a way to supercharge Claude Code, Cursor, Codex, and OpenCode with Semantic Code Intelligence.\n\n94% fewer tool calls, 77% faster exploration, 100% local\n\nYou pay $20/month for Codex or Claude Pro. $20/month for Cursor Pro. Sometimes both.\n\nAnd every single time your AI agent touches your codebase, it reads files. Greps. Globs. Calls tool after tool after tool. Burning tokens on work it already did last session.\n\nSomeone built a pre-indexed knowledge graph that sits between your AI agent and your code. It answers in one call what used to take 40.\n\nIt's called CodeGraph. 8,459 stars on GitHub.\n\nYou run one command. CodeGraph indexes your entire project. Builds a symbol graph. Maps every function, every call, every relationship. Then when Claude Code or Cursor asks \"how does this system work,\" it queries the graph once and stops.\n\nHere's what it does:\n\n→ Pre-indexes your codebase into a knowledge graph of symbols, call graphs, and code structure.\n→ Drops into Claude Code, Cursor, Codex CLI, and OpenCode automatically. One installer configures all of them.\n→ 94% fewer tool calls on real codebases. VS Code's 4,002 files answered in 3 calls instead of 52.\n→ 77% faster exploration. What took 1m 37s now takes 17 seconds.\n→ Zero file reads during agent exploration. The graph has everything the agent needs.\n→ Works on TypeScript, Python, Rust, Java, Swift, and C++.\n→ Tested against VS Code, Excalidraw, Alamofire, and the Swift Compiler. Not toy repos.\n→ 100% local. The graph lives on your machine. Your code never leaves.\n→ One command to initialize any project: `codegraph init -i`\n→ Runs on Windows, macOS, and Linux. Node.js 18+.\n\nHere's the wildest part:\n\nWhen Claude Code explores a codebase without CodeGraph, it spawns Explore agents that scan files with grep and glob on every single question. Every session. Every time. You pay for those tokens. Again and again.\n\nThe Swift Compiler codebase has 25,874 files and 272,898 nodes. With CodeGraph, an agent answers a deep architecture question in 6 tool calls and 35 seconds. Without it: 37 calls and 2 minutes 8 seconds.\n\nThat is not a small optimization. That is a different category of tool.\n\nClaude Pro: $20/month. Cursor Pro: $20/month. Codex usage billed per token. Every redundant grep call costs you money.\n\nCodeGraph: $0. Unlimited projects. Unlimited queries. Your machine. Your graph. Forever.\n\n8,459 stars. 536 forks. MIT licensed. Built in TypeScript.\n\nMIT licensed. 100% local. Free forever.\n\n100% Open Source.",
+    "likes": 34,
+    "retweets": 3,
+    "bookmarks": 33,
+    "views": 2497,
+    "date": "Wed May 20 16:11:12 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "You wanted to build an app last week.\n\nYou Googled \"learn to code.\" You clicked the first result. You got a 40-hour curriculum about variables, loops, and data structures. You hadn't written a single line of useful code by hour three. You closed the tab and went back to your day job.\n\nSomeone built a coding course where you skip all of that. You describe what you want. The AI builds it. You ship it.\n\nIt's called easy-vibe. 14,077 stars on GitHub.\n\nYou open VS Code. You type what you want to build in plain English. An AI model writes the code. You learn by watching it happen, then tweaking, then prompting again. No computer science degree. No bootcamp. No $15,000 tuition.\n\nHere's what it does:\n\n→ Teaches vibe coding from zero. If you can describe something, you can build it.\n→ Works with GPT, Gemini, DeepSeek, and every major LLM. You pick the model.\n→ Covers AI agents and MCP workflows. Not just \"hello world\" scripts.\n→ Next.js project structure taught hands-on. Real apps, not toy examples.\n→ Low-code and no-code workflows built into the curriculum. Visual tools plus AI.\n→ VS Code as the core environment. Industry standard from day one.\n→ Interactive tutorial available directly in the browser. No setup required.\n→ Step-by-step learning map so you always know exactly where you are.\n→ Available in 10 languages. English, Chinese, Japanese, Spanish, French, Korean, Arabic, Vietnamese, German, and Traditional Chinese.\n→ Free to read online. Every lesson. Every chapter. No paywall.\n\nHere's the wildest part:\n\nCodecademy Pro costs $19.99/month. $239.88/year.\nCoursera's coding specializations run $49/month. $588/year.\nUdemy bootcamp bundles run $200-500 upfront.\nLambda School asks for 17% of your first year's salary.\n\nAnd every single one of those teaches you to code the old way. Syntax first. Projects later. Months before you ship anything real.\n\neasy-vibe flips it. You ship something on day one. You learn by building. The AI handles the syntax. You handle the idea.\n\n14,077 GitHub stars. 1,340 forks. Trending globally since launch in late 2025.\n\nCC BY-NC-SA 4.0 licensed. Free to read, share, and remix for non-commercial use. Community-driven. Built by Datawhale.\n\n100% Open Source.",
+    "likes": 37,
+    "retweets": 0,
+    "bookmarks": 19,
+    "views": 2448,
+    "date": "Sat May 23 14:44:59 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "THIS IS CRAZY!\n\nNever have I had a longform YouTube video get over 1K views within the first hour of upload.\n\nWhy do you think it’s pumping:\nA) topic\nB) thumbnail\nC) title\nD) all the above",
+    "likes": 35,
+    "retweets": 0,
+    "bookmarks": 9,
+    "views": 2390,
+    "date": "Wed Jun 03 18:24:11 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "I Tried Every Viral TikTok AI Hack So You Don't Have To:\n\n0:38 Gamma AI presentation test  \n2:00 ChatGPT image prompt test  \n4:11 Speechma AI voice test  \n5:43 NotebookLM test  \n7:56 Claude Code UI design hack  \n10:09 Lovable app builder test  \n14:20 Google Flow / VO3 video test  \n16:28 Graphify Claude Code token test  \n18:35 Manus app builder test  \n23:11 Google Opal test  \n24:37 Final ranking and takeaway",
+    "likes": 28,
+    "retweets": 2,
+    "bookmarks": 37,
+    "views": 2248,
+    "date": "Thu Jun 11 14:29:25 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "What is happening?\n\nBitcoin is going down, while the S&amp;P prints new all time highs 😲😲😲",
+    "likes": 28,
+    "retweets": 0,
+    "bookmarks": 0,
+    "views": 2246,
+    "date": "Wed Jun 03 08:28:44 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "WTF ITS ACTUALLY HERE!!!\n\nTime to play around with Opus 4.8",
+    "likes": 23,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 2205,
+    "date": "Thu May 28 20:03:18 +0000 2026"
+  },
+  {
+    "handle": "sharbel",
+    "text": "X is becoming less and less of a platform where longform videos thrive.\n\nFor comparison, 3 months ago, my longform videos would get over 1M views on X.\n\nToday, my 11K YouTube subscriber channel pulls 10x more views on the exact same videos than my 71K X followers account does on X.\n\nThis is less of a critique, and more of an observation.\n\nIf you are a video creator, spread your eggs onto many baskets. The return on investment for your time will be insanely higher.",
+    "likes": 35,
+    "retweets": 1,
+    "bookmarks": 4,
+    "views": 2140,
+    "date": "Fri May 22 07:53:59 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Using Hermes with these 10 upgrades is the first time I feel like I have an actual AI Assistant",
+    "likes": 168,
+    "retweets": 13,
+    "bookmarks": 158,
+    "views": 17724,
+    "date": "Thu Jun 04 14:31:42 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "This saved me WEEKS of research\n\nBefore you start building with Hermes:",
+    "likes": 115,
+    "retweets": 10,
+    "bookmarks": 110,
+    "views": 13932,
+    "date": "Sat Jun 06 16:39:20 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "5 months into 2026:\n\n- Got married to the love of my life\n- Moved to a new country\n- Multiple public speaking opportunities (very new and scary)\n- Started 2 new businesses (1 failed, 1 successful)\n- Multiple longterm deals (thank you partners!)\n- Sold my first company\n- Acquired a % of a web2 business\n- Bought my first car\n- Visited a new continent\n- Developing a new outlook on life\n- More energy & better mindset\n\nLife is so good.",
+    "likes": 218,
+    "retweets": 2,
+    "bookmarks": 9,
+    "views": 12655,
+    "date": "Sun May 31 10:40:50 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Money is just energy.\n\nThat's why cheap money feels expensive.\n\nBeen thinking a lot about this lately.",
+    "likes": 105,
+    "retweets": 0,
+    "bookmarks": 3,
+    "views": 10555,
+    "date": "Wed Jun 03 13:11:08 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "one thing crypto does better than almost any market is turn access into an actual trade.\n\nmost people only look at the token price.\n\ni usually look at the structure around it:\n\n- who gets in first?\n- what is the allocation mechanic?\n- is there a clear market reference?\n- are new users being given a real window or just leftovers?\n\nthat’s why the @MEXC 2nd phase of the SpaceX (PRE) caught my attention.\n\nphase 1 entered at $650 and later traded around ~$920.\n\nafter the 1:5 split, that same entry level becomes $130.\n\nphase 2 is opening at $130 on June 1st, while the current market reference is sitting around $180+.\n\nso the interesting part is not the “SpaceX” headline alone.\n\nit’s actually the gap between subscription access and where the market is already pricing the exposure.\n\npaid partnership but I will participate in this myself :)",
+    "likes": 52,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 10321,
+    "date": "Thu May 28 12:49:16 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Whop is paying out $40,000 a day to people who clip other people's videos.\n\nAlmost a million videos a month.\n\nThe machine:\n\n1. A brand funds a campaign. Polymarket, Eleven Labs (Justin Bieber's team)\n2. Anyone picks up the campaign, clips the content, posts it.\n3. Views get tracked. Clippers get paid per 1,000 views.\n4. CPMs run as low as 2 cents.\n\nOne musician spent $20k on clipping campaigns and got 50 MILLION views back. Crazy CPM.\n\nMost of the clippers are anonymous accounts farming volume.\n\nBrands stopped renting influencers and started buying raw distribution.\n\nPeople are printing millions with clipping.\n\nNew money.",
+    "likes": 102,
+    "retweets": 0,
+    "bookmarks": 17,
+    "views": 8021,
+    "date": "Fri Jun 12 08:46:08 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "\"you shouldn't let a robot do everything for you\"\n\nme when I do exactly that:",
+    "likes": 88,
+    "retweets": 0,
+    "bookmarks": 3,
+    "views": 7931,
+    "date": "Tue Jun 09 14:02:49 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "His name is 张伟 and in 5 years he will lead the The Resistance",
+    "likes": 73,
+    "retweets": 4,
+    "bookmarks": 13,
+    "views": 7929,
+    "date": "Fri Jun 05 14:20:16 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "This is really clean by @xBubble_ai \n\nI ask it about $AAVE like i would ask ChatGPT.\n\nInstead of a generic answer, it gives me a ticker-aware research report:\n\n- thesis\n- risks\n- catalysts\n- valuation context\n- sources.\n\n@dappOS_com just oneshot the research by just dropping a ticker.",
+    "likes": 69,
+    "retweets": 0,
+    "bookmarks": 4,
+    "views": 7763,
+    "date": "Wed Jun 10 10:25:54 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "The world cup is basically the one time everyone comes together.\n\nPeople pick a side first, then spend the next month finding arguments for it.\n\nForm, history, vibes, whatever makes the group chat more unbearable.\n\n@okx turned that into a simple game:\n\n- earn points\n- use them on match outcomes\n- climb the board\n- share the BTC pool (17 BTC total)\n\nLearn more ↓",
+    "likes": 65,
+    "retweets": 0,
+    "bookmarks": 4,
+    "views": 7486,
+    "date": "Wed Jun 10 07:44:57 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Truly gave my life to AI.\n\nAnd it shows.\n\nTop 8% token user. That's globally by the way.\n\nVery cool feature.",
+    "likes": 67,
+    "retweets": 1,
+    "bookmarks": 3,
+    "views": 7280,
+    "date": "Fri Jun 05 16:25:55 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "The Ultimate Hermes Beginner Setup :)\n\nUsed OpenClaw for 6 months.\n\nSwitched to Hermes.\n\nThis is the first time I feel like I have a real AI assistant.",
+    "likes": 120,
+    "retweets": 2,
+    "bookmarks": 45,
+    "views": 7225,
+    "date": "Sun May 24 19:02:41 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Voice AI keeps getting better.\n\nThe proof is here.\n\nYou can edit specific words while the rest of your recording stays as is. \n\nSomething I wish I had before.\n\nThis saves so much time (no re-recording over and over again)\n\nCan’t wait to add this to my AI stack.",
+    "likes": 51,
+    "retweets": 0,
+    "bookmarks": 4,
+    "views": 6964,
+    "date": "Thu Jun 11 14:54:12 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Most AI tools ask you to prompt harder.\n\nGuide Labs’ Clarity lets you:\n\n- See the concepts driving a response\n- Trace them back to data\n- Then turn those concepts up or down directly\n\nLess prompt gymnastics, more actual steering.",
+    "likes": 92,
+    "retweets": 0,
+    "bookmarks": 6,
+    "views": 6847,
+    "date": "Thu Jun 04 15:58:48 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "last 6 months I’ve been gigafocused on health.\n\n- gym 4x/week\n- daily walks\n- stairs only\n- animal based + whole foods\n- zero alcohol\n- more social events\n\nbody feels amazing.\nmind feels amazing.\nenergy is completely different.\n\nit also changed how i think about money.\n\nmost people treat health like a personal thing and money like a financial thing.\n\ni think they’re way more connected.\n\na tired body makes impatient decisions.\n\na foggy brain chases dopamine.\n\nlow energy makes every opportunity feel heavier than it is.\n\nclear head = better taste.\nbetter taste = better decisions.\nbetter decisions = better money.\n\nthis is the true \"health is wealth\"",
+    "likes": 122,
+    "retweets": 3,
+    "bookmarks": 18,
+    "views": 6356,
+    "date": "Wed Jun 10 09:04:18 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Everything keeps moving onchain.\n\nMoney, collateral, rewards, identity, reputation, markets.\n\nThe line between “crypto trading app” and “everything trading app” gets thinner every cycle.\n\n@okx Equity Perps fit that direction pretty well:\n\n- Same account\n- Same wallet\n- Same leverage tooling\n- 24/7 perps on global equity tickers\n\nI can trade NVDA for the AI/chip cycle.\n\nI can trade SPY for broad US equity exposure.\n\nI can trade AMD if I want more semi exposure.\n\nI like the idea of more markets becoming internet-native instead of sitting in separate apps.\n\nUse my ref link to get started: 🫴",
+    "likes": 86,
+    "retweets": 1,
+    "bookmarks": 5,
+    "views": 6266,
+    "date": "Mon Jun 01 11:32:00 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Bookmarks remain the MAIN way to identify quality content.\n\nCreate quality content that:\n\n- Helps people\n- Entertains people\n- Educates people",
+    "likes": 73,
+    "retweets": 0,
+    "bookmarks": 10,
+    "views": 5870,
+    "date": "Thu Jun 04 10:20:09 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Somewhere in here there is a guy on a yacht who changed his entire bloodline.\n\nGive him 10 minutes and he is probably looking at the boat next to him thinking he is behind.\n\nLesson in that.",
+    "likes": 111,
+    "retweets": 1,
+    "bookmarks": 2,
+    "views": 5094,
+    "date": "Mon Jun 08 08:38:02 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "My 𝕏 Monetisation Revenue Sharing got suspended a few months ago.\n\nI appealed 5x.\n\nNow it shows me I have to reach 5M impressions again.\n\nBrb see you in a couple weeks.",
+    "likes": 130,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 5077,
+    "date": "Thu May 28 18:57:32 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "an honest note to small creators:\n\nseeing creators take $25 for a post makes me want to take the internet away from them for 48 hours.\n\nnot even in a mean way.\n\njust a small parental control timeout.\n\nbecause the $25 is much more expensive than they might realise.\n\nsure, $25 buys dinner.\n\nmaybe, depending where you're from.\n\nwhat it also buys is a permanent little note in someone's head that says:\n\n> this person will post anything\n> this person has no filter\n> this person is cheap inventory\n> this person can be bundled into a spreadsheet next to 300 other accounts\n\nand once you are in that bucket, good luck escaping it.\n\ni've been here. i know it's hard. especially in a bear market.\n\nyou feel like everyone else is printing and you're behind somehow. it's just fake news. no one has actual good dealflow (except the top 1%).\n\nlots of my friends, myself included, will tell you that dealflow is super dry right now. I still get offers almost daily but the rates and conditions are ludicrous.\n\nthis is EXACTLY the time to start saying no to deals.\n\nCT pretends every deal is about followers, engagement, impressions, niche, whatever.\n\nobviously those matter.\n\nbut a lot of dealflow is actually based on:\n\n- \"who has taste?\"\n- \"who do we trust?\"\n- \"who would not nuke their own audience for lunch money?\"\n- \"who can we put in front of something important without getting embarrassed?\"\n\nthat is the part small creators keep underpricing.\n\nthey think they are selling one post.\n\nbut they're actually selling their reputation.\n\nand before you think nobody notices.\n\ntrust me when i say:\n\nKOL managers DO notice. it's literally their job.\n\nthe timeline might forget the random promo in 12 hours.\n\nthe people who route opportunities do not.\n\nand the funniest part is the cheap post usually does not even work.\n\nexcept now the creator has trained the audience that attention is in fact...very cheap.\n\nyea bro, amazing business model:\n\n1. sell trust for $25\n2. confuse it for income\n3. wonder why the $2k-$10k opportunities go to someone else later\n\nthis is why personal brand is not just \"posting a lot\".\n\nit is having some visible standard over time.\n\nsay no more than you say yes.\n\ncheap posts can feel like free money when you are small.\n\ni get it.\n\neveryone has rent, food, subscriptions, stupid little life bills, all of it.\n\nbut if the goal is long-term access, better intros, better campaigns, better rooms, better projects, better dealflow...\n\nyou are asking the wrong question with \"how do i monetise every tiny piece of attention today?\"\n\nwhat you should care about instead:\n\nhow do i make people trust my taste before they ever meet me?\n\n$25 posts do the opposite.\n\nthey do not create dealflow.\n\nthey rob you of future opportunities.",
+    "likes": 69,
+    "retweets": 0,
+    "bookmarks": 4,
+    "views": 4913,
+    "date": "Fri May 29 09:00:00 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "The @NFCsummit has ended.\n\nMet some absolute legends this week in Lisbon.\n\nPeople I’ve interacted with on the timeline for YEARS. \n\nGood to finally put faces to so many names.\n\nMarket is down but the vibes are up huge.\n\nFeeling grateful ♥️",
+    "likes": 103,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 4416,
+    "date": "Sun Jun 07 11:44:55 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "neobank narrative is starting to make sense to me.\n\nbut not in the way your favourite CT KOL is preaching.\n\nwhat's actually useful:\n\n> deposits\n> cards\n> lending\n> brokerage\n> crypto rails\n> stablecoin settlement\n> one consumer relationship\n\nthat stack gets more interesting when stablecoins stop being a crypto-only product and start showing up inside actual banking apps.\n\nI'm stacking an irresponsible amount of $SOFI\n\nSoFi just pushed SoFiUSD onto its platform.\n\nthe headline people are running with is basically \"the first banking stablecoin from a US national bank.\"\n\ncould be early.\n\ncould also take longer than CT wants.\n\nbut i like the direction:\n\nbanks becoming more crypto-native\nfintechs becoming more bank-native\n\nstablecoins sit in the middle of the narrative.",
+    "likes": 67,
+    "retweets": 0,
+    "bookmarks": 1,
+    "views": 4378,
+    "date": "Tue Jun 02 15:49:00 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "This guy is getting $14 for two minutes of drumming in a silly costume.\n\nWhich is:\n\n$7 per minute \n$420 per hour \n$10,080 per day \n$70,560 per week\n$305,760 per month\n$3,669,120 per year \n\nWhat’s your excuse?",
+    "likes": 62,
+    "retweets": 1,
+    "bookmarks": 0,
+    "views": 4281,
+    "date": "Tue May 26 15:48:35 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "MCP is useful but the REAL leverage comes when teams can package agent workflows into repeatable skills.\n\nA good agent skill is not just a prompt. \n\nIt has multiple components:\n\n- context\n- tools\n- instructions\n- adeployment pattern\n\nThe frontier is not only better models.\n\nIt is making agent behavior deployable, consistent & ACTUALLY usable by people.",
+    "likes": 47,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 4165,
+    "date": "Thu Jun 11 13:13:01 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "This story about the South Korean Garlic Farmer is one of the strangest AI stories I’ve seen in 2026.\n\nThey used AI to build a lie detector.\n\nNo laptop.\nNo coding background.\nNo clean developer setup.\n\nJust a whole lot of Korean instructions and a lot of copy-paste between Claude and ChatGPT.\n\nImagine this:  A farmer with a phone. A tiny terminal screen. Several error messages going back and forth. One of the models writes something, the other runs it.\n\nBut she didn’t build a normal app.\n\nShe built a tiny programming language that checks if AI is lying.\n\nThe setup is ridiculous:\n\n• Claude writes the language\n• ChatGPT runs the files\n• Terminal on the phone\n• The farmer copies errors back and forth\n\nIf something breaks, she sends the error back to Claude.\n\nIf Claude needs proof, she sends the ChatGPT result back.\n\nShe is basically the API between two AIs.\n\nThe language is called GarlicLang.\n\nIt has one command that makes the whole story worth reading:\n\n↠ on hallucination\n↠ print \"AI lied.\"\n\nWe've all been there... the AI says it finished the job.\n\nBut the output feels off.\n\nGarlicLang doublechecks the output.\n\nIf the output is wrong, it calls bvllshit and says \"AI LIED\".\n\nBuilt by a garlic farmer on an Android phone.",
+    "likes": 83,
+    "retweets": 0,
+    "bookmarks": 4,
+    "views": 4011,
+    "date": "Sat Jun 06 10:33:44 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "the payment loop is finally getting removed from humans.\n\nright now most agents still depend on someone’s card, API key, server bill, wallet, or manual top-up.\n\nthey can make decisions, but they can’t really survive economically by themselves.\n\nthis is the next primitive:\n\n> agent gets wallet\n> agent earns / receives rewards\n> agent pays for compute + actions\n> agent keeps operating without asking a founder for permission\n\nonce agents can pay their own bills, they stop looking like bots and start looking like tiny onchain businesses.\n\nthat is where the market gets fun.",
+    "likes": 58,
+    "retweets": 1,
+    "bookmarks": 4,
+    "views": 3947,
+    "date": "Tue May 26 10:43:37 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "This AI story starts with a stack of postcards.\n\nPriscilla Tina is a 28-year-old product manager in San Francisco.\n\nBy day: she works in tech.\nAt night: she makes little creative side projects because she missed analog things.\n\nLast November, she sat down with Claude Code and built Postcard Press in 4 hours.\n\nThe idea is simple:\n\n1. Upload a photo\n2. Type a message\n3. Pay ~$2\n4. Postgrid prints and mails the card\n5. No stamps, no post office, no walking around looking for a mailbox\n\nThe best part is how small the business is.\n\n100+ postcards sent since launch.\n\nPostgrid costs $0.82.\nStripe takes $0.30.\n\nThis is not some fake unicorn arc.\n\nIt is someone using Claude to turn a tiny personal annoyance into a working physical object that shows up in somebody's mailbox.\n\nAbsolutely love these personal stories.",
+    "likes": 62,
+    "retweets": 0,
+    "bookmarks": 3,
+    "views": 3835,
+    "date": "Sun Jun 07 09:38:45 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "i’ve been making money online since I was a kid.\n\nfirst it was RuneScape items.\n\nthen random reselling.\nthen ecom.\nthen poker.\nthen trading.\nthen NFTs.\nthen crypto.\nthen content. \nnow AI.\n\nfrom the outside it probably looks like I keep jumping between things. (\"huuuuh you need a niche wtf\")\n\nto me it has always been the same game:\n\nfind a corner of the internet where attention, information or timing is misspriced.\n\nlearn the rules faster than most people.\n\nthen monetise it.\n\nthat is the part I have always been obsessed with.\n\nnot \"business\" in the polished LinkedIn sense.\n\nmore like sitting at your laptop at crazy hours trying to understand why some random person is making money from a Discord, a Shopify store, a poker table, a Twitter account, an airdrop, a newsletter, or now an AI workflow.\n\ni believe everyone should (and can) experience making their first dollar online.\n\nit probably won’t make you rich right away.\n\nbut it will change how you see the world.\n\nsuddenly the internet stops being a place you consume.\n\nit becomes a place where you can build tiny machines.\n\nsome fail.\nsome make $40.\nsome accidentally open doors for years.\n\nbut once you see it, you can’t really unsee it.\n\ninternet money. brrr.",
+    "likes": 72,
+    "retweets": 0,
+    "bookmarks": 5,
+    "views": 3613,
+    "date": "Thu Jun 11 10:34:52 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "The expensive part of AI apps is usually invisible: the routing.\n\nA lot of teams run production AI because the first model choice just becomes permanent infrastructure.\n\nMerge Gateway fixes the boring-but-expensive layer:\n\nSet the rules, define what good means & route each request to the model that actually makes sense.",
+    "likes": 64,
+    "retweets": 1,
+    "bookmarks": 2,
+    "views": 3613,
+    "date": "Tue May 26 14:27:25 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Getting a job is actually not bad advice.",
+    "likes": 77,
+    "retweets": 1,
+    "bookmarks": 0,
+    "views": 3168,
+    "date": "Wed May 27 09:46:43 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "June 13th.\n\n10 new deals signed this month.\n\nAlmost one per day. All of them quality projects.\n\nMeanwhile, timeline feels dead because the easy dopamine is gone.\n\nBut if you kept your reputation clean there's still dealflow out there for you.\n\nRemember this when you decide to post for $25 for a random undoxxed founder's project.\n\nMonetise too early and you won't be able to monetise at all later.\n\nI see it in many friends of mine that accepted lower rates. Once you do, it's incredibly hard to move up.\n\nAnchor your worth.",
+    "likes": 68,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 3143,
+    "date": "Sat Jun 13 09:37:14 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "I LOVE THESE PERSONAL AI STORIES.\n\nThis AI story starts at 4 a.m.\n\nWhitney Stefko Dover is a Ford legal ops exec with two young sons.\n\nShe also has a husband, an au pair, school schedules, camp drop-offs, birthday parties, travel plans, and the usual invisible family admin pile.\n\nSo she built a “chief of staff” for her house.\n\nIts name is Claudette.\n\nEvery morning, it sends the Daily Dover.\n\nThe briefing scans email and calendar, then turns the chaos into a family ops note:\n\n> who is doing drop-off\n> when the au pair takes over\n> which birthdays matter\n> which boxes need recycling\n> what texts should be sent\n> what is coming next\n\nShe built it with Claude Pro, Claude Code, and Claude Cowork.\n\nThe funny part is that Claudette had to be trained like a real assistant.\n\nEarly versions were way too detailed.\n\nOne draft told her husband when the kids should brush their teeth.\n\nEventually Claudette sounded like part assistant, part family operations manager, part slightly unhinged roommate.\n\nOne message reminded her husband about his mother’s birthday, the recycling, and the cardboard boxes from new furniture.\n\nThen Claudette added:\n\n“Your wife really has a shopping problem.”\n\nShe kept the line in.",
+    "likes": 59,
+    "retweets": 0,
+    "bookmarks": 3,
+    "views": 3007,
+    "date": "Mon Jun 08 18:17:46 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Will be sharing a lot of alpha here.\n\n⚡️ How I build content systems for creators that run while they sleep \n\nImagine having an agent research for you. Draft your posts. Find out what's viral and trending.\n\nThis is exactly what I build for my clients.\n\nDon't miss this one.",
+    "likes": 74,
+    "retweets": 2,
+    "bookmarks": 6,
+    "views": 2908,
+    "date": "Sun May 24 09:55:22 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "I'm an AI optimist.\n\nThere is already enough wealth in the world for everyone to live comfortably.\n\nAI can actualise this. If it takes all the jobs, humans can focus on other things.\n\nUniversal Basic Income probably becomes inevitable if the tech works out  in this way however.\n\nThen, the hard question becomes philosophical:\n\nWhat do people do with 60 extra hours a week when work was where they got their status, routine and sense of self?\n\nGenuinely think this will be the real issue to solve in 5-10 years.",
+    "likes": 70,
+    "retweets": 0,
+    "bookmarks": 7,
+    "views": 2703,
+    "date": "Sun May 24 14:35:09 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "📂 AI projects & tools worth learning\n┃\n┣ 📂 Models / labs\n┃ ┣ 📂 @OpenAI\n┃ ┣ 📂 @AnthropicAI\n┃ ┣ 📂 @xai\n┃ ┣ 📂 @GoogleDeepMind\n┃ ┗ 📂 @MistralAI\n┃\n┣ 📂 Coding / app builders\n┃ ┣ 📂 @cursor_ai\n┃ ┣ 📂 @Replit\n┃ ┗ 📂 @Lovable\n┃\n┣ 📂 Search / research\n┃ ┗ 📂 @perplexity_ai\n┃\n┣ 📂 Open-source / AI infra\n┃ ┣ 📂 @huggingface\n┃ ┗ 📂 @replicate\n┃\n┗ 📂 Voice / audio AI\n     ┣ 📂 @WisprFlow\n     ┣ 📂 @superwhisper\n     ┣ 📂 @ElevenLabs\n     ┣ 📂 @DeepgramAI\n     ┗ 📂 @AssemblyAI",
+    "likes": 76,
+    "retweets": 1,
+    "bookmarks": 30,
+    "views": 2545,
+    "date": "Wed May 27 09:26:52 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Most people have no idea what MCP is, so here’s the simple version:\n\nHermes is the agent.\n\nMCP is the plug-and-play system.\n\nIf Hermes wants to do real work, it needs access to tools:\n\n> Files\n> Browsers\n> Apps\n> Databases\n> Search\n> Calendars\n> Anything else a workflow needs\n\nBefore MCP, every new tool is like custom wiring with: different setup, different docs, different auth, different little failure mode.\n\nMCP gives agents a shared way to connect to tools.\n\nThe new Hermes catalog makes that even cleaner.\n\nInstead of you hunting for the right connector and wiring it by hand, Hermes can browse a catalog of compatible tool connections and pick the one the job needs.\n\nNon-technical way to think about it:\n\n> Hermes = the worker\n> MCP = the adapter\n> Catalog = the tool shelf\n\nThis matters because agents only become useful when they can leave the chat box and influencer & upgrade the actual workflow.\n\nMASSIVE upgrade.",
+    "likes": 49,
+    "retweets": 1,
+    "bookmarks": 3,
+    "views": 2445,
+    "date": "Wed May 27 20:01:18 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Grok just gave away how to get more from 𝕏 payouts.\n\nIt is not only \"post more\".\n\nThe money follows premium impressions.\n\nAnd premium impressions follow quality signals.\n\nSo the real game is not raw follower count (which is why some 100k+ accounts get nothing).\n\nThe main thing is getting the right people to reply, save, quote, and keep the post alive long enough for the feed to route it into higher-value attention.\n\nThat is why small accounts can still make weirdly good money here.\n\nA useful post with REAL replies can beat a large account posting into dead air.",
+    "likes": 59,
+    "retweets": 0,
+    "bookmarks": 4,
+    "views": 2211,
+    "date": "Mon May 25 11:53:08 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "your favourite creator talks about a \"personal brand\"\n\nyour favourite creator talks about \"thinking longterm\"\n\nyour favourite creator has a different affiliate badge every 14 days",
+    "likes": 70,
+    "retweets": 0,
+    "bookmarks": 0,
+    "views": 2128,
+    "date": "Sun May 24 13:58:02 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "I've been in crypto long enough to know this is the absolute top for $NVDA \n\nGenerational short.",
+    "likes": 72,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 2076,
+    "date": "Mon Jun 01 10:34:14 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "posting more on @CoinMarketCap these days\n\nsharing theses + ideas\n\ndrop a follow: http s:// coinma rketcap. com/community/profile/zaimiri/",
+    "likes": 43,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 2014,
+    "date": "Sun May 24 18:04:04 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Everything in life is just energy. \n\nSooner you realise, the more successful you will become.",
+    "likes": 73,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 1879,
+    "date": "Sat May 30 09:47:45 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "So proud of this legend.\n\nHad a vision and simply decided it was time to make it a reality. \n\nShows that hard work + commitment + just being a good human gets you places. \n\nCreate your vision and work to achieve it.",
+    "likes": 61,
+    "retweets": 2,
+    "bookmarks": 0,
+    "views": 1841,
+    "date": "Sat May 30 09:59:40 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Alt season\n\nbut it's just space stocks &amp; semiconductors",
+    "likes": 50,
+    "retweets": 0,
+    "bookmarks": 2,
+    "views": 1269,
+    "date": "Fri May 29 06:06:42 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Someone on Reddit built a local newsletter to its first $100 in a month.\n\nTiny number.\n\nUseful money machine.\n\n- 120 subscribers.\n- $25 weekly banner ads.\n- $20/week local business spotlight.\n- 43% open rate.\n\nThe product is just curated local news.\n\nThe workflow used to be 20 tabs, copy-pasted links, downloaded images and formatting hell.\n\nSo he built a small tool that pulls the local sources, lets him pick the stories, then formats the issue.\n\nTakes him 4 minutes per newsletter now.\n\nThen, he sells ads to local businesses.\n\nLocal shops seem more interested in the “small business spotlight” than a normal banner ad.\n\nMakes sense.\n\nA spotlight feels like trust & a banner feels like rented attention.\n\nThis is the kind of first $100 online story people skip because it sounds too small.\n\nBut small is where the mechanism is easiest to see.",
+    "likes": 44,
+    "retweets": 0,
+    "bookmarks": 3,
+    "views": 1247,
+    "date": "Sat Jun 13 17:32:17 +0000 2026"
+  },
+  {
+    "handle": "zaimiri",
+    "text": "Massive week for HermeS:\n\n- Less tab-hopping\n- Less copy/pasting\n- Less rebuilding context every 12 minutes.\n\nOne man now has the productivity of 9 a year ago.",
+    "likes": 59,
+    "retweets": 0,
+    "bookmarks": 5,
+    "views": 1232,
+    "date": "Mon Jun 01 07:29:48 +0000 2026"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "staring at a blank page hoping for inspiration was a pain for me\n\nso i built an idea scout agent that watches top creators in my niche on YT, X and IG\n\npairs that with 500+ proven viral tweet structures to draft ideas for me\n\ni never have to worry about ideas again\n\nhow it works?\n\nthis is actually built on two workflows\n\n@pawnie_'s viral library he shared few months back\n\nbefore that i used to bookmark threads and tweets,  tbh none of it turned into actual content, they just sat there - his idea gave me structure\n\ncombining his idea with\n\nDan Koe content recycling system\n\nwhich is AI shouldn't write for you\n\nit should scout what top creators are doing in your niche and deconstruct why it works, and draft ideas for you to write on\n\nso i combined both into one autonomous pipeline\n\nevery day the workflow:\n\n→ monitors top creators in my niche across YT, IG and x\n→ filters and keeps only high relevance content\n→ pairs those scouted ideas with 500+ proven viral tweet formats, structures and hooks from my library\n→ drafts fresh ideas using the best match\n\neach drafted tweet idea comes with:\n\n→ a hook angle\n→ the tweet structure\n→ why it works\n→ the viral format it was paired with\n\nyou just open your ideas bank, pick an idea you vibe with and WRITE\n\nif you want me to break down exactly how i built this step by step?\n\nhow you can set this up yourself?\n\nsend me a DM and i'll share the full build breakdown and the tools i used.",
+    "likes": 16,
+    "retweets": 0,
+    "bookmarks": 4,
+    "views": 473,
+    "date": "Tue Jun 02 14:34:58 +0000 2026"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "Creativity is the MOAT\n\nhaving a creative mindset is your biggest advantage in this era of AI\n\nwhere majority of people will allocate even the smallest task of thought to AI\n\npeople hardly think anymore tbh\n\nit's one thing knowing to use AI but also another having thought process",
+    "likes": 8,
+    "retweets": 0,
+    "bookmarks": 1,
+    "views": 232,
+    "date": "Sat Jun 06 15:46:01 +0000 2026"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "[1/7] I watched @LeonAbboud audit X profiles live for 1hr so you don't have to\n\nHe roasted founders, creators, and marketers and most of them failed the test\n\nIf you want your profile to attract the audience you want rather than repel them\n\nHere are the 7 Golden Rules 👇 https://t.co/zyVHPIBw5h\n\n[2/7] 1️⃣ Don't be the hero, Be the guide instead\n\nStop making your bio about how great YOU are.\n\n• Bad: \"Award-winning strategist.\" (Hero)\n• Good: \"Helping founders scale to $1M.\" (The customer is the hero, you are the guide)\n\nYour bio should paint the customer's transformation, not your accolades\n\n[3/7] 2️⃣ Be Clear\n\nDon't be a \"Storytelling Alchemist\" (Huh)\n\nTruth is fancy titles confuse people\n\nIf a stranger can't understand how you make them money in 3 seconds, etc...you lose.\n\n• Instead of: \"Growth Ninja\"\n• Use: \"I help X achieve Y using Z.\"\n\nClarity &gt; Cleverness https://t.co/JKBZqsykAg\n\n[4/7] 3️⃣ The Volume Rule\n\nThe X Algorithm Punishes Vacations \n\nLeon noted that even great profiles fail if they post for 2 days and vanish for 5.\n\nHe shared his own stats: When he went from posting 3x a day to 10x a day \n\nHis growth didn't just increase, it doubled.\n\nVolume creates luck\n\n[5/7] 4️⃣ Show confidence\n\nDuring the audit\n\none profile said: \"Just building and creating.\"\n\nThis is nonchalant and weak. It sounds like you're \"just hanging around.\" - Leon\n\nBe assertive. if you are building the future/something or you are solving expensive problems\n\nSpeak like it. https://t.co/PHOM30Ib0d\n\n[6/7] 5️⃣ Kill the Linktree (Controversial take)\n\nLeon was ruthless about this. Linktrees cause \"decision paralysis.\"\n\nIf you give a lead 10 options, they click none.\n\nHe cited an experiment by Alex Hormozi\n\nSwitching from Linktree to a SINGLE direct link (e.g., a landing page or booking link) increased conversion by 25%.\n\n[7/7] Key Takeaway\n\nI'm applying these fixes to my profile today 😩\n\nWhich of these \"Red Flags\" are you guilty of? \n\nI was definitely guilty of 3 😅\n\nFeel free to drop your thoughts and follow for more breakdowns like this",
+    "likes": 40,
+    "retweets": 1,
+    "bookmarks": 10,
+    "views": 1141,
+    "date": "Fri Dec 05 10:40:32 +0000 2025"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "[1/12] Mr Beast makes over $700M annually\n\nKhaby lame makes approx $750k per TikTok post\n\nWale makes X amount weekly on 𝕏 \n\nThese guys all have one thing in common \n\nThey are HUGE CREATORS and MONETIZED\n\nWhich brings the question \n\nHow can you monetize your content in Web3 🧵\n\n1/10\n\n[2/12] Disclaimer\nThis post is created in collaboration with persona and bonsai \n\nAlso\n\nI'll be sharing a video along the thread on how to get started on this \n\nSo make sure you stick around till the end\n\nIf you can't...feel free to leave a bookmark for later 👇\n\n2/10\n\n[3/12] Let's face it \n\nBuilding an audience is HARD\n\nEspecially for small and budding web3 creators coming up\n\nWhat's even HARDER is\n\nMaking a living out of it...MONETIZATION \n\nI've experienced this first hand as a creator\n\nSo is it hopeless for smaller creators?...Well noo 👇\n\n3/10\n\n[4/12] Of course \n\nThere are mediums by which creators could earn from doing what they love\n\nCREATING CONTENT \n\nFrom \n→ YouTube ad revenue \n→ X Ad revenue \n→ TikTok Creator fund, etc \n\nBut the cons of this is \n\nThe barrier to entry on this can be quite high 👇\n\n4/10\n\n[5/12] Being you'd have to meet certain required milestones to get in \n\nWhich could be frustrating and time intensive \n\nDuring the weekend\n\nI did some digging and research on platforms that solves this \n\nAnd helps web3 creators monetize their content while building an audience 👇\n\n5/10 https://t.co/RFABkgrs1q\n\n[6/12] Being on this I came across Bonsai\n\n@bonsaitoken404 is a social token (not a meme) 👀\n\nDeployed on the Lens Protocol, ZkSync, and now going live on Base\n\nThink of it as the currency you earn as a creator from creating content \n\nThe question is...how do you earn BONSAI 👇\n\n6/10\n\n[7/12] SIMPLE\n\nAs the primary currency for web3 social media platform @orb_club\n\nYou can earn bonsai by creating content and making it a collectible on @orb_club\n\nThis could be anything from memes, arts, video, etc\n\nOnce you've turned your content into a collectible \n\nOthers can.\n\n7/10\n\n[8/12] collect your work, and you get rewarded in $BONSAI! \n\nBut\n\nDon’t just take my word for it. \n\nHere's my experience (Video) 👇\n\nI’ve been using it for a few days now\n\nMinted my first piece of art, and earned $BONSAI in the process\n\n8/10\n\n[9/12] One thing I love about orb is how smooth and aesthetically pleasing the app UI feels\n\nTake it from someone who's tried several web3 social media platforms\n\nThis really takes the cake 👇\n\n9/10 https://t.co/8nHBMAt8OK\n\n[10/12] That's a wrap ✍️ \n\nI'm really happy seeing platforms like orb alongside bonsai \n\nGiving creators despite their size the ability to not only grow an audience but as well earn while doing so\n\nFeel free to check out orb\n\nI would love to know what y'all would be creating\n\n10/10 https://t.co/vSANmM7qRm\n\n[11/12] @CAPTA1NSCARLET Thank you so much captain \n\nHonestly, that means alot coming from you\n\nI actually feel I could have done better on this \n\nStill I appreciate the kind words and support man\n\n[12/12] @Icon_The_Great Thank you icon \n\nI'm glad you enjoyed the read",
+    "likes": 48,
+    "retweets": 1,
+    "bookmarks": 9,
+    "views": 1578,
+    "date": "Wed Oct 09 10:29:15 +0000 2024"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "[1/7] Kaito gave approximately $29.9M to creators last week\n\nWith about 85% of creators qualifying for the airdrop\n\nAs for the remaining 15% who missed out\n\nHere’s how you can position for next big opportunity 👇 https://t.co/icYA6ZnU25\n\n[2/7] if you've stuck around in the space for a while now\n\nI'm pretty sure you must have come across or even interacted with a popular tool called Hub\n\nEither through very well-known web3 brands or influencers and\n\nIf you haven't well...👇 https://t.co/A6afsVIXJt\n\n[3/7] Hub is positioned to be Web3’s largest link-in-bio tool\n\nWith the goal of helping creators and brands connect with their audiences with ease\n\nHub has become a popular name among brands like Aethir, Pixelmon, Pirate Nation, etc\n\nBut it doesn't end there\n\nAs this is where the real opportunity begins 👇\n\n[4/7] Hub recently introduced AI Social Layer, being one of web3's first as well as its AI agent\n\nAt the heart of this development\n\nThe agent stands as an AI-powered platform designed to match brands with creators while rewarding engagement\n\nThis is what's in it for you 👇 https://t.co/QsOVOUuBV0\n\n[5/7] For creators\n\n➠ New revenue streams via AI-powered brand deals\n➠ No follower count barriers, as influence matters more than numbers\n➠ Airdrops based on real contributions from partners\n\nAnd it gets better, similar to kaito yaps\n\nCreators can earn IQ points, which will converted to $HUBS token at TGE but this time, it’s not just about engagement\n\nAs Hub AI rewards intelligence, here’s how it works 👇\n\n[6/7] ➡️ How to stay Positioned\n\n➠ Sign up with your X here https://t.co/3F6FyNIDe4\n➠ Enter this invite code \"46R6\"\n\n➡️ How to earn IQ points\n\nYou earn points by replying to tweets from Hub AI Agent, the smarter your replies, the more points you earn and rank higher on the leaderboard\n\n[7/7] That's a wrap ✍🏻\n\nLet me know if you found this valuable\n\nif you did, feel free to leave a like and drop your thoughts\n\nFor now, cheers",
+    "likes": 191,
+    "retweets": 5,
+    "bookmarks": 18,
+    "views": 31049,
+    "date": "Mon Feb 24 12:44:03 +0000 2025"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "[1/16] This is Star Platinum.\n\nHe’s mastered the art of writing viral threads, with views hitting 1M+.\n\nLast week, alongside Flow and Eyden, they revealed exactly how to\n\n➠ Write content that goes viral and\n➠ Standout as a brand/creator\n\nHere’s everything you need to know 👇 https://t.co/HFPIAVXsOu\n\n[2/16] @starplatinum_ @NFTFlow_ @Eyden_eth Last week I was privileged to be among the audience in a space held by the legendary @maximusss\n\nAnd OG speakers from @starplatinum_, @Eyden_eth and @NFTFlow_\n\nThey brought light on how to better yourself as a creator from 👇\n\nhttps://t.co/L42f9ApPeO https://t.co/GyK9uV3qCr\n\n[3/16] ➡️ Writing Viral Content - Star platinum\n\nStar explained that going viral often depends on three key factors\n\n*️⃣ Narrative and Current Trend\n\nNarratives means picking hot, trending topics that everyone’s talking about and\n\nTelling stories that resonate and spark emotions from humor, nostalgia, etc with such ongoing trends from 👇\n\n[4/16] Star has absolutely crushed this, if you take a close look at some of his best pieces from\n\n➠ Hailey Welch \"Hawk Tueh\" token saga\n➠ Pumpfun stream madness\n➠ Kid who rugged his own token (Quant)\n\nStar capitalized on those ongoing narrative by telling stories alongside providing value and entertainment\n\nBut this wouldn't be really possible without paying attention to 👇\n\n[5/16] *️⃣ Timing\n\nHow quickly you respond to trends plays a huge role in writing viral pieces,\n\nBecause being in a fast paced industry like web3\n\nAttention changes very quickly\n\nThe faster you are at getting ongoing narrative driven pieces out the more attention your thread gets\n\nAs important as these two factors are you can't undermine 👇\n\n[6/16] *️⃣ Quality and Research\n\nYour content and what you are writing about will be just as good as the effort you put into it\n\nMaking it either valuable or interesting\n\nCapitalizing only on narratives while disregarding the quality of info you put out there won't do\n\n➠ Do the research\n➠ Make it read worthy\n➠ Have an attention grabbing hook (Very Important) - That drives curiousity or addressing a problem\n\n[7/16] ➡️ Standing out as a Brand - Eyden\n\nEyden is one creator known in this space for his impressive branding\n\nOn space he shared what it really takes to stand out from 👇 https://t.co/aHwO3XuX38\n\n[8/16] *️⃣ Authenticity\n\nBeing authentic as a creator is one crucial trait a creator should possess\n\nEyden emphasized how audiences/people can tell when you’re genuine\n\nBecause they gravitate toward creators who are real and employed\n\nSharing your personal stories, values, and lessons learned\n\nAs this will connect with your audience on a personal level\n\n[9/16] *️⃣ Visual Identity\n\n\"Your visuals are your signature when it comes standing out\" - Eyden\n\nEven simple, consistent branding like unique banners, thread covers, or your own custom design can set you apart\n\nYou don't necessarily have to break the bank with design, you could start small\n\nAs you grow, scale your visuals to something even more polished 👇\n\n[10/16] *️⃣ Community Engagement\n\nLastly he also pointed out something many creators tend to miss\n\n➠ The comment section\n\nSometimes creators are often too focused on posting content but your comments are where relationships are built\n\nReply, engage, start conversations with audience and also other creators this is where trust is earned and connections are made\n\n[11/16] ➡️ Content Strategy - Flow\n\nFlow as well touched up and added several key points to the conversation\n\nEspecially with regards to content strategy from\n\n*️⃣ Timing and Adaptability\n\nHe built on Star’s earlier point, emphasizing the importance of being quick to respond to trends.\n\nBut timing isn’t just about speed\n\nHe mentioned about knowing when your audience is most active and how you could do this by\n\nTracking engagement patterns and post during high-traffic windows to maximize your reach\n\n[12/16] *️⃣ Explore other platforms\n\nHe stressed that in 2024, you can’t rely on just one platform\n\nWhether it’s X (Twitter), TikTok, or YouTube\n\nYou need to meet your audience where they already are by\n\nDiversifying your presence, this'll create multiple entry points for new followers and ensure\n\nYou’re not overly dependent on a single platform’s algorithm\n\nWe've seen this done marvelously with the likes of Kermit, Leon, Cryptoleon with video content on other platforms\n\nAnd lastly\n\n[13/16] *️⃣ Experiment with Video\n\nHe pointed out that video will dominate Web3 content in the coming years\n\nWhich for me personally I believe so\n\nSure text has it's way in this space but video content connects people on a personal level\n\n➠ Take for example\n\nA 30-second video explaining your thread or key insight can instantly boost engagement and help build a deeper connection with your audience\n\n@maya_lndn does this amazingly when it comes to videos\n\n[14/16] That's a wrap ✍️\n\nThis took me a while to get up 😤\n\nIf you found this thread helpful, feel free to\n\nFollow, drop a like and share your thoughts as well\n\n[15/16] @kenpachey_eth @starplatinum_ @NFTFlow_ @Eyden_eth You're very welcome man\n\nThese guys are no doubt part of the top 1%\n\n[16/16] @Zorin_NFT @starplatinum_ @NFTFlow_ @Eyden_eth I'd say he's one the top 1% of thread writers in this space honestly \n\nReally love his style and quickness on hopping on narratives",
+    "likes": 78,
+    "retweets": 2,
+    "bookmarks": 7,
+    "views": 3545,
+    "date": "Thu Dec 12 10:34:31 +0000 2024"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "[1/13] Pixel Heroes is one of the most addictive MMORPG on ronin right now\n\nBut it can feel complicated playing at first\n\nAfter spending a whole week on the game\n\nHere's every tip and guide on playing, and defeating bosses 👇 https://t.co/Y4LyWerhPe\n\n[2/13] @Ronin_Network @PixelHeroesMMO ⚠️ Disclaimer: Long Thread Ahead\n\nFeel free to bookmark for later\n\nI'll be going through 5 tips and guides from\n\n➠ First Steps\n➠ Equipment and Character building\n➠ Reaching LvL 20\n➠ ToyZ Placement Strategy\n➠ Mastering Combat and Boss hunting\n\nYou wouldn't want to miss guide #5 😁\n\n[3/13] ➡️ First Steps (Day 1 Priority)\n\nThe moment you launch the game, before getting caught up in the excitement of combat.\n\nThis is a crucial step many players miss being\n\n✅ Heading to your settings menu\n✅ Click coupon\n✅ Enter the code 'WELCOMEPHA'\n\nThis gives you 3,000 diamonds as a welcome bonus\n\n[4/13] ➡️ Equipment and Character building\n\nYour character's combat ability stems from four key elements\n\n➠ Basic attacks form your consistent damage output\n\n➠ Skills and Attributes creates a rock-paper-scissors system where matching elements correctly can double your damage\n\nThis also provides burst damages to mobs and bosses\n\n➠ Movement allows you to dodge boss attacks\n\n[5/13] ➡️ Choosing the Right Skills/Equipment (Tips)\n\nYour skill choices can make or break your progress in the game\n\nHere's how to build optimally\n\n➠ Focus on one damage type (range, melee, critical DMG, etc)\n➠ Match skills to your equipment bonuses\n➠ ALWAYS check attribute chart before boss fights\n➠ Match skills to boss weaknesses for massive damage boost 👇\n\nFor instance if you're up against an ice type boss, having an ice type skill is the way to go\n\n[6/13] ➡️ Reaching Altar LvL 20\n\nGetting to level 20 should be one of your first major goals in the game\n\nWhy? 👇\n\n➠ It unlocks the 3rd skill slot = 2x more damage potential\n➠ Higher chances at defeating bosses\n\nI'm still at LvL 16 😂\n\nBut the fastest way to reach Level 20 efficiently is 👇\n\n[7/13] ➠ Salvaging unused equipment usually common and rare equipment\n\nThis builds up altar EXP for leveling up\n\nYou can get more of these items from AFK rewards and boxes also\n\n➠ Completing all guide quests and missions (gives a legendary ToyZ)\n\n➠ Clearing forest stages systematically and\n\n➠ Defeating field bosses (These are different from the usual bosses at the end of each stage)\n\nMore on this on Guide #5 💡\n\n[8/13] ➡️ ToyZ Placement Strategy\n\nToyZ are like the character's companions which have crucial power/damage multipliers and\n\nHelps with automatic loot collection\n\nThey range from common to legendary\n\nPlacing your ToyZ in the right position plays a crucial role in getting more DMG\n\nHere's my placement strategy tips 👇\n\n[9/13] ➠ Your strongest (usually Legendary) ToyZ should go in center\n➠ Doing this activates the ToyZ skill\n➠ Position same-color ToyZ facing each other\n➠ Prioritize buffs matching your build\n➠ Multiple same-color connections will give even more stacked DMG https://t.co/zvR7SQjxRC\n\n[10/13] ➡️ Mastering Combat and Boss hunting\n\nField Boss Strategy\n\nField Bosses are one of your primary source of premium rewards and loots\n\nHere's how to master them (Tips) 👇\n\nFinding field bosses 🔍\n\n➠ Watch for arrow indicators on your map\n➠ Distance markers (shown in meters) help you plan your approach route\n➠ Check field boss Information menu for spawn timers\n\nAnother strategy to find field bosses is 👇\n\n[11/13] Using server/channel hopping strategy\n\n➠ When a boss dies, switch channels\nIf no boss present, try different servers\n\n➠ Create a rotation pattern between channels\n\nFor combat tips and tactics (applies to all bosses) first we have\n\n➠ Positioning\n\n- Study the boss's attack patterns\n- Position yourself at maximum attack range\n- Stay within dash distance to dodge hits from bosses\n\nAnd lastly 👇\n\n[12/13] ➠ Damage dealing\n\n- Equip character with skills/attributes that weaken bosses and do more DMG\n\n- Use element advantages (check your attribute chart) as mentioned in guide #3\n\n[13/13] That's a wrap ✍️\n\nPixel Heroes is game with a lot of moving parts and mechanics\n\nMy first day on this game ngl was complicated but I got a hang of it\n\nThere's alot I couldn't touch on here\n\nFeel free to drop your tips and guide too\n\nI hope you find this valuable #RoninCreator",
+    "likes": 81,
+    "retweets": 8,
+    "bookmarks": 13,
+    "views": 5280,
+    "date": "Tue Nov 12 13:52:43 +0000 2024"
+  },
+  {
+    "handle": "Dreyshq",
+    "text": "[200] I tried the top Web3 AI projects and...\n\nTo my surprise,\n\nThey beat AI models like ChatGPT (worth $500M+)\n\n[Explain why/how]\n\n👇",
+    "likes": 0,
+    "retweets": 0,
+    "bookmarks": 0,
+    "views": 0,
+    "date": "2026-06-14T00:48:52.069Z"
+  }
+]

@@ -6,6 +6,11 @@
  * the top 50 tweets per creator for voice profile extraction.
  * 
  * Output: .tmp/creator-voice-samples.json
+ *
+ * Production note:
+ *   .tmp is scratch space and is not deployed. After regenerating samples,
+ *   review/sanitize this output, then promote it to:
+ *   src/data/creator-voice-samples.json
  */
 
 import * as fs from "fs";

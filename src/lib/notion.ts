@@ -1213,3 +1213,26 @@ export async function updateIdea(pageId: string, updates: Partial<CreateIdeaOpti
   }
 }
 
+/**
+ * Append a small operational note to an Ideas Bank page without changing schema.
+ */
+export async function appendIdeaOperationalNote(pageId: string, title: string, body: string) {
+  try {
+    await notion.blocks.children.append({
+      block_id: pageId,
+      children: [
+        {
+          object: "block" as const,
+          type: "heading_3" as const,
+          heading_3: {
+            rich_text: [{ text: { content: title.substring(0, 2000) } }],
+          },
+        },
+        ...splitIntoParagraphBlocks(body),
+      ],
+    });
+  } catch (error) {
+    console.error(`Error appending operational note to Idea ${pageId}:`, error);
+    throw error;
+  }
+}

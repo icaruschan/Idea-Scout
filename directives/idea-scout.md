@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday, Thursday, and Saturday at 8:30 AM UTC (9:30 AM local time), evaluates new uploads for relevance against 8 active content pillars, and saves summaries in Notion. A decoupled task running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic tweet drafts in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library. Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
+Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday, Thursday, and Saturday at 8:30 AM UTC (9:30 AM local time), evaluates new uploads for relevance against 8 active content pillars, and saves summaries in Notion. A decoupled two-actor engine running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic briefs (Strategist) and drafts publication-ready tweets and articles (Writer Actor via Grok-4.3) in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library. Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
 
 ---
 
@@ -91,7 +91,7 @@ Trigger.dev Mon/Thu/Sat Cron
     ├── 3. Execute process-content in batches of 15 (Trigger.dev Batch Chunking) with a 2s delay between batches to prevent parent orchestrator hangs
     │      ├── A. Duplicate check: Verify URL/title does not clash with existing scouted content for that creator
     │      ├── B. Feed to LLM: Prepares up to 100,000 characters of content/transcript (expanded from 6,000 to prevent context truncation)
-    │      ├── C. Relevance check: LLM checks content maps to 9 pillars (reject if < 0.6 confidence)
+    │      ├── C. Relevance check: LLM checks content maps to 8 active pillars (reject if < 0.6 confidence; frozen Web3/Psychology are ignored)
     │      ├── D. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
     │      ├── E. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
     │      └── F. Notion insert: Create Scouted Content page, establishing creator relation
@@ -99,16 +99,38 @@ Trigger.dev Mon/Thu/Sat Cron
 
 Trigger.dev Mon-Sat Cron
 │
-└── draft-ideas (Runs 8:00 AM UTC Mon-Sat | maxDuration: 900s)
-    ├── 1. Gather context from all sources:
+└── draft-ideas [STRATEGIST] (Runs 8:00 AM UTC Mon-Sat | maxDuration: 900s)
+    ├── 1. Clean up rejected ideas (archive to sever relations and free scouted content)
+    ├── 2. Gather context from all sources:
     │      ├── A. Unused Scouted Content (from past 7 days, filtering out those already linked to Ideas)
     │      ├── B. Top 30 Viral Posts (4★+)
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
     │      └── D. Category distribution balance (prioritize underserved pillars)
-    ├── 2. Group scouted posts into buckets based on their "Niche" property in Notion (falling back to AI-Keyword Sorter regex matching if empty)
-    ├── 3. Parallelize LLM synthesis across niche groups in concurrency-limited batches of 3 to avoid timeouts
-    ├── 4. Gather and flatten all generated ideas
-    └── 5. Sequentially write the ideas to the Ideas Bank Notion database with a 350ms throttle delay, resolving Inspired By relations using the unique Notion Page IDs matching loop (UUID regex) with cleanTitle title-substring matching as a fallback safety net
+    ├── 3. Group scouted posts into buckets based on the first active "Niche" tag exposed as item.pillars
+    ├── 4. Parallelize LLM synthesis (Qwen) across active niche groups in concurrency-limited batches of 3
+    │      Output: StrategyBrief JSON per idea (title, pillar, voiceMode, format, hookAngle, etc.)
+    │      Format options: "Short" | "Mid-length" | "Thread" | "Article"
+    │      Title constraint: 2-5 word concise working titles (not clickbait)
+    ├── 5. Sequentially write StrategyBriefs to Ideas Bank (status: 💭 Raw) with 350ms throttle
+    └── 6. Dispatch write-tweets task for each idea, logging and appending the child run ID to the Idea page
+
+Triggered by draft-ideas (async)
+│
+└── write-tweets [WRITER ACTOR] (maxDuration: 600s | retry: 2)
+    ├── 1. Load few-shot voice samples from src/data/creator-voice-samples.json (.tmp is local regeneration scratch)
+    ├── 2. Build voice-specific prompt via buildWriterPrompt() from voice-dna.ts
+    │      Maps voiceMode → creator samples:
+    │        Builder-Retrospective → Dreyshq (first-person, scar tissue, value)
+    │        Tool-Curator → Sharbel (analytical, metric-dense, "Bookmark this" CTA)
+    │        Case-Study → Zaimiri (operator wisdom, lowercase openers, "bro" allowed)
+    ├── 3. Generate text via Grok-4.3 (x-ai/grok-4.3) at temperature 0.85
+    │      Dynamically switches output:
+    │        Tweet/Thread: Staccato formatting, [1/n] markers
+    │        Article: Full long-form markdown with ##/### headers
+    └── 4. Update Notion Idea:
+           - Draft Tweet property (first 2000 chars)
+           - Full text in toggle block (▶️ Full Draft Tweet)
+           - Auto-set status to 📝 Drafted
 
 Trigger.dev Manual Run
 │
@@ -125,29 +147,48 @@ Trigger.dev Manual Run
     │      └── Write the structured analysis to the Viral Post Library database with a 500ms delay to stay within Notion's write rate limits
 ```
 
-### Synthesis & Drafting Task (`draft-ideas`)
-The synthesis engine runs independently on its scheduled days:
+### Synthesis & Drafting Tasks (`draft-ideas` + `write-tweets`)
+The synthesis engine runs as a two-actor pipeline:
+
+**Actor 1: The Strategist (`draft-ideas`)**
 1. Cleans up any Ideas Bank entries marked as "Rejected" (archiving them) to sever relations and free up the associated scouted content for reuse.
 2. Queries the past 7 days of Scouted Content, filtering out entries that are already linked to generated ideas in the `"Linked Ideas"` relation (Source Deduplication).
-3. Queries the top 30 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns (increased from 15).
+3. Queries the top 30 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
 4. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
 5. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
-6. Groups scouted posts by their `"Niche"` multi-select property (instead of general creator categories).
+6. Groups scouted posts by the first active `"Niche"` multi-select value exposed in code as `item.pillars`, skipping frozen Web3/Psychology tags.
 7. Processes groups in parallel batches of 3:
    - Filters templates to only those containing Category tags relevant to the current niche.
-   - Instructs the LLM (via OpenRouter) to cross-pollinate the niche's raw insights with the matched templates.
-8. Gathers, flattens, and writes the synthesized ideas back to Notion:
-   - Validates and fuzzy-maps the generated pillars using `matchPillar()` (from `src/lib/pillar-utils.ts`) to avoid silent defaults.
-   - Applies the deterministic UUID relation matching to extract the Notion Page ID from the LLM output's `"inspiredByScoutedIds"` and links the relation, falling back to `cleanTitle` string matching if empty.
-   - Sequentially invokes Notion's API, introducing a `350ms` throttle pause between writes to strictly stay under Notion's rate limits.
-   - The entries written contain:
-     - Compelling title anchor containing a specific metric/tool/amount (Anti-template rules)
-     - Source: `"Idea Scout"`
-     - Categories and Hook Angles
-     - Relation link back to `Scouted Content`
-     - Page Body: Source Context recap, rough draft copy, why it works explanation, and patterns used.
-9. Decoupled Business Logic: The core synthesis logic is extracted into a named export `runDraftIdeas` so it can be run and verified locally using `scripts/test-draft-locally.ts` without Trigger.dev overhead.
+   - Instructs the LLM (Qwen via OpenRouter) to generate `StrategyBrief` objects containing title, pillar, voiceMode, format, hookAngle, whyItWorks, appliedFramework, stealablePattern, and tweetStructure.
+   - Format options: `"Short"`, `"Mid-length"`, `"Thread"`, `"Article"`.
+   - Title constraint: 2-5 word concise working titles (not clickbait sentences).
+   - Full viral template content is passed (no 300-char truncation).
+8. Gathers, flattens, and writes the synthesized StrategyBriefs to the Notion Ideas Bank (status: 💭 Raw) with a `350ms` throttle delay.
+9. Dispatches the `write-tweets` task for each idea, logs the child run ID, and appends a Writer Dispatch note to the Idea page. If dispatch fails, the Idea remains 💭 Raw and gets a failure note.
 
+**Actor 2: The Writer (`write-tweets`)**
+1. Receives the `StrategyBrief` and the Notion Idea page ID.
+2. Loads few-shot voice samples from `src/data/creator-voice-samples.json` (committed, reviewed production samples). `.tmp/creator-voice-samples.json` is only a regeneration/export artifact.
+3. Calls `buildWriterPrompt()` from `voice-dna.ts` which:
+   - Maps `voiceMode` to a creator handle (Builder-Retrospective → Dreyshq, Tool-Curator → Sharbel, Case-Study → Zaimiri).
+   - Selects the top 5 matching samples by engagement.
+   - Injects mode-specific instructions (e.g., Sharbel: "Bookmark this" CTA allowed, Zaimiri: lowercase openers and "bro" allowed).
+   - Dynamically switches output format based on `strategyBrief.format`: Tweet/Thread (staccato) vs Article (long-form markdown with `##`/`###` headers).
+4. Generates text using **Grok-4.3** (`x-ai/grok-4.3`) at temperature `0.85`.
+5. Updates the Notion Idea with the draft:
+   - First 2000 chars in `"Draft Tweet"` property.
+   - Full un-truncated text in a toggle block (`▶️ Full Draft Tweet`).
+   - Auto-sets status to `"📝 Drafted"`.
+
+
+---
+
+## Operational Notes / Known Failure Modes
+
+- **Ideas stuck in 💭 Raw:** Check the Idea page body for the Writer Dispatch note. If it has a child run ID, inspect that Trigger.dev run. If it has a failure note, fix the dispatch/runtime error and rerun `write-tweets` for that strategy brief.
+- **Voice samples:** Production reads from `src/data/creator-voice-samples.json`. Regeneration scripts write to `.tmp/creator-voice-samples.json`; review and sanitize that output before promoting it into `src/data`.
+- **Frozen pillars:** Web3 and Psychology remain valid historical labels in Notion, but new matching, drafting, and category writes must ignore them or resolve them to `Unknown`.
+- **Async Writer behavior:** `draft-ideas` does not wait for Writer completion. A successful Strategist run means strategies were created and Writer tasks were dispatched, not that every final draft is complete.
 
 ---
 
@@ -161,7 +202,7 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 | **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` and `maxDuration: 300s` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter, with 5 min safety buffer |
 | **Trigger.dev Batch Chunking** | Chunk raw content items into groups of 15 with 2s cooldown | Prevents parent orchestrator from hanging indefinitely in "waiting" state |
 | **OpenAI/OpenRouter Client** | 120s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, increased from 60s to handle parallel synthesis workloads |
-| **LLM Synthesis Parallelization** | Concurrency limit of 3 | Processes 3 niche groups concurrently to prevent network/connection saturation while speeding up the pipeline |
+| **LLM Synthesis Parallelization** | Concurrency limit of 3 | Processes 3 active niche groups concurrently to prevent network/connection saturation while speeding up the pipeline |
 | **Notion batch reads** | `getScoutedContentByIds` chunks into batches of 5 + 350ms delay | Stays under Notion's 3 req/s rate limit |
 | **Notion writes throttle** | 350ms delay between consecutive `createIdea` requests | Strictly prevents Notion 429 rate limit errors when writing newly drafted ideas |
 | **Inter-platform cooldowns** | 5s pause between YT→IG and IG→Twitter phases | Lets Apify actors release memory before next phase |

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsc --noEmit && tsx scripts/test-pillar-matching.ts && tsx scripts/test-url-normalization.ts",
+    "test": "tsc --noEmit && tsx scripts/test-pillar-matching.ts && tsx scripts/test-url-normalization.ts && tsx scripts/test-writer-voice-samples.ts",
     "test:pillars": "tsx scripts/test-pillar-matching.ts",
     "test:scrapers": "tsx scripts/test-scrapers.ts",
     "test:twitter": "tsx scripts/test-twitter.ts",

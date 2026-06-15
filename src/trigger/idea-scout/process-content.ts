@@ -11,7 +11,7 @@ import {
 // ═══════════════════════════════════════════════════════════════
 // Receives a single raw content item from the orchestrator.
 // Step 1: Check for duplicates against recent Scouted Content
-// Step 2: AI relevance filter — does this map to our 9 pillars?
+// Step 2: AI relevance filter — does this map to our 8 active pillars?
 // Step 3: AI summarization — extract key takeaways
 // Step 4: Write to Scouted Content DB with creator relation
 // ═══════════════════════════════════════════════════════════════

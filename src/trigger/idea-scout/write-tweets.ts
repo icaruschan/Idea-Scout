@@ -10,6 +10,25 @@ interface WriteTweetsPayload {
   strategyBrief: StrategyBrief;
 }
 
+const COMMITTED_SAMPLES_PATH = path.resolve(process.cwd(), "src/data/creator-voice-samples.json");
+const TMP_SAMPLES_PATH = path.resolve(process.cwd(), ".tmp/creator-voice-samples.json");
+
+export function loadVoiceSamples(): any[] {
+  const samplePaths = [COMMITTED_SAMPLES_PATH, TMP_SAMPLES_PATH];
+
+  for (const samplesPath of samplePaths) {
+    if (fs.existsSync(samplesPath)) {
+      console.log(`Loaded voice samples from ${samplesPath}`);
+      return JSON.parse(fs.readFileSync(samplesPath, "utf-8"));
+    }
+  }
+
+  console.warn(
+    "⚠️ creator-voice-samples.json not found in src/data or .tmp. Falling back to base DNA.",
+  );
+  return [];
+}
+
 export const writeTweets = task({
   id: "write-tweets",
   maxDuration: 600, // 10 minutes max
@@ -24,13 +43,7 @@ export const writeTweets = task({
 
     try {
       // 1. Load few-shot samples
-      const samplesPath = path.resolve(process.cwd(), ".tmp/creator-voice-samples.json");
-      let samples = [];
-      if (fs.existsSync(samplesPath)) {
-        samples = JSON.parse(fs.readFileSync(samplesPath, "utf-8"));
-      } else {
-        console.warn("⚠️ creator-voice-samples.json not found! Falling back to base DNA.");
-      }
+      const samples = loadVoiceSamples();
 
       // 2. Build the exact system and user prompt for this mode
       const { systemPrompt, userPrompt } = buildWriterPrompt(strategyBrief, strategyBrief.voiceMode, samples);

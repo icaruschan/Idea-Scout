@@ -11,6 +11,8 @@ import {
   getPillarDistribution,
   createIdea,
   cleanRejectedIdeas,
+  appendIdeaOperationalNote,
+  CreateIdeaOptions,
 } from "../../lib/notion";
 
 // ═══════════════════════════════════════════════════════════════
@@ -375,16 +377,24 @@ Return JSON:
             }
           }
 
-          const formatMap: Record<string, string> = {
+          const formatMap: Record<string, NonNullable<CreateIdeaOptions["formatIdea"]>> = {
             Short: "Short",
             "Mid-length": "Mid-length",
             Thread: "Thread",
             Article: "Article",
-            Video: "Video",
           };
+          const normalizedFormat = formatMap[idea.format] || "Short";
+          const validVoiceModes: StrategyBrief["voiceMode"][] = [
+            "Builder-Retrospective",
+            "Tool-Curator",
+            "Case-Study",
+          ];
+          const normalizedVoiceMode = validVoiceModes.includes(idea.voiceMode)
+            ? idea.voiceMode
+            : "Builder-Retrospective";
 
           const rawData = [
-            `🎙️ Voice: ${idea.voiceMode || "Smart Friend"}`,
+            `🎙️ Voice: ${normalizedVoiceMode}`,
             `📐 Framework: ${idea.appliedFramework || "General Blended"}`,
             `📌 Cross-Pollination: ${idea.crossPollinationLogic}`,
             `📦 Sourced From: ${idea.sourcedFrom}`,
@@ -406,7 +416,7 @@ Return JSON:
             rawData,
             {
               priority: idea.priority as any,
-              formatIdea: (formatMap[idea.format] as any) || "Short",
+              formatIdea: normalizedFormat,
               stealablePattern: idea.stealablePattern,
               tweetStructure: idea.tweetStructure,
               inspiredByScoutedIds:
@@ -425,18 +435,57 @@ Return JSON:
           const strategyBrief: StrategyBrief = {
             title: idea.title,
             pillar: validPillar,
-            voiceMode: idea.voiceMode as any || "Builder-Retrospective",
+            voiceMode: normalizedVoiceMode,
             appliedFramework: idea.appliedFramework,
             hookAngle: idea.hookAngle,
             whyItWorks: idea.whyItWorks,
-            format: idea.format,
+            format: normalizedFormat,
             stealablePattern: idea.stealablePattern,
             tweetStructure: idea.tweetStructure,
             crossPollinationLogic: idea.crossPollinationLogic
           };
 
           console.log(`🚀 Dispatching to Writer Actor for Idea: ${notionIdeaId}`);
-          await tasks.trigger("write-tweets", { notionIdeaId, strategyBrief });
+          try {
+            const writerHandle = await tasks.trigger("write-tweets", {
+              notionIdeaId,
+              strategyBrief,
+            });
+            const dispatchNote = [
+              `Writer run ID: ${writerHandle.id}`,
+              `Dispatched at: ${new Date().toISOString()}`,
+              `Idea page ID: ${notionIdeaId}`,
+              `Title: ${idea.title}`,
+              `Voice mode: ${normalizedVoiceMode}`,
+              `Format: ${normalizedFormat}`,
+            ].join("\n");
+            console.log(
+              `🧾 Writer dispatched | idea=${notionIdeaId} | run=${writerHandle.id} | voice=${normalizedVoiceMode} | format=${normalizedFormat} | title="${idea.title}"`,
+            );
+            await appendIdeaOperationalNote(
+              notionIdeaId,
+              "Writer Dispatch",
+              dispatchNote,
+            );
+          } catch (dispatchErr: any) {
+            const message = dispatchErr?.message || String(dispatchErr);
+            console.error(
+              `Writer dispatch failed for Idea ${notionIdeaId}:`,
+              message,
+            );
+            await appendIdeaOperationalNote(
+              notionIdeaId,
+              "Writer Dispatch Failed",
+              [
+                `Failed at: ${new Date().toISOString()}`,
+                `Idea page ID: ${notionIdeaId}`,
+                `Title: ${idea.title}`,
+                `Voice mode: ${normalizedVoiceMode}`,
+                `Format: ${normalizedFormat}`,
+                `Error: ${message}`,
+              ].join("\n"),
+            );
+          }
 
         } catch (err: any) {
           console.error(
@@ -472,7 +521,6 @@ export const draftIdeas = task({
 const PILLAR_TO_VIRAL_CATEGORIES: Record<string, string[]> = {
   "Vibe Coding": ["Vibe Coding", "Tech/AI"],
   "Automation": ["Tools/Resources", "Tech/AI"],
-  "Web3": ["Web3/Crypto"],
   "Creator Economy": ["Content Creators", "Business/Entrepreneurs"],
   "Copywriting and Storytelling": ["Marketing/Growth", "Content Creators"],
   "AI Prompting & Tools": ["Tech/AI", "Tools/Resources"],
@@ -483,7 +531,10 @@ const PILLAR_TO_VIRAL_CATEGORIES: Record<string, string[]> = {
 
 function getPrimaryPillar(item: any): string {
   if (item.pillars && item.pillars.length > 0) {
-    return item.pillars[0]; // Use the first AI-matched pillar
+    const activePillar = item.pillars.find((p: string) =>
+      CONTENT_PILLARS.includes(p),
+    );
+    if (activePillar) return activePillar; // Use the first active Notion Niche tag
   }
 
   // Fallback: Keyword-based matching on summary / takeaways
@@ -509,15 +560,6 @@ function getPrimaryPillar(item: any): string {
     textToSearch.includes("agentic")
   ) {
     return "Automation";
-  }
-  if (
-    textToSearch.includes("solana") ||
-    textToSearch.includes("base") ||
-    textToSearch.includes("memecoin") ||
-    textToSearch.includes("crypto") ||
-    textToSearch.includes("web3")
-  ) {
-    return "Web3";
   }
   if (
     textToSearch.includes("newsletter") ||
