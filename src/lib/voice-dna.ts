@@ -45,7 +45,118 @@ export const VOICE_DNA_PROMPT = `# 🧬 VOICE DNA DOCUMENT: THE TRENCH-BUILDER C
 - **Never force engagement.** No "drop a 🔥", no "follow for more", no "what do you think?". Let the content stand alone.
 `;
 
+export const VOICE_EXAMPLES_PER_PROMPT = 5;
+
+const BUILDER_POSITIVE_TERMS = [
+  "i built",
+  "i spent",
+  "i finally",
+  "i tried",
+  "i did a thing",
+  "vibe coding",
+  "automation",
+  "workflow",
+  "agent",
+  "claude",
+  "cursor",
+  "n8n",
+  "pipeline",
+  "scout",
+  "notion",
+  "github",
+  "llm",
+  "shipping",
+  "shipped",
+  "idea scout",
+  "how it works",
+  "lesson",
+  "burnout",
+  "burned out",
+  "creativity is the moat",
+];
+
+const BUILDER_NEGATIVE_TERMS = [
+  "ronin",
+  "persona ip",
+  "azuki",
+  "immutable",
+  "pixel heroes",
+  "bonsai",
+  "virtuals_io",
+  "sei network",
+  "web3",
+  "crypto",
+  "nft",
+  "memecoin",
+  "gaming",
+  "mmorpg",
+  "star platinum",
+  "mr beast",
+  "ready player one",
+  "among us",
+  "fps game",
+  "auto clicking",
+];
+
+const MICRO_CASE_TERMS = [
+  "someone built",
+  "someone on reddit",
+  "first $",
+  "first 100",
+  "120 subscribers",
+  "tiny number",
+  "useful money",
+];
+
 export type VoiceMode = "Builder-Retrospective" | "Tool-Curator" | "Case-Study";
+
+export function scoreVoiceSample(text: string, voiceMode: VoiceMode, likes = 0): number {
+  const low = text.toLowerCase();
+  let score = 0;
+
+  if (voiceMode === "Builder-Retrospective") {
+    for (const term of BUILDER_POSITIVE_TERMS) {
+      if (low.includes(term)) score += 10;
+    }
+    for (const term of BUILDER_NEGATIVE_TERMS) {
+      if (low.includes(term)) score -= 30;
+    }
+    if (/\bi (built|spent|fixed|tried|learned|finally)\b/i.test(text)) score += 15;
+    if (/\b(→|step \d|here's what)\b/i.test(text)) score += 8;
+    if (/\[1\/\d+\]/.test(text) && low.includes("this is ")) score -= 12;
+  } else if (voiceMode === "Case-Study") {
+    for (const term of MICRO_CASE_TERMS) {
+      if (low.includes(term)) score += 18;
+    }
+    if (/\bbro\b/.test(low)) score += 4;
+    if (low.includes("reputation") || low.includes("compounding")) score += 6;
+  }
+
+  score += Math.log10(Math.max(1, likes + 1)) * 3;
+  return score;
+}
+
+export function selectVoiceSamples(
+  fewShotSamples: any[],
+  handleTarget: string,
+  voiceMode: VoiceMode,
+  limit = VOICE_EXAMPLES_PER_PROMPT,
+): string[] {
+  const useRelevanceRanking =
+    voiceMode === "Builder-Retrospective" || voiceMode === "Case-Study";
+
+  return fewShotSamples
+    .filter((s) => s.handle === handleTarget)
+    .map((s) => ({
+      text: s.text as string,
+      rankScore: useRelevanceRanking
+        ? scoreVoiceSample(s.text, voiceMode, s.likes ?? 0)
+        : (s.likes ?? 0),
+    }))
+    .sort((a, b) => b.rankScore - a.rankScore)
+    .slice(0, limit)
+    .map((s) => s.text);
+}
 
 export interface StrategyBrief {
   title: string;
@@ -71,32 +182,33 @@ export function buildWriterPrompt(strategyBrief: StrategyBrief, voiceMode: Voice
 
   if (voiceMode === 'Builder-Retrospective') {
     handleTarget = 'Dreyshq';
-    modeInstructions = `MODE: Builder-Retrospective
-    - You are speaking from first-person experience.
+    modeInstructions = `MODE: Builder-Retrospective (Emulating X Creator: @Dreyshq)
+    - You are speaking from first-person experience in AI, automation, and dev workflow builds.
     - Use phrases like "I built this", "I finally fixed my...", "I did a thing guys".
-    - Highly authentic, slightly vulnerable, sharing scar tissue and lessons learned.`;
+    - Share scar tissue, shipping lessons, and operational takeaways — not generic creator-economy advice.`;
   } else if (voiceMode === 'Tool-Curator') {
     handleTarget = 'sharbel';
-    modeInstructions = `MODE: Tool-Curator
+    modeInstructions = `MODE: Tool-Curator (Emulating X Creator: @sharbel)
     - You are spotlighting a tool, repo, or another builder's work.
     - Highly analytical, metric-dense, structured feature lists using arrows (→).
     - Contrast expensive SaaS with open-source/free alternatives.
     - Allowed to use "Bookmark this" as a CTA.`;
   } else if (voiceMode === 'Case-Study') {
     handleTarget = 'zaimiri';
-    modeInstructions = `MODE: Case-Study
+    modeInstructions = `MODE: Case-Study (Emulating X Creator: @zaimiri)
     - You are deconstructing a massive win, trend, or dropping long-term operator wisdom.
+    - Include micro-case studies: "someone built X, got first $/users/revenue, here is the mechanism."
     - Allowed to use lowercase openers.
     - Focus on long-term reputation, compounding systems, and deep principles.
     - Allowed to use "bro" strictly for emphasis.`;
   }
 
-  // Get up to 5 matching samples
-  const matchedSamples = fewShotSamples
-    .filter(s => s.handle === handleTarget)
-    .sort((a, b) => b.likes - a.likes)
-    .slice(0, 5)
-    .map(s => s.text);
+  const matchedSamples = selectVoiceSamples(
+    fewShotSamples,
+    handleTarget,
+    voiceMode,
+    VOICE_EXAMPLES_PER_PROMPT,
+  );
 
   const systemPrompt = `You are an elite ghostwriter for a sharp founder/developer in the Tech/AI/Automation space.
 You write highly engaging, structured, and deeply authentic tweets based on a strategic brief.

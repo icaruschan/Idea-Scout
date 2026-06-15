@@ -1,5 +1,11 @@
 import { loadVoiceSamples } from "../src/trigger/idea-scout/write-tweets";
-import { buildWriterPrompt, StrategyBrief, VoiceMode } from "../src/lib/voice-dna";
+import {
+  buildWriterPrompt,
+  StrategyBrief,
+  VoiceMode,
+  VOICE_EXAMPLES_PER_PROMPT,
+  selectVoiceSamples,
+} from "../src/lib/voice-dna";
 
 const samples = loadVoiceSamples();
 let failed = 0;
@@ -18,7 +24,8 @@ console.log("=== RUNNING WRITER VOICE SAMPLE TESTS ===");
 assert(samples.length > 0, "Committed voice samples load from src/data");
 
 const handles = new Set(samples.map((sample: any) => sample.handle));
-assert(handles.has("Dreyshq"), "Dreyshq samples are available");
+const dreyshqSamples = samples.filter((s: any) => s.handle === "Dreyshq");
+assert(dreyshqSamples.length >= 30, `Dreyshq has at least 30 samples (Found: ${dreyshqSamples.length})`);
 assert(handles.has("sharbel"), "Sharbel samples are available");
 assert(handles.has("zaimiri"), "Zaimiri samples are available");
 
@@ -52,7 +59,33 @@ for (const voiceMode of voiceModes) {
     prompt.userPrompt.includes("Example 1:"),
     `${voiceMode} prompt includes few-shot examples`,
   );
+  
+  assert(
+    !prompt.userPrompt.includes(`Example ${VOICE_EXAMPLES_PER_PROMPT + 1}:`),
+    `${voiceMode} prompt respects VOICE_EXAMPLES_PER_PROMPT limit`,
+  );
+
+  const selected = selectVoiceSamples(samples, voiceMode === "Tool-Curator" ? "sharbel" : voiceMode === "Case-Study" ? "zaimiri" : "Dreyshq", voiceMode);
+  assert(
+    selected.length <= VOICE_EXAMPLES_PER_PROMPT,
+    `${voiceMode} selector returns at most ${VOICE_EXAMPLES_PER_PROMPT} samples`,
+  );
 }
+
+const builderPrompt = buildWriterPrompt(
+  { ...sampleStrategy, voiceMode: "Builder-Retrospective" },
+  "Builder-Retrospective",
+  samples,
+);
+const exampleCount = builderPrompt.userPrompt.split("Example ").length - 1;
+assert(
+  exampleCount === VOICE_EXAMPLES_PER_PROMPT,
+  `Builder-Retrospective prompt includes exactly ${VOICE_EXAMPLES_PER_PROMPT} examples (found ${exampleCount})`,
+);
+assert(
+  /idea scout|automation|vibe coding|i built|i spent/i.test(builderPrompt.userPrompt),
+  "Builder-Retrospective few-shots skew toward builder/automation voice",
+);
 
 console.log("\n======================================");
 if (failed > 0) {
