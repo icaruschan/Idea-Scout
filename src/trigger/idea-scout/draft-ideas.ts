@@ -503,8 +503,9 @@ Return JSON:
     return { ideasCreated };
 }
 
-export const draftIdeas = task({
+export const draftIdeas = schedules.task({
   id: "draft-ideas",
+  cron: "0 8 * * 1-6", // Mon-Sat 8:00 AM UTC (9:00 AM WAT)
   maxDuration: 900,
   retry: {
     maxAttempts: 2,

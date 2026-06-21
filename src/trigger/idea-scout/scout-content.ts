@@ -26,8 +26,9 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 // Step 4: Once all processing is done, dispatch draft-ideas
 // ═══════════════════════════════════════════════════════════════
 
-export const scoutContent = task({
+export const scoutContent = schedules.task({
   id: "scout-content",
+  cron: "30 8 * * 1,4,6", // Mon/Thu/Sat 8:30 AM UTC (9:30 AM WAT)
   maxDuration: 14400, // 4 hours — accounts for Apify actor wait times
   run: async (payload: any) => {
     const runTimestamp = payload?.timestamp ?? new Date().toISOString();
