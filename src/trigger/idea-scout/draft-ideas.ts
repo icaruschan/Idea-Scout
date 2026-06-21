@@ -1,8 +1,8 @@
-import { schedules, task, tasks } from "@trigger.dev/sdk/v3";
+import { schedules, tasks } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { matchPillar } from "../../lib/pillar-utils";
 import { generateJSON } from "../../lib/llm";
-import { StrategyBrief } from "../../lib/voice-dna";
+import { ContentFormat, ValueBrief, VoiceMode } from "../../lib/voice-dna";
 import {
   getRecentScoutedContent,
   getScoutedContentByIds,
@@ -11,496 +11,184 @@ import {
   getPillarDistribution,
   createIdea,
   cleanRejectedIdeas,
-  appendIdeaOperationalNote,
   CreateIdeaOptions,
+  ScoutedContentForDraft,
 } from "../../lib/notion";
 
-// ═══════════════════════════════════════════════════════════════
-// DRAFT IDEAS — Cross-Platform Synthesis Engine
-// ═══════════════════════════════════════════════════════════════
-// This is the intelligence layer. It correlates:
-//   1. Scouted Content (this run's processed items)
-//   2. Viral Post Library (proven tweet formats)
-//   3. Existing Ideas Bank (dedup)
-//   4. Pillar Distribution (balance)
-// ...then generates 10 high-quality tweet idea drafts.
-// ═══════════════════════════════════════════════════════════════
-
 interface DraftIdeasPayload {
-  scoutedContentIds: string[];
+  scoutedContentIds?: string[];
 }
 
-const SYNTHESIS_SYSTEM_PROMPT = `You are the Strategy Brain for a Twitter (X) creator. Audience: sharp founders, indie hackers, developers — not beginners.
+const VALUE_STRATEGIST_SYSTEM_PROMPT = `You are the Value Strategist for a Twitter/X creator.
 
-═══════════════════════════════════════════════════════════════════════════════
-VOICE MODES
-═══════════════════════════════════════════════════════════════════════════════
-→ Builder-Retrospective (default): You built/experienced it yourself. First-person retrospective. ("i spent 90 days trying to scale my scraping...")
-→ Tool-Curator: Spotlighting an external tool or repo. Metric-dense, spec-focused.
-→ Case-Study: Micro wins and operator wisdom — "someone built X, got first $/users/revenue, here is the mechanism" OR long-term reputation/compounding lessons.
+Your job is NOT to write the final tweet.
+Your job is to study ONE full source at a time and produce a source-grounded ValueBrief for the Writer.
 
-Default to Builder-Retrospective. Use Tool-Curator when spotlighting external tools/repos. Use Case-Study for small monetization wins, builder journeys with receipts, or deep operator principles.
+The source transcript/content is the authority.
+Viral templates are only packaging.
+Voice modes are only styling direction.
 
-═══════════════════════════════════════════════════════════════════════════════
-CONTENT PILLARS (8 ACTIVE)
-═══════════════════════════════════════════════════════════════════════════════
+Audience: sharp founders, indie hackers, builders, developers, and AI/automation operators.
+Goal: extract useful value, not generic advice.
+
+ACTIVE CONTENT PILLARS:
 ${CONTENT_PILLARS.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 
-═══════════════════════════════════════════════════════════════════════════════
-TITLE RULES — THIS IS CRITICAL
-═══════════════════════════════════════════════════════════════════════════════
-These titles are NOT for Twitter. They are INTERNAL working titles for a Notion database.
-They must be short, punchy, and instantly scannable (2-5 words max).
+VOICE MODES:
+- Builder-Retrospective: commentary from a builder/operator POV. First-person is allowed only as commentary unless the source supports direct experience.
+- Tool-Curator: external tool/repo/workflow spotlight. Best for concrete tools, specs, pricing, features, or comparisons.
+- Case-Study: micro-case study, first-$/users/revenue breakdown, builder journey, or operator principle.
 
-GOOD EXAMPLES (Short & Punchy):
-✅ "Cursor vs SaaS Pricing"
-✅ "The 72hr n8n Build"
-✅ "Claude Code Context Trick"
-✅ "The Indie Hacker Trap"
+FORMAT CONTRACTS:
+- Short: one tight tweet.
+- Mid-length: one longer value tweet.
+- Thread: multiple posts with [1/n] markers.
+- Article: long-form markdown article.
 
-BANNED PATTERNS:
-❌ No full sentences ("How I used Cursor to build...")
-❌ No generic buzzwords ("The X Protocol", "The Z Stack")
-❌ No clickbait ("You won't believe how this tool...")
+RULES:
+- Return 1 brief by default.
+- Return 2-3 briefs only when the source contains clearly distinct, high-value angles.
+- Never combine this source with unrelated sources.
+- Preserve source IDs and URLs exactly.
+- Extract facts, mechanisms, tools, examples, and numbers from the source.
+- Add "doNotInvent" guardrails for anything the source does not prove.
+- Do not invent personal experience, revenue, user counts, screenshots, steps, tools, or claims.
+- If the source is too thin to support a useful draft, return an empty "briefs" array.
+- Respond only with pure JSON. No markdown fences.`;
 
-═══════════════════════════════════════════════════════════════════════════════
-STRATEGY BRIEF RULES
-═══════════════════════════════════════════════════════════════════════════════
-You do NOT write the actual tweet. You only generate the underlying Strategy Brief.
-A separate dedicated Writer AI will take your strategy and draft the text.
+type Priority = NonNullable<CreateIdeaOptions["priority"]>;
 
-Focus entirely on:
-- Identifying the perfect Hook Angle based on the scouted content.
-- Explaining the psychological trigger (why it works).
-- Recommending the best viral format/structure to map it to.
+const VALID_VOICE_MODES: VoiceMode[] = [
+  "Builder-Retrospective",
+  "Tool-Curator",
+  "Case-Study",
+];
 
-═══════════════════════════════════════════════════════════════════════════════
-FRAMEWORK SELECTION — PICK THE BEST LAYOUT FOR EACH DRAFT
-═══════════════════════════════════════════════════════════════════════════════
-For each draft, evaluate the concept and select the most fitting framework to structure the eventual tweet/article. Set the "appliedFramework" field accordingly.
+const VALID_FORMATS: ContentFormat[] = [
+  "Short",
+  "Mid-length",
+  "Thread",
+  "Article",
+];
 
-1. "SaaS-Killer" — Use when the concept contrasts a free/open-source tool with a paid SaaS expense.
-   Flow: Staccato hook highlighting cost pain → Introduce the alternative → Indented feature list using "→" → Side-by-side pricing block → GitHub stars + license → "100% Open Source."
+const VALID_PRIORITIES: Priority[] = ["🔥 Hot", "💡 Good", "📝 Maybe"];
 
-2. "Macro Case-Study" — Use when explaining a major builder achievement, milestone, or industry shift.
-   Flow: Dramatic narrative hook + direct quote/metric → Background context → Paradigm shift ("We used to... Now we...") → Detail list using "→" → Closing macro-question ("What happens when...").
+export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ ideasCreated: number }> {
+  const scoutedContentIds = Array.isArray(payload?.scoutedContentIds)
+    ? payload.scoutedContentIds
+    : [];
 
-3. "Reputation Warning" — Use when sharing career advice, creator warnings, or long-term lessons about trust/taste.
-   Flow: Direct address or caution opener → Explain the trap → Personal/historical scar tissue → Actionable checklist using "✅" → Philosophical/mindset close.
+  console.log(
+    `💡 Draft Ideas starting — ${scoutedContentIds.length > 0 ? scoutedContentIds.length : "all recent"} scouted items to study`,
+  );
 
-4. "Concept Explainer" — Use when breaking down a technical protocol, architecture, or mechanism in simple terms.
-   Flow: "I finally figured out how [X] works" style hook → Nested analogical stack ("Think of X like Y") → Step-by-step setup using "→" → "Massive upgrade." or "Simple once it clicks." close.
+  const cleanedCount = await cleanRejectedIdeas();
+  if (cleanedCount > 0) {
+    console.log(`🗑️ Cleaned up ${cleanedCount} rejected ideas to free up source content.`);
+  }
 
-5. "General Blended" — Default fallback for observations, news, general builder topics, or anything that doesn't clearly fit the above.
-   Flow: Use the standard Trench-Builder Curator Voice DNA layout.
+  const [scoutedContent, viralPosts, existingTitles, pillarCounts] =
+    await Promise.all([
+      scoutedContentIds.length > 0
+        ? getScoutedContentByIds(scoutedContentIds)
+        : getRecentScoutedContent(7),
+      getTopViralPosts(30),
+      getRecentIdeaTitles(30),
+      getPillarDistribution(14),
+    ]);
 
-IMPORTANT: Mix frameworks across the batch. Do NOT apply the same framework to every idea. Let the concept dictate the choice.
+  const totalIdeas = (Object.values(pillarCounts) as number[]).reduce(
+    (a: number, b: number) => a + b,
+    0,
+  );
+  const avgPerPillar = totalIdeas / CONTENT_PILLARS.length || 1;
+  const underservedPillars = CONTENT_PILLARS.filter(
+    (p) => (pillarCounts[p] || 0) < avgPerPillar * 0.5,
+  );
 
-═══════════════════════════════════════════════════════════════════════════════
-ANTI-PATTERNS (never produce)
-═══════════════════════════════════════════════════════════════════════════════
-- "AI is changing everything" — vague
-- "Here are X reasons why..." — weak hook
-- Generic takes without numbers/tools
-- Hedged opinions ("some might argue...")
-- Hyped claims without receipts
+  console.log(
+    `Context loaded → Scouted: ${scoutedContent.length}, Viral templates: ${viralPosts.length}, Existing ideas: ${existingTitles.length}`,
+  );
+  console.log(
+    `Underserved pillars: ${underservedPillars.length > 0 ? underservedPillars.join(", ") : "none"}`,
+  );
 
-Respond only with pure JSON — no markdown fences, no explanation.`;
+  if (scoutedContent.length === 0) {
+    console.log("⚠️ No scouted content available. Skipping drafting.");
+    return { ideasCreated: 0 };
+  }
 
-export async function runDraftIdeas(payload?: any): Promise<{ ideasCreated: number }> {
-    const scoutedContentIds = payload && "scoutedContentIds" in payload && Array.isArray(payload.scoutedContentIds)
-      ? (payload.scoutedContentIds as string[])
-      : [];
+  let ideasCreated = 0;
 
-    console.log(
-      `💡 Draft Ideas starting — ${scoutedContentIds.length > 0 ? scoutedContentIds.length : "all recent"} scouted items to synthesize`,
-    );
+  for (const source of scoutedContent) {
+    try {
+      const pillar = getPrimaryPillar(source);
+      if (!CONTENT_PILLARS.includes(pillar)) {
+        console.log(
+          `⏭️ Skipping source "${source.title.substring(0, 80)}" because it did not map to an active pillar.`,
+        );
+        continue;
+      }
 
-    // ─── Step 0: Clean up any Rejected ideas ────────────────────
-    
-    const cleanedCount = await cleanRejectedIdeas();
-    if (cleanedCount > 0) {
-      console.log(`🗑️ Cleaned up ${cleanedCount} rejected ideas to free up source content.`);
-    }
-
-    // ─── Step 1: Gather context from all sources ────────────────
-
-    const [scoutedContent, viralPosts, existingTitles, pillarCounts] =
-      await Promise.all([
-        scoutedContentIds.length > 0
-          ? getScoutedContentByIds(scoutedContentIds)
-          : getRecentScoutedContent(7),
-        getTopViralPosts(30),         // Top 30 viral posts (4★+)
-        getRecentIdeaTitles(30),      // Last 30 days of ideas for dedup
-        getPillarDistribution(14),    // 14-day pillar balance
-      ]);
-
-    // Compute underserved pillars for the LLM
-    const totalIdeas = (Object.values(pillarCounts) as number[]).reduce(
-      (a: number, b: number) => a + b,
-      0,
-    );
-    const avgPerPillar = totalIdeas / CONTENT_PILLARS.length || 1;
-    const underservedPillars = CONTENT_PILLARS.filter(
-      (p) => (pillarCounts[p] || 0) < avgPerPillar * 0.5,
-    );
-
-    console.log(
-      `Context loaded → Scouted: ${scoutedContent.length}, Viral: ${viralPosts.length}, Existing ideas: ${existingTitles.length}`,
-    );
-    console.log(
-      `Underserved pillars: ${underservedPillars.length > 0 ? underservedPillars.join(", ") : "none"}`,
-    );
-
-    if (scoutedContent.length === 0) {
-      console.log("⚠️ No scouted content available. Skipping drafting.");
-      return { ideasCreated: 0 };
-    }
-
-    // ─── Step 2: Group scouted content by primary pillar ───────────
-
-    const groups = new Map<string, any[]>();
-    for (const item of scoutedContent) {
-      const p = getPrimaryPillar(item);
-      const list = groups.get(p) || [];
-      list.push(item);
-      groups.set(p, list);
-    }
-
-    console.log(`Pillar groups created: ${Array.from(groups.keys()).map(k => `${k}: ${groups.get(k)?.length}`).join(", ")}`);
-
-    // ─── Step 3: Run LLM Synthesis in Parallel ─────────────────────
-    console.log("🧠 Starting parallel LLM synthesis across all pillar groups...");
-
-    interface GeneratedIdeaResult {
-      pillar: string;
-      groupItems: any[];
-      ideas: any[];
-    }
-
-    const synthesizePillar = async (
-      pillar: string,
-      groupItems: any[],
-    ): Promise<GeneratedIdeaResult> => {
-      const matchedCategories = PILLAR_TO_VIRAL_CATEGORIES[pillar] || [];
-      let groupTemplates = (viralPosts as any[]).filter((post) => {
-        const p = post.properties || {};
-        const cats = p.Category?.multi_select?.map((s: any) => s.name) || [];
-        return cats.some((c: string) => matchedCategories.includes(c));
+      const templates = getTemplatesForPillar(viralPosts as any[], pillar);
+      const valueBriefs = await generateValueBriefsForSource({
+        source,
+        pillar,
+        templates,
+        existingTitles,
+        underservedPillars,
       });
 
-      // If less than 4 templates matched, append general top-rated templates to ensure variety
-      if (groupTemplates.length < 4) {
-        const generalTemplates = (viralPosts as any[]).filter((post) => {
-          const rating = post.properties?.["⭐ Rating"]?.select?.name || "";
-          return rating.includes("⭐⭐⭐⭐⭐") || rating.includes("★★★★★");
+      if (valueBriefs.length === 0) {
+        console.log(`⏭️ No usable value angles found for source: ${source.title.substring(0, 80)}`);
+        continue;
+      }
+
+      for (const valueBrief of valueBriefs) {
+        const rawData = buildIdeaPageRawData(valueBrief);
+        const notionIdeaId = await createIdea(
+          valueBrief.ideaTitle,
+          "Idea Scout",
+          valueBrief.pillar,
+          valueBrief.selectedAngle,
+          rawData,
+          {
+            priority: valueBrief.priority || "💡 Good",
+            formatIdea: valueBrief.format,
+            stealablePattern: valueBrief.stealablePattern,
+            tweetStructure: valueBrief.suggestedStructure,
+            inspiredByScoutedIds: [valueBrief.sourcePageId],
+            inspiredByLibraryId: valueBrief.inspiredByLibraryId,
+            whyItWorks: valueBrief.whyThisMatters,
+          },
+        );
+
+        ideasCreated++;
+        console.log(
+          `💡 Created source-grounded idea "${valueBrief.ideaTitle}" from "${source.title.substring(0, 60)}"`,
+        );
+
+        await tasks.trigger("write-tweets", {
+          notionIdeaId,
+          valueBrief,
         });
-        const existingIds = new Set(groupTemplates.map((t) => t.id));
-        for (const gt of generalTemplates) {
-          if (!existingIds.has(gt.id)) {
-            groupTemplates.push(gt);
-          }
-        }
-      }
 
-      // Limit templates to a maximum of 8 per chunk to prevent prompt overload
-      groupTemplates = groupTemplates.slice(0, 8);
-
-      const scoutedSummary = groupItems
-        .map(
-          (item: any) =>
-            `[ID: ${item.pageId}] [${item.platform}] ${item.title}\nSummary: ${item.aiSummary}\nKey Takeaways: ${item.keyTakeaways}\nURL: ${item.url}`,
-        )
-        .join("\n\n---\n\n");
-
-      const viralSummary = groupTemplates
-        .map((post) => {
-          const p = post.properties || {};
-          const tweetText =
-            p["Post Title"]?.title?.[0]?.plain_text ||
-            p["Tweet"]?.title?.[0]?.plain_text ||
-            p["Post Content"]?.rich_text?.[0]?.plain_text ||
-            "";
-          const structure =
-            p["Tweet Structure"]?.rich_text?.[0]?.plain_text ||
-            p["Structure"]?.select?.name ||
-            "";
-          const rating = p["⭐ Rating"]?.select?.name || "";
-          const hookType = p["Hook Type"]?.select?.name || "";
-          const stealable =
-            p["Steal-able Pattern"]?.rich_text?.[0]?.plain_text || "";
-          const whyItWorksVal =
-            p["💡 Why It Works"]?.rich_text?.[0]?.plain_text ||
-            p["Why It Works"]?.rich_text?.[0]?.plain_text ||
-            "";
-          return `[ID: ${post.id}] [${rating}] [Hook Type: ${hookType}] ${tweetText}\nStructure: ${structure}\nSteal-able Pattern: ${stealable}\nWhy it works: ${whyItWorksVal}`;
-        })
-        .join("\n\n---\n\n");
-
-      const targetIdeaCount = Math.max(
-        1,
-        Math.min(5, Math.ceil(groupItems.length * 0.75)),
-      );
-
-      const synthesisPrompt = `You have two data sources. Your job is to CROSS-POLLINATE them to create tweet ideas for the content pillar: ${pillar}.
-
-═══ SOURCE 1: SCOUTED CONTENT (raw intelligence about ${pillar}) ═══
-${scoutedSummary}
-
-═══ SOURCE 2: VIRAL POST LIBRARY (proven templates matching ${pillar}) ═══
-${viralSummary || "No viral posts available."}
-
-═══ EXISTING IDEAS (do NOT duplicate these) ═══
-${existingTitles.slice(0, 30).join("\n") || "None yet"}
-
-═══ TASK ═══
-Generate EXACTLY ${targetIdeaCount} tweet idea drafts specifically for the "${pillar}" pillar by combining the scouted content insights with the proven viral templates.
-
-For each idea, you MUST:
-1. Pick a specific insight from Source 1 (scouted content)
-2. Apply a proven format/hook from Source 2 (viral library)
-3. Choose the optimal voice mode: "Builder-Retrospective", "Tool-Curator", or "Case-Study". Mix them across the batch.
-4. Explain the cross-pollination logic
-
-Return JSON:
-{
-  "ideas": [
-    {
-      "title": "Specific, compelling idea title following the TITLE RULES",
-      "pillar": "${pillar}",
-      "voiceMode": "Builder-Retrospective" | "Tool-Curator" | "Case-Study",
-      "appliedFramework": "SaaS-Killer" | "Macro Case-Study" | "Reputation Warning" | "Concept Explainer" | "General Blended",
-      "hookAngle": "The specific hook/angle framing for this topic",
-      "whyItWorks": "The psychological/strategic reason why this format/angle works (audience motivation, curiosity gap, etc.)",
-      "format": "Short" | "Mid-length" | "Thread" | "Article",
-      "priority": "🔥 Hot" | "💡 Good" | "📝 Maybe",
-      "stealablePattern": "The viral format pattern being applied (from Source 2)",
-      "tweetStructure": "Brief outline of the tweet structure",
-      "sourcedFrom": "Brief name or title of the scouted content source",
-      "inspiredByScoutedIds": ["exact [ID: ...] of the scouted content item(s) from Source 1 that inspired this"],
-      "inspiredByLibraryId": "The [ID: ...] of the Viral Library post you used from Source 2 that inspired this format/pattern",
-      "crossPollinationLogic": "Brief explanation of how Source 1 insight + Source 2 format = this idea"
-    }
-  ]
-}`;
-
-      try {
-        console.log(`📡 Calling OpenRouter for pillar: ${pillar}...`);
-        const generatedIdeas = await generateJSON(
-          synthesisPrompt,
-          SYNTHESIS_SYSTEM_PROMPT,
-          0.8,
+        console.log(
+          `🚀 Writer Actor dispatched for idea=${notionIdeaId} voice=${valueBrief.voiceMode} format=${valueBrief.format}`,
         );
-        if (generatedIdeas?.ideas && Array.isArray(generatedIdeas.ideas)) {
-          console.log(
-            `✨ LLM successfully synthesized ${generatedIdeas.ideas.length} ideas for ${pillar}.`,
-          );
-          return { pillar, groupItems, ideas: generatedIdeas.ideas };
-        }
-      } catch (err: any) {
-        console.error(
-          `❌ LLM synthesis failed for pillar ${pillar}:`,
-          err.message || err,
-        );
+
+        await wait(350);
       }
-      return { pillar, groupItems, ideas: [] };
-    };
-
-    // Process in batches of 3 to avoid overwhelming OpenRouter
-    const CONCURRENCY_LIMIT = 3;
-    const allEntries = Array.from(groups.entries()).filter(
-      ([pillar]) => CONTENT_PILLARS.includes(pillar)
-    );
-    const synthesisResults: GeneratedIdeaResult[] = [];
-
-    for (let i = 0; i < allEntries.length; i += CONCURRENCY_LIMIT) {
-      const batch = allEntries.slice(i, i + CONCURRENCY_LIMIT);
-      console.log(
-        `\n📦 Processing batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1}/${Math.ceil(allEntries.length / CONCURRENCY_LIMIT)} (${batch.map(([p]) => p).join(", ")})...`,
+    } catch (err: any) {
+      console.error(
+        `❌ Failed to draft from source "${source.title?.substring(0, 80)}":`,
+        err?.message || err,
       );
-      const batchResults = await Promise.all(
-        batch.map(([pillar, groupItems]) =>
-          synthesizePillar(pillar, groupItems),
-        ),
-      );
-      synthesisResults.push(...batchResults);
     }
+  }
 
-    // ─── Step 4: Write Generated Ideas Sequentially with Throttle ───────────
-    console.log("\n✍️ Starting sequential Notion database writes...");
-    let ideasCreated = 0;
-
-    for (const groupResult of synthesisResults) {
-      const { pillar, groupItems, ideas } = groupResult;
-      if (ideas.length === 0) continue;
-
-      console.log(`Writing ${ideas.length} ideas for pillar: ${pillar}...`);
-
-      for (const idea of ideas) {
-        try {
-          const validPillar = matchPillar(idea.pillar || pillar);
-          const inspiredByScoutedIds: string[] = [];
-
-          if (idea.inspiredByScoutedIds && Array.isArray(idea.inspiredByScoutedIds)) {
-            for (const idStr of idea.inspiredByScoutedIds) {
-              const matchedId = idStr.match(
-                /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-              )?.[0];
-              if (matchedId) {
-                // Verify the ID belongs to one of our group items
-                const exists = groupItems.some((item) => item.pageId === matchedId);
-                if (exists) {
-                  inspiredByScoutedIds.push(matchedId);
-                }
-              }
-            }
-          }
-
-          // Fallback: If no direct ID was matched, run the cleanTitle matching on sourcedFrom as a safety net
-          if (inspiredByScoutedIds.length === 0 && idea.sourcedFrom) {
-            const cleanSourced = cleanTitle(idea.sourcedFrom);
-            for (const item of groupItems) {
-              const cleanScouted = cleanTitle(item.title);
-              // Match length: check prefix similarity or direct inclusion
-              const minLength = Math.min(cleanScouted.length, cleanSourced.length);
-              const matchLength = Math.min(30, minLength);
-              const isMatch =
-                cleanSourced.includes(cleanScouted) ||
-                cleanScouted.includes(cleanSourced) ||
-                (matchLength >= 15 &&
-                  cleanSourced.substring(0, matchLength) ===
-                    cleanScouted.substring(0, matchLength));
-
-              if (isMatch) {
-                inspiredByScoutedIds.push(item.pageId);
-              }
-            }
-          }
-
-          const formatMap: Record<string, NonNullable<CreateIdeaOptions["formatIdea"]>> = {
-            Short: "Short",
-            "Mid-length": "Mid-length",
-            Thread: "Thread",
-            Article: "Article",
-          };
-          const normalizedFormat = formatMap[idea.format] || "Short";
-          const validVoiceModes: StrategyBrief["voiceMode"][] = [
-            "Builder-Retrospective",
-            "Tool-Curator",
-            "Case-Study",
-          ];
-          const normalizedVoiceMode = validVoiceModes.includes(idea.voiceMode)
-            ? idea.voiceMode
-            : "Builder-Retrospective";
-
-          const rawData = [
-            `🎙️ Voice: ${normalizedVoiceMode}`,
-            `📐 Framework: ${idea.appliedFramework || "General Blended"}`,
-            `📌 Cross-Pollination: ${idea.crossPollinationLogic}`,
-            `📦 Sourced From: ${idea.sourcedFrom}`,
-            `🔧 Structure: ${idea.tweetStructure}`,
-          ].join("\n\n");
-
-          const cleanLibraryId = idea.inspiredByLibraryId
-            ? idea.inspiredByLibraryId.match(
-                /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
-              )?.[0]
-            : undefined;
-
-          // 1. Save Strategy to Notion Idea Bank
-          const notionIdeaId = await createIdea(
-            idea.title,
-            "Idea Scout",
-            validPillar,
-            idea.hookAngle,
-            rawData,
-            {
-              priority: idea.priority as any,
-              formatIdea: normalizedFormat,
-              stealablePattern: idea.stealablePattern,
-              tweetStructure: idea.tweetStructure,
-              inspiredByScoutedIds:
-                inspiredByScoutedIds.length > 0 ? inspiredByScoutedIds : undefined,
-              inspiredByLibraryId: cleanLibraryId,
-              whyItWorks: idea.whyItWorks,
-            },
-          );
-
-          ideasCreated++;
-          console.log(
-            `💡 Created idea strategy: "${idea.title.substring(0, 60)}" [${validPillar}]`,
-          );
-
-          // 2. Trigger the Writer Actor
-          const strategyBrief: StrategyBrief = {
-            title: idea.title,
-            pillar: validPillar,
-            voiceMode: normalizedVoiceMode,
-            appliedFramework: idea.appliedFramework,
-            hookAngle: idea.hookAngle,
-            whyItWorks: idea.whyItWorks,
-            format: normalizedFormat,
-            stealablePattern: idea.stealablePattern,
-            tweetStructure: idea.tweetStructure,
-            crossPollinationLogic: idea.crossPollinationLogic
-          };
-
-          console.log(`🚀 Dispatching to Writer Actor for Idea: ${notionIdeaId}`);
-          try {
-            const writerHandle = await tasks.trigger("write-tweets", {
-              notionIdeaId,
-              strategyBrief,
-            });
-            const dispatchNote = [
-              `Writer run ID: ${writerHandle.id}`,
-              `Dispatched at: ${new Date().toISOString()}`,
-              `Idea page ID: ${notionIdeaId}`,
-              `Title: ${idea.title}`,
-              `Voice mode: ${normalizedVoiceMode}`,
-              `Format: ${normalizedFormat}`,
-            ].join("\n");
-            console.log(
-              `🧾 Writer dispatched | idea=${notionIdeaId} | run=${writerHandle.id} | voice=${normalizedVoiceMode} | format=${normalizedFormat} | title="${idea.title}"`,
-            );
-            await appendIdeaOperationalNote(
-              notionIdeaId,
-              "Writer Dispatch",
-              dispatchNote,
-            );
-          } catch (dispatchErr: any) {
-            const message = dispatchErr?.message || String(dispatchErr);
-            console.error(
-              `Writer dispatch failed for Idea ${notionIdeaId}:`,
-              message,
-            );
-            await appendIdeaOperationalNote(
-              notionIdeaId,
-              "Writer Dispatch Failed",
-              [
-                `Failed at: ${new Date().toISOString()}`,
-                `Idea page ID: ${notionIdeaId}`,
-                `Title: ${idea.title}`,
-                `Voice mode: ${normalizedVoiceMode}`,
-                `Format: ${normalizedFormat}`,
-                `Error: ${message}`,
-              ].join("\n"),
-            );
-          }
-
-        } catch (err: any) {
-          console.error(
-            `Failed to create idea "${idea.title?.substring(0, 60)}":`,
-            err.message || err,
-          );
-        }
-
-        // Throttle to respect Notion rate limits (~3 reqs/sec)
-        await new Promise((r) => setTimeout(r, 350));
-      }
-    }
-
-    console.log(`✅ Draft complete: ${ideasCreated} ideas written to Ideas Bank`);
-    return { ideasCreated };
+  console.log(`✅ Draft complete: ${ideasCreated} source-grounded ideas written to Ideas Bank`);
+  return { ideasCreated };
 }
 
 export const draftIdeas = schedules.task({
@@ -511,35 +199,172 @@ export const draftIdeas = schedules.task({
     maxAttempts: 2,
   },
   run: async (payload): Promise<{ ideasCreated: number }> => {
-    return runDraftIdeas(payload);
+    return runDraftIdeas(payload as DraftIdeasPayload);
   },
 });
 
-// ═══════════════════════════════════════════════════════════════
-// HELPERS FOR CHUNKED DRAFTING
-// ═══════════════════════════════════════════════════════════════
+async function generateValueBriefsForSource(input: {
+  source: ScoutedContentForDraft;
+  pillar: string;
+  templates: any[];
+  existingTitles: string[];
+  underservedPillars: string[];
+}): Promise<ValueBrief[]> {
+  const { source, pillar, templates, existingTitles, underservedPillars } = input;
+  const viralSummary = templates.map(formatViralTemplate).join("\n\n---\n\n");
 
-const PILLAR_TO_VIRAL_CATEGORIES: Record<string, string[]> = {
-  "Vibe Coding": ["Vibe Coding", "Tech/AI"],
-  "Automation": ["Tools/Resources", "Tech/AI"],
-  "Creator Economy": ["Content Creators", "Business/Entrepreneurs"],
-  "Copywriting and Storytelling": ["Marketing/Growth", "Content Creators"],
-  "AI Prompting & Tools": ["Tech/AI", "Tools/Resources"],
-  "AI Creative": ["Tech/AI", "Design/Creative"],
-  "Personal/Vulnerability": ["Productivity/Self-Improvement", "Business/Entrepreneurs"],
-  "Building in Public": ["Business/Entrepreneurs", "Marketing/Growth"],
-};
+  const prompt = `Study this ONE source and produce source-grounded ValueBriefs.
 
-function getPrimaryPillar(item: any): string {
+SOURCE METADATA
+ID: ${source.pageId}
+Title: ${source.title}
+Platform: ${source.platform}
+URL: ${source.url || "No URL"}
+Primary active pillar: ${pillar}
+Niche tags from Notion: ${source.pillars.join(", ") || "None"}
+
+FULL SOURCE CONTEXT
+${source.sourceText}
+
+VIRAL POST LIBRARY PATTERNS
+Use these only for packaging/structure. The source remains the authority.
+${viralSummary || "No viral templates available."}
+
+RECENT IDEA TITLES TO AVOID DUPLICATING
+${existingTitles.slice(0, 30).join("\n") || "None yet"}
+
+UNDERSERVED PILLARS
+${underservedPillars.join(", ") || "None"}
+
+RETURN JSON IN THIS SHAPE:
+{
+  "briefs": [
+    {
+      "ideaTitle": "2-5 word internal working title",
+      "sourcePageId": "${source.pageId}",
+      "sourceTitle": "${escapeForPrompt(source.title)}",
+      "sourceUrl": "${escapeForPrompt(source.url)}",
+      "platform": "${escapeForPrompt(source.platform)}",
+      "pillar": "${pillar}",
+      "voiceMode": "Builder-Retrospective" | "Tool-Curator" | "Case-Study",
+      "format": "Short" | "Mid-length" | "Thread" | "Article",
+      "sourceText": "Do not summarize here; the system will inject the full source text deterministically.",
+      "sourceThesis": "The core claim/lesson of the source in 1-2 sentences",
+      "sourceFacts": ["Specific facts from the source"],
+      "numbersMentioned": ["Exact numbers/metrics from the source, or empty array"],
+      "toolsMentioned": ["Tools/platforms/repos/frameworks named in the source, or empty array"],
+      "specificExamples": ["Concrete examples/cases/stories from the source"],
+      "mechanism": "The actual how/why behind the source insight",
+      "whyThisMatters": "Why a builder/founder/operator should care",
+      "valuableAngles": ["Distinct valuable angles found in the source"],
+      "selectedAngle": "The strongest angle for this draft",
+      "mustUseDetails": ["Concrete source details the Writer must use"],
+      "doNotInvent": ["Unsupported claims the Writer must not add"],
+      "suggestedStructure": "Specific structure for the final draft",
+      "priority": "🔥 Hot" | "💡 Good" | "📝 Maybe",
+      "appliedFramework": "Optional packaging framework from the viral library",
+      "stealablePattern": "Optional viral pattern used only as packaging",
+      "inspiredByLibraryId": "Optional Notion ID of the viral template used"
+    }
+  ]
+}`;
+
+  const generated = await generateJSON(
+    prompt,
+    VALUE_STRATEGIST_SYSTEM_PROMPT,
+    0.45,
+    "x-ai/grok-4.3",
+  );
+
+  const rawBriefs = Array.isArray(generated?.briefs)
+    ? generated.briefs
+    : Array.isArray(generated?.ideas)
+      ? generated.ideas
+      : [];
+
+  return rawBriefs
+    .slice(0, 3)
+    .map((brief: any) => normalizeValueBrief(brief, source, pillar))
+    .filter((brief: ValueBrief | null): brief is ValueBrief => brief !== null);
+}
+
+function normalizeValueBrief(raw: any, source: ScoutedContentForDraft, fallbackPillar: string): ValueBrief | null {
+  const pillar = matchPillar(String(raw?.pillar || fallbackPillar));
+  if (!CONTENT_PILLARS.includes(pillar)) return null;
+
+  const voiceMode = VALID_VOICE_MODES.includes(raw?.voiceMode)
+    ? raw.voiceMode
+    : inferVoiceMode(raw, source);
+
+  const format = VALID_FORMATS.includes(raw?.format)
+    ? raw.format
+    : inferFormat(raw);
+
+  const priority = VALID_PRIORITIES.includes(raw?.priority)
+    ? raw.priority
+    : "💡 Good";
+
+  const ideaTitle = cleanIdeaTitle(raw?.ideaTitle || raw?.title || raw?.selectedAngle || source.title);
+  const sourceFacts = ensureStringArray(raw?.sourceFacts);
+  const mustUseDetails = ensureStringArray(raw?.mustUseDetails);
+
+  if (sourceFacts.length === 0 && mustUseDetails.length === 0) {
+    return null;
+  }
+
+  return {
+    ideaTitle,
+    sourcePageId: source.pageId,
+    sourceTitle: source.title,
+    sourceUrl: source.url,
+    platform: source.platform,
+    pillar,
+    voiceMode,
+    format,
+    sourceText: source.sourceText,
+    sourceThesis: stringOrFallback(raw?.sourceThesis, source.aiSummary || source.title),
+    sourceFacts,
+    numbersMentioned: ensureStringArray(raw?.numbersMentioned),
+    toolsMentioned: ensureStringArray(raw?.toolsMentioned),
+    specificExamples: ensureStringArray(raw?.specificExamples),
+    mechanism: stringOrFallback(raw?.mechanism, "Explain the practical mechanism directly from the source."),
+    whyThisMatters: stringOrFallback(raw?.whyThisMatters, "This gives builders a concrete lesson from the source."),
+    valuableAngles: ensureStringArray(raw?.valuableAngles),
+    selectedAngle: stringOrFallback(raw?.selectedAngle || raw?.hookAngle, raw?.sourceThesis || source.aiSummary || source.title),
+    mustUseDetails,
+    doNotInvent: ensureStringArray(raw?.doNotInvent).length > 0
+      ? ensureStringArray(raw?.doNotInvent)
+      : [
+          "Do not invent metrics, tools, steps, timelines, or outcomes not present in the source.",
+          "Do not claim the creator personally built or tested anything unless the source says so.",
+        ],
+    suggestedStructure: stringOrFallback(raw?.suggestedStructure || raw?.tweetStructure, "Hook, source-backed insight, mechanism, practical takeaway."),
+    priority,
+    appliedFramework: stringOrFallback(raw?.appliedFramework, "Source-grounded value breakdown"),
+    stealablePattern: stringOrFallback(raw?.stealablePattern, "Use viral templates only as packaging; do not override source truth."),
+    inspiredByLibraryId: cleanNotionId(raw?.inspiredByLibraryId),
+  };
+}
+
+function getPrimaryPillar(item: ScoutedContentForDraft): string {
   if (item.pillars && item.pillars.length > 0) {
     const activePillar = item.pillars.find((p: string) =>
       CONTENT_PILLARS.includes(p),
     );
-    if (activePillar) return activePillar; // Use the first active Notion Niche tag
+    if (activePillar) return activePillar;
   }
 
-  // Fallback: Keyword-based matching on summary / takeaways
   const textToSearch = `${item.title} ${item.aiSummary} ${item.keyTakeaways}`.toLowerCase();
+  if (
+    textToSearch.includes("web3") ||
+    textToSearch.includes("crypto") ||
+    textToSearch.includes("solana") ||
+    textToSearch.includes("ethereum") ||
+    textToSearch.includes("nft")
+  ) {
+    return "Unknown";
+  }
+
   if (
     textToSearch.includes("cursor") ||
     textToSearch.includes("claude code") ||
@@ -568,6 +393,7 @@ function getPrimaryPillar(item: any): string {
     textToSearch.includes("audience") ||
     textToSearch.includes("creator economy") ||
     textToSearch.includes("monetise") ||
+    textToSearch.includes("monetization") ||
     textToSearch.includes("sponsorship")
   ) {
     return "Creator Economy";
@@ -599,16 +425,177 @@ function getPrimaryPillar(item: any): string {
   ) {
     return "Building in Public";
   }
-  // Default fallback
-  return "AI Prompting & Tools";
+  if (
+    textToSearch.includes("chatgpt") ||
+    textToSearch.includes("claude") ||
+    textToSearch.includes("prompt") ||
+    textToSearch.includes("grok") ||
+    textToSearch.includes("perplexity")
+  ) {
+    return "AI Prompting & Tools";
+  }
+
+  return "Unknown";
 }
 
-function cleanTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/^\[(youtube|instagram|x)\]\s*/i, "")
-    .replace(/^(youtube|instagram|x)\s+post:\s*/i, "")
-    .replace(/^(youtube|instagram|x)\s+video:\s*/i, "")
-    .replace(/[\s\r\n]+/g, " ")
+const PILLAR_TO_VIRAL_CATEGORIES: Record<string, string[]> = {
+  "Vibe Coding": ["Vibe Coding", "Tech/AI"],
+  "Automation": ["Tools/Resources", "Tech/AI"],
+  "Creator Economy": ["Content Creators", "Business/Entrepreneurs"],
+  "Copywriting and Storytelling": ["Marketing/Growth", "Content Creators"],
+  "AI Prompting & Tools": ["Tech/AI", "Tools/Resources"],
+  "AI Creative": ["Tech/AI", "Design/Creative"],
+  "Personal/Vulnerability": ["Productivity/Self-Improvement", "Business/Entrepreneurs"],
+  "Building in Public": ["Business/Entrepreneurs", "Marketing/Growth"],
+};
+
+function getTemplatesForPillar(viralPosts: any[], pillar: string): any[] {
+  const matchedCategories = PILLAR_TO_VIRAL_CATEGORIES[pillar] || [];
+  const matched = viralPosts.filter((post) => {
+    const p = post.properties || {};
+    const cats = p.Category?.multi_select?.map((s: any) => s.name) || [];
+    return cats.some((c: string) => matchedCategories.includes(c));
+  });
+
+  if (matched.length >= 4) return matched.slice(0, 8);
+
+  const existingIds = new Set(matched.map((t) => t.id));
+  const generalTemplates = viralPosts.filter((post) => {
+    const rating = post.properties?.["⭐ Rating"]?.select?.name || "";
+    return rating.includes("⭐⭐⭐⭐⭐") || rating.includes("★★★★★");
+  });
+
+  for (const template of generalTemplates) {
+    if (!existingIds.has(template.id)) matched.push(template);
+    if (matched.length >= 8) break;
+  }
+
+  return matched.slice(0, 8);
+}
+
+function formatViralTemplate(post: any): string {
+  const p = post.properties || {};
+  const tweetText =
+    p["Post Title"]?.title?.[0]?.plain_text ||
+    p["Tweet"]?.title?.[0]?.plain_text ||
+    p["Post Content"]?.rich_text?.[0]?.plain_text ||
+    "";
+  const structure =
+    p["Tweet Structure"]?.rich_text?.[0]?.plain_text ||
+    p["Structure"]?.select?.name ||
+    "";
+  const rating = p["⭐ Rating"]?.select?.name || "";
+  const hookType = p["Hook Type"]?.select?.name || "";
+  const stealable =
+    p["Steal-able Pattern"]?.rich_text?.[0]?.plain_text || "";
+  const whyItWorksVal =
+    p["💡 Why It Works"]?.rich_text?.[0]?.plain_text ||
+    p["Why It Works"]?.rich_text?.[0]?.plain_text ||
+    "";
+  return `[ID: ${post.id}] [${rating}] [Hook Type: ${hookType}]
+Template/Text:
+${tweetText}
+
+Structure:
+${structure}
+
+Steal-able Pattern:
+${stealable}
+
+Why it works:
+${whyItWorksVal}`;
+}
+
+function buildIdeaPageRawData(valueBrief: ValueBrief): string {
+  return [
+    `Source Title:\n${valueBrief.sourceTitle}`,
+    valueBrief.sourceUrl ? `Source URL:\n${valueBrief.sourceUrl}` : "",
+    `Platform:\n${valueBrief.platform}`,
+    `Source Thesis:\n${valueBrief.sourceThesis}`,
+    `Selected Angle:\n${valueBrief.selectedAngle}`,
+    `Why This Matters:\n${valueBrief.whyThisMatters}`,
+    `Mechanism:\n${valueBrief.mechanism}`,
+    `Source Facts:\n${formatLines(valueBrief.sourceFacts)}`,
+    `Numbers Mentioned:\n${formatLines(valueBrief.numbersMentioned)}`,
+    `Tools Mentioned:\n${formatLines(valueBrief.toolsMentioned)}`,
+    `Specific Examples:\n${formatLines(valueBrief.specificExamples)}`,
+    `Must-Use Details:\n${formatLines(valueBrief.mustUseDetails)}`,
+    `Do Not Invent:\n${formatLines(valueBrief.doNotInvent)}`,
+    `Suggested Structure:\n${valueBrief.suggestedStructure}`,
+    `Voice Mode:\n${valueBrief.voiceMode}`,
+    `Format:\n${valueBrief.format}`,
+    `Packaging Pattern:\n${valueBrief.stealablePattern || "Source-grounded value breakdown"}`,
+    `Full ValueBrief JSON:\n${JSON.stringify(valueBrief, null, 2)}`,
+  ].filter(Boolean).join("\n\n---\n\n");
+}
+
+function ensureStringArray(value: any): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+}
+
+function stringOrFallback(value: any, fallback: string): string {
+  const str = String(value || "").trim();
+  return str || fallback;
+}
+
+function cleanIdeaTitle(value: string): string {
+  const cleaned = String(value || "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/^["']|["']$/g, "")
     .trim();
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  return words.slice(0, 6).join(" ") || "Source Value Angle";
+}
+
+function cleanNotionId(value: any): string | undefined {
+  const match = String(value || "").match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+  );
+  return match?.[0];
+}
+
+function inferVoiceMode(raw: any, source: ScoutedContentForDraft): VoiceMode {
+  const text = `${raw?.selectedAngle || ""} ${raw?.sourceThesis || ""} ${source.sourceText}`.toLowerCase();
+  if (
+    text.includes("tool") ||
+    text.includes("repo") ||
+    text.includes("github") ||
+    text.includes("open-source") ||
+    text.includes("open source")
+  ) {
+    return "Tool-Curator";
+  }
+  if (
+    text.includes("first $") ||
+    text.includes("revenue") ||
+    text.includes("mrr") ||
+    text.includes("case study") ||
+    text.includes("someone built")
+  ) {
+    return "Case-Study";
+  }
+  return "Builder-Retrospective";
+}
+
+function inferFormat(raw: any): ContentFormat {
+  const structure = String(raw?.suggestedStructure || raw?.selectedAngle || "").toLowerCase();
+  if (structure.includes("article") || structure.includes("long-form")) return "Article";
+  if (structure.includes("thread") || structure.includes("[1/")) return "Thread";
+  if (structure.includes("mid")) return "Mid-length";
+  return "Mid-length";
+}
+
+function formatLines(items: string[]): string {
+  return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : "- None extracted";
+}
+
+function escapeForPrompt(value: string): string {
+  return String(value || "").replace(/"/g, '\\"');
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -28,6 +28,19 @@ export interface CreateIdeaOptions {
   draftTweet?: string;
 }
 
+export interface ScoutedContentForDraft {
+  pageId: string;
+  title: string;
+  platform: string;
+  aiSummary: string;
+  keyTakeaways: string;
+  url: string;
+  pillars: string[];
+  creatorPageId: string;
+  transcriptPreview: string;
+  sourceText: string;
+}
+
 export interface ScoutedContentInput {
   title: string;
   platform: "X" | "YouTube" | "Instagram";
@@ -247,6 +260,126 @@ function splitIntoParagraphBlocks(text: string): any[] {
       rich_text: [{ text: { content: chunk } }],
     },
   }));
+}
+
+async function appendBlocksInBatches(pageId: string, blocks: any[]) {
+  const batchSize = 80;
+  for (let i = 0; i < blocks.length; i += batchSize) {
+    await notion.blocks.children.append({
+      block_id: pageId,
+      children: blocks.slice(i, i + batchSize),
+    });
+    if (i + batchSize < blocks.length) {
+      await new Promise((r) => setTimeout(r, 350));
+    }
+  }
+}
+
+function getRichTextPlain(prop: any): string {
+  if (!prop?.rich_text) return "";
+  return prop.rich_text.map((r: any) => r.plain_text || "").join("");
+}
+
+function getTitlePlain(prop: any): string {
+  if (!prop?.title) return "";
+  return prop.title.map((r: any) => r.plain_text || "").join("");
+}
+
+function getBlockRichText(block: any): string {
+  const typed = block?.[block?.type];
+  const richText = typed?.rich_text || typed?.caption || [];
+  if (!Array.isArray(richText)) return "";
+  return richText.map((r: any) => r.plain_text || "").join("");
+}
+
+export function extractPlainTextFromNotionBlocks(blocks: any[]): string {
+  return blocks
+    .map((block) => getBlockRichText(block))
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+async function getBlockChildrenPlainText(blockId: string): Promise<string> {
+  const chunks: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response: any = await notion.blocks.children.list({
+      block_id: blockId,
+      page_size: 100,
+      ...(cursor ? { start_cursor: cursor } : {}),
+    });
+
+    for (const block of response.results || []) {
+      const ownText = getBlockRichText(block);
+      if (ownText) chunks.push(ownText);
+      if (block.has_children) {
+        const childText = await getBlockChildrenPlainText(block.id);
+        if (childText) chunks.push(childText);
+      }
+    }
+
+    cursor = response.has_more ? response.next_cursor : undefined;
+  } while (cursor);
+
+  return chunks.filter(Boolean).join("\n\n");
+}
+
+export function buildSourceTextFromScoutedContentFields(input: {
+  title: string;
+  platform: string;
+  url: string;
+  aiSummary: string;
+  keyTakeaways: string;
+  transcriptPreview?: string;
+  pageBodyText?: string;
+}): string {
+  const fullSourceText = input.pageBodyText || input.transcriptPreview || input.title;
+  return [
+    `SOURCE TITLE:\n${input.title}`,
+    `PLATFORM:\n${input.platform}`,
+    input.url ? `SOURCE URL:\n${input.url}` : "",
+    input.aiSummary ? `AI SUMMARY:\n${input.aiSummary}` : "",
+    input.keyTakeaways ? `KEY TAKEAWAYS:\n${input.keyTakeaways}` : "",
+    `FULL TRANSCRIPT / SOURCE TEXT:\n${fullSourceText}`,
+  ].filter(Boolean).join("\n\n---\n\n");
+}
+
+async function mapScoutedPageForDraft(page: any): Promise<ScoutedContentForDraft> {
+  const p = page.properties || {};
+  const creatorPageId =
+    p["YouTube Creators"]?.relation?.[0]?.id ||
+    p["Instagram Creators"]?.relation?.[0]?.id ||
+    p["👤 Twitter Creators"]?.relation?.[0]?.id ||
+    "";
+  const title = getTitlePlain(p["Title"]);
+  const platform = p["Platform"]?.select?.name || "";
+  const aiSummary = getRichTextPlain(p["AI Summary"]);
+  const keyTakeaways = getRichTextPlain(p["Key Takeaways"]);
+  const transcriptPreview = getRichTextPlain(p["Transcript"]);
+  const url = p["URL"]?.url || "";
+  const pageBodyText = await getBlockChildrenPlainText(page.id);
+
+  return {
+    pageId: page.id,
+    title,
+    platform,
+    aiSummary,
+    keyTakeaways,
+    url,
+    pillars: p["Niche"]?.multi_select?.map((s: any) => s.name) || [],
+    creatorPageId,
+    transcriptPreview,
+    sourceText: buildSourceTextFromScoutedContentFields({
+      title,
+      platform,
+      url,
+      aiSummary,
+      keyTakeaways,
+      transcriptPreview,
+      pageBodyText,
+    }),
+  };
 }
 
 /**
@@ -528,16 +661,7 @@ export async function getRecentScoutedTitles(
 export async function getRecentScoutedContent(
   days: number = 7,
   platform?: "X" | "YouTube" | "Instagram",
-): Promise<
-  {
-    pageId: string;
-    title: string;
-    platform: string;
-    aiSummary: string;
-    keyTakeaways: string;
-    url: string;
-  }[]
-> {
+): Promise<ScoutedContentForDraft[]> {
   try {
     const sinceDate = new Date();
     sinceDate.setDate(sinceDate.getDate() - days);
@@ -566,24 +690,18 @@ export async function getRecentScoutedContent(
       page_size: 50,
     });
 
-    return response.results.map((page: any) => {
-      const p = page.properties || {};
-      const creatorPageId =
-        p["YouTube Creators"]?.relation?.[0]?.id ||
-        p["Instagram Creators"]?.relation?.[0]?.id ||
-        p["👤 Twitter Creators"]?.relation?.[0]?.id ||
-        "";
-      return {
-        pageId: page.id,
-        title: p["Title"]?.title?.[0]?.plain_text || "",
-        platform: p["Platform"]?.select?.name || "",
-        aiSummary: p["AI Summary"]?.rich_text?.[0]?.plain_text || "",
-        keyTakeaways: p["Key Takeaways"]?.rich_text?.[0]?.plain_text || "",
-        url: p["URL"]?.url || "",
-        pillars: p["Niche"]?.multi_select?.map((s: any) => s.name) || [],
-        creatorPageId,
-      };
-    });
+    const results: ScoutedContentForDraft[] = [];
+    const pages = response.results as any[];
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < pages.length; i += BATCH_SIZE) {
+      const batch = pages.slice(i, i + BATCH_SIZE);
+      results.push(...await Promise.all(batch.map(mapScoutedPageForDraft)));
+      if (i + BATCH_SIZE < pages.length) {
+        await new Promise((r) => setTimeout(r, 350));
+      }
+    }
+
+    return results;
   } catch (error) {
     console.error("Error fetching recent scouted content:", error);
     return [];
@@ -595,26 +713,10 @@ export async function getRecentScoutedContent(
  */
 export async function getScoutedContentByIds(
   ids: string[],
-): Promise<
-  {
-    pageId: string;
-    title: string;
-    platform: string;
-    aiSummary: string;
-    keyTakeaways: string;
-    url: string;
-  }[]
-> {
+): Promise<ScoutedContentForDraft[]> {
   if (!ids || ids.length === 0) return [];
   try {
-    const results: (NonNullable<{
-      pageId: string;
-      title: string;
-      platform: string;
-      aiSummary: string;
-      keyTakeaways: string;
-      url: string;
-    }> | null)[] = [];
+    const results: (ScoutedContentForDraft | null)[] = [];
 
     // Chunk requests to stay under Notion's 3 req/s rate limit
     const BATCH_SIZE = 5;
@@ -623,26 +725,7 @@ export async function getScoutedContentByIds(
       const chunkResults = await Promise.all(chunk.map(async (id) => {
         try {
           const page: any = await notion.pages.retrieve({ page_id: id });
-          const p = page.properties || {};
-          const getRichTextPlain = (prop: any) => {
-            if (!prop?.rich_text) return "";
-            return prop.rich_text.map((r: any) => r.plain_text || "").join("");
-          };
-          const creatorPageId =
-            p["YouTube Creators"]?.relation?.[0]?.id ||
-            p["Instagram Creators"]?.relation?.[0]?.id ||
-            p["👤 Twitter Creators"]?.relation?.[0]?.id ||
-            "";
-          return {
-            pageId: page.id,
-            title: p["Title"]?.title?.[0]?.plain_text || "",
-            platform: p["Platform"]?.select?.name || "",
-            aiSummary: getRichTextPlain(p["AI Summary"]),
-            keyTakeaways: getRichTextPlain(p["Key Takeaways"]),
-            url: p["URL"]?.url || "",
-            pillars: p["Niche"]?.multi_select?.map((s: any) => s.name) || [],
-            creatorPageId,
-          };
+          return mapScoutedPageForDraft(page);
         } catch (err) {
           console.error(`Error retrieving scouted content page ${id}:`, err);
           return null;
@@ -762,29 +845,29 @@ export async function createIdea(
             rich_text: [{ text: { content: "🔍 Source Content" } }],
           },
         },
-        {
-          object: "block" as const,
-          type: "paragraph" as const,
-          paragraph: {
-            rich_text: [{ text: { content: rawData.substring(0, 2000) } }],
-          },
-        },
-        // Draft Tweet section (if provided)
-        ...(options.draftTweet ? [
-          {
-            object: "block" as const,
-            type: "toggle" as const,
-            toggle: {
-              rich_text: [{ text: { content: "▶️ Full Draft Tweet" } }],
-              children: splitIntoParagraphBlocks(options.draftTweet),
-            },
-          },
-        ] : []),
       ],
     };
 
+    const pageBodyBlocks = [
+      ...splitIntoParagraphBlocks(rawData),
+      // Draft Tweet section (if provided)
+      ...(options.draftTweet ? [
+        {
+          object: "block" as const,
+          type: "toggle" as const,
+          toggle: {
+            rich_text: [{ text: { content: "▶️ Full Draft Tweet" } }],
+            children: splitIntoParagraphBlocks(options.draftTweet),
+          },
+        },
+      ] : []),
+    ];
+
     try {
       const response = await notion.pages.create(pageBody);
+      if (pageBodyBlocks.length > 0) {
+        await appendBlocksInBatches(response.id, pageBodyBlocks);
+      }
       return response.id;
     } catch (error: any) {
       // If the error is related to an invalid/missing relation ID, retry without it
@@ -799,6 +882,9 @@ export async function createIdea(
         delete pageBody.properties["Inspired By (Library)"];
         delete pageBody.properties["Inspired By (Scouted)"];
         const response = await notion.pages.create(pageBody);
+        if (pageBodyBlocks.length > 0) {
+          await appendBlocksInBatches(response.id, pageBodyBlocks);
+        }
         return response.id;
       }
       throw error;
@@ -1193,7 +1279,7 @@ export async function updateIdea(pageId: string, updates: Partial<CreateIdeaOpti
     }
 
     if (updates.draftTweet) {
-      await notion.blocks.children.append({
+      const toggleResponse: any = await notion.blocks.children.append({
         block_id: pageId,
         children: [
           {
@@ -1201,11 +1287,14 @@ export async function updateIdea(pageId: string, updates: Partial<CreateIdeaOpti
             type: "toggle" as const,
             toggle: {
               rich_text: [{ text: { content: "▶️ Full Draft Tweet" } }],
-              children: splitIntoParagraphBlocks(updates.draftTweet),
             },
           },
         ]
       });
+      const toggleId = toggleResponse.results?.[0]?.id;
+      if (toggleId) {
+        await appendBlocksInBatches(toggleId, splitIntoParagraphBlocks(updates.draftTweet));
+      }
     }
   } catch (error) {
     console.error(`Error updating Idea ${pageId}:`, error);
@@ -1218,19 +1307,16 @@ export async function updateIdea(pageId: string, updates: Partial<CreateIdeaOpti
  */
 export async function appendIdeaOperationalNote(pageId: string, title: string, body: string) {
   try {
-    await notion.blocks.children.append({
-      block_id: pageId,
-      children: [
-        {
-          object: "block" as const,
-          type: "heading_3" as const,
-          heading_3: {
-            rich_text: [{ text: { content: title.substring(0, 2000) } }],
-          },
+    await appendBlocksInBatches(pageId, [
+      {
+        object: "block" as const,
+        type: "heading_3" as const,
+        heading_3: {
+          rich_text: [{ text: { content: title.substring(0, 2000) } }],
         },
-        ...splitIntoParagraphBlocks(body),
-      ],
-    });
+      },
+      ...splitIntoParagraphBlocks(body),
+    ]);
   } catch (error) {
     console.error(`Error appending operational note to Idea ${pageId}:`, error);
     throw error;

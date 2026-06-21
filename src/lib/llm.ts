@@ -14,7 +14,7 @@ function getClient() {
         "HTTP-Referer": "http://localhost:3000", // Required by OpenRouter
         "X-Title": "Agentic Workflows", // Required by OpenRouter
       },
-      timeout: 120000, // 120 seconds timeout — large parallel synthesis prompts need headroom
+      timeout: 120000, // 120 seconds timeout — large source-study prompts need headroom
     });
   }
   return _client;

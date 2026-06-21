@@ -1,7 +1,8 @@
 import { loadVoiceSamples } from "../src/trigger/idea-scout/write-tweets";
 import {
   buildWriterPrompt,
-  StrategyBrief,
+  ContentFormat,
+  ValueBrief,
   VoiceMode,
   VOICE_EXAMPLES_PER_PROMPT,
   selectVoiceSamples,
@@ -35,22 +36,39 @@ const voiceModes: VoiceMode[] = [
   "Case-Study",
 ];
 
-const sampleStrategy: StrategyBrief = {
-  title: "Voice Sample Test",
+const sampleValueBrief: ValueBrief = {
+  ideaTitle: "Transcript Value Test",
+  sourcePageId: "3674a5db-f371-80ad-8ec6-f3e99bdd4191",
+  sourceTitle: "How an n8n workflow triages inbound leads",
+  sourceUrl: "https://example.com/source",
+  platform: "YouTube",
   pillar: "Automation",
   voiceMode: "Builder-Retrospective",
-  appliedFramework: "General Blended",
-  hookAngle: "Show a practical automation lesson",
-  whyItWorks: "It gives builders a concrete takeaway",
   format: "Thread",
-  stealablePattern: "Specific problem into repeatable steps",
-  tweetStructure: "Hook, context, steps, payoff",
-  crossPollinationLogic: "Test strategy only",
+  sourceText: "FULL TRANSCRIPT: The workflow uses n8n, Airtable, and Slack to qualify leads before a human replies.",
+  sourceThesis: "A simple routing workflow can remove manual lead triage.",
+  sourceFacts: [
+    "The workflow qualifies inbound leads before a human replies.",
+    "Slack is used for the final notification step.",
+  ],
+  numbersMentioned: ["3-step routing workflow"],
+  toolsMentioned: ["n8n", "Airtable", "Slack"],
+  specificExamples: ["Inbound leads are scored before the handoff."],
+  mechanism: "Use automation to classify, enrich, score, and route each lead.",
+  whyThisMatters: "It shows builders how to remove repetitive qualification work.",
+  valuableAngles: ["Lead triage as an automation primitive"],
+  selectedAngle: "Turn lead triage into a routing system",
+  mustUseDetails: ["n8n", "Airtable", "Slack", "lead qualification before human reply"],
+  doNotInvent: ["Do not claim revenue lift.", "Do not say the creator personally built it."],
+  suggestedStructure: "Hook, source mechanism, 3 steps, practical takeaway.",
+  priority: "💡 Good",
+  appliedFramework: "Concept Explainer",
+  stealablePattern: "Mechanism breakdown",
 };
 
 for (const voiceMode of voiceModes) {
   const prompt = buildWriterPrompt(
-    { ...sampleStrategy, voiceMode },
+    { ...sampleValueBrief, voiceMode },
     voiceMode,
     samples,
   );
@@ -59,21 +77,59 @@ for (const voiceMode of voiceModes) {
     prompt.userPrompt.includes("Example 1:"),
     `${voiceMode} prompt includes few-shot examples`,
   );
-  
+
   assert(
     !prompt.userPrompt.includes(`Example ${VOICE_EXAMPLES_PER_PROMPT + 1}:`),
     `${voiceMode} prompt respects VOICE_EXAMPLES_PER_PROMPT limit`,
   );
 
-  const selected = selectVoiceSamples(samples, voiceMode === "Tool-Curator" ? "sharbel" : voiceMode === "Case-Study" ? "zaimiri" : "Dreyshq", voiceMode);
+  assert(
+    prompt.userPrompt.includes("FULL SOURCE TEXT / TRANSCRIPT"),
+    `${voiceMode} prompt includes full source context section`,
+  );
+
+  assert(
+    prompt.userPrompt.includes("The workflow qualifies inbound leads before a human replies."),
+    `${voiceMode} prompt includes source facts`,
+  );
+
+  assert(
+    prompt.systemPrompt.includes("Do not invent metrics"),
+    `${voiceMode} prompt includes anti-invention rules`,
+  );
+
+  const selected = selectVoiceSamples(
+    samples,
+    voiceMode === "Tool-Curator" ? "sharbel" : voiceMode === "Case-Study" ? "zaimiri" : "Dreyshq",
+    voiceMode,
+  );
   assert(
     selected.length <= VOICE_EXAMPLES_PER_PROMPT,
     `${voiceMode} selector returns at most ${VOICE_EXAMPLES_PER_PROMPT} samples`,
   );
 }
 
+const formats: Record<ContentFormat, string> = {
+  Short: "Draft ONE short tweet.",
+  "Mid-length": "Draft ONE mid-length tweet.",
+  Thread: "Draft a valuable thread.",
+  Article: "Draft the final LONG-FORM ARTICLE.",
+};
+
+for (const [format, expectedInstruction] of Object.entries(formats) as [ContentFormat, string][]) {
+  const prompt = buildWriterPrompt(
+    { ...sampleValueBrief, format },
+    sampleValueBrief.voiceMode,
+    samples,
+  );
+  assert(
+    prompt.userPrompt.includes(expectedInstruction),
+    `${format} receives distinct format instructions`,
+  );
+}
+
 const builderPrompt = buildWriterPrompt(
-  { ...sampleStrategy, voiceMode: "Builder-Retrospective" },
+  { ...sampleValueBrief, voiceMode: "Builder-Retrospective" },
   "Builder-Retrospective",
   samples,
 );

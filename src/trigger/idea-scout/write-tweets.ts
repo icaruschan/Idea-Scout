@@ -1,13 +1,13 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { generateText } from "../../lib/llm";
-import { StrategyBrief, buildWriterPrompt } from "../../lib/voice-dna";
+import { ValueBrief, buildWriterPrompt } from "../../lib/voice-dna";
 import { updateIdea } from "../../lib/notion";
 import * as fs from "fs";
 import * as path from "path";
 
 interface WriteTweetsPayload {
   notionIdeaId: string;
-  strategyBrief: StrategyBrief;
+  valueBrief: ValueBrief;
 }
 
 const COMMITTED_SAMPLES_PATH = path.resolve(process.cwd(), "src/data/creator-voice-samples.json");
@@ -36,24 +36,24 @@ export const writeTweets = task({
     maxAttempts: 2,
   },
   run: async (payload: WriteTweetsPayload): Promise<{ success: boolean; notionIdeaId: string }> => {
-    const { notionIdeaId, strategyBrief } = payload;
+    const { notionIdeaId, valueBrief } = payload;
     
     console.log(`✍️ Writer Actor starting for Idea: ${notionIdeaId}`);
-    console.log(`Mode: ${strategyBrief.voiceMode} | Framework: ${strategyBrief.appliedFramework}`);
+    console.log(`Mode: ${valueBrief.voiceMode} | Format: ${valueBrief.format} | Source: ${valueBrief.sourceTitle}`);
 
     try {
       // 1. Load few-shot samples
       const samples = loadVoiceSamples();
 
       // 2. Build the exact system and user prompt for this mode
-      const { systemPrompt, userPrompt } = buildWriterPrompt(strategyBrief, strategyBrief.voiceMode, samples);
+      const { systemPrompt, userPrompt } = buildWriterPrompt(valueBrief, valueBrief.voiceMode, samples);
 
-      // 3. Generate the text using Qwen/Claude (with higher creativity and no JSON wrapper)
+      // 3. Generate the text from the source-grounded brief (no JSON wrapper)
       console.log("📡 Calling LLM to draft tweet text...");
       const draftResult = await generateText(
         userPrompt,
         systemPrompt,
-        0.85, // Higher temperature for more creative/human-like text
+        0.7,
         "x-ai/grok-4.3" // Use Grok-4.3 as requested by the user
       );
 

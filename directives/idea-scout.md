@@ -99,35 +99,43 @@ Trigger.dev Mon/Thu/Sat Cron
 
 Trigger.dev Mon-Sat Cron
 │
-└── draft-ideas [STRATEGIST] (Runs 8:00 AM UTC Mon-Sat | maxDuration: 900s)
+└── draft-ideas [VALUE STRATEGIST] (Runs 4:30 AM UTC Mon/Wed/Fri/Sun | maxDuration: 900s)
     ├── 1. Clean up rejected ideas (archive to sever relations and free scouted content)
     ├── 2. Gather context from all sources:
     │      ├── A. Unused Scouted Content (from past 7 days, filtering out those already linked to Ideas)
     │      ├── B. Top 30 Viral Posts (4★+)
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
     │      └── D. Category distribution balance (prioritize underserved pillars)
-    ├── 3. Group scouted posts into buckets based on the first active "Niche" tag exposed as item.pillars
-    ├── 4. Parallelize LLM synthesis (Qwen) across active niche groups in concurrency-limited batches of 3
-    │      Output: StrategyBrief JSON per idea (title, pillar, voiceMode, format, hookAngle, etc.)
+    ├── 3. For each Scouted Content page, fetch the full source context:
+    │      ├── Title, Platform, URL, AI Summary, Key Takeaways, and Niche
+    │      ├── Full transcript/source text from the Notion page body toggle when present
+    │      └── X posts without transcript fall back to stored title/text + summary/takeaways
+    ├── 4. Resolve the first active "Niche" tag exposed as item.pillars
+    │      Frozen Web3/Psychology tags resolve to Unknown/skip for new drafting
+    ├── 5. Study one source at a time with Grok-4.3
+    │      Output: ValueBrief JSON with source thesis, facts, numbers, tools, examples, mechanism, selected angle, must-use details, and do-not-invent rules
     │      Format options: "Short" | "Mid-length" | "Thread" | "Article"
     │      Title constraint: 2-5 word concise working titles (not clickbait)
-    ├── 5. Sequentially write StrategyBriefs to Ideas Bank (status: 💭 Raw) with 350ms throttle
-    └── 6. Dispatch write-tweets task for each idea, logging and appending the child run ID to the Idea page
+    ├── 6. Sequentially write ValueBriefs to Ideas Bank (status: 💭 Raw) with 350ms throttle
+    └── 7. Dispatch write-tweets task for each ValueBrief
 
 Triggered by draft-ideas (async)
 │
 └── write-tweets [WRITER ACTOR] (maxDuration: 600s | retry: 2)
     ├── 1. Load few-shot voice samples from src/data/creator-voice-samples.json (.tmp is local regeneration scratch)
-    ├── 2. Build voice-specific prompt via buildWriterPrompt() from voice-dna.ts
+    ├── 2. Build source-grounded, voice-specific prompt via buildWriterPrompt() from voice-dna.ts
     │      Maps voiceMode → creator samples:
     │        Builder-Retrospective → Dreyshq (first-person, scar tissue, value)
     │        Tool-Curator → Sharbel (analytical, metric-dense, "Bookmark this" CTA)
     │        Case-Study → Zaimiri (operator wisdom, lowercase openers, "bro" allowed)
-    ├── 3. Generate text via Grok-4.3 (x-ai/grok-4.3) at temperature 0.85
+    ├── 3. Use the ValueBrief source facts, numbers, tools, examples, mechanism, and do-not-invent guardrails
+    ├── 4. Generate text via Grok-4.3 (x-ai/grok-4.3) at temperature 0.7
     │      Dynamically switches output:
-    │        Tweet/Thread: Staccato formatting, [1/n] markers
+    │        Short: One tight tweet
+    │        Mid-length: One longer value tweet
+    │        Thread: Staccato formatting, [1/n] markers
     │        Article: Full long-form markdown with ##/### headers
-    └── 4. Update Notion Idea:
+    └── 5. Update Notion Idea:
            - Draft Tweet property (first 2000 chars)
            - Full text in toggle block (▶️ Full Draft Tweet)
            - Auto-set status to 📝 Drafted
@@ -150,31 +158,36 @@ Trigger.dev Manual Run
 ### Synthesis & Drafting Tasks (`draft-ideas` + `write-tweets`)
 The synthesis engine runs as a two-actor pipeline:
 
-**Actor 1: The Strategist (`draft-ideas`)**
+**Actor 1: The Value Strategist (`draft-ideas`)**
 1. Cleans up any Ideas Bank entries marked as "Rejected" (archiving them) to sever relations and free up the associated scouted content for reuse.
 2. Queries the past 7 days of Scouted Content, filtering out entries that are already linked to generated ideas in the `"Linked Ideas"` relation (Source Deduplication).
 3. Queries the top 30 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
 4. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
 5. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
-6. Groups scouted posts by the first active `"Niche"` multi-select value exposed in code as `item.pillars`, skipping frozen Web3/Psychology tags.
-7. Processes groups in parallel batches of 3:
-   - Filters templates to only those containing Category tags relevant to the current niche.
-   - Instructs the LLM (Qwen via OpenRouter) to generate `StrategyBrief` objects containing title, pillar, voiceMode, format, hookAngle, whyItWorks, appliedFramework, stealablePattern, and tweetStructure.
+6. Fetches full source context for each Scouted Content page:
+   - `Title`, `Platform`, `URL`, `AI Summary`, `Key Takeaways`, and `Niche`.
+   - Full transcript/source text from page body blocks when present.
+   - X posts without transcripts fall back to stored title/text plus summary/takeaways.
+7. Processes one source at a time with Grok-4.3:
+   - Uses the first active `"Niche"` multi-select value exposed in code as `item.pillars`.
+   - Skips sources that only resolve to frozen Web3/Psychology or `Unknown`.
+   - Filters viral templates to relevant Category tags, but treats them as packaging only.
+   - Generates `ValueBrief` objects containing source thesis, facts, numbers, tools, examples, mechanism, why it matters, selected angle, must-use details, do-not-invent rules, voiceMode, and format.
    - Format options: `"Short"`, `"Mid-length"`, `"Thread"`, `"Article"`.
    - Title constraint: 2-5 word concise working titles (not clickbait sentences).
-   - Full viral template content is passed (no 300-char truncation).
-8. Gathers, flattens, and writes the synthesized StrategyBriefs to the Notion Ideas Bank (status: 💭 Raw) with a `350ms` throttle delay.
-9. Dispatches the `write-tweets` task for each idea, logs the child run ID, and appends a Writer Dispatch note to the Idea page. If dispatch fails, the Idea remains 💭 Raw and gets a failure note.
+8. Writes each ValueBrief to the Notion Ideas Bank (status: 💭 Raw) with a `350ms` throttle delay.
+9. Dispatches the `write-tweets` task for each ValueBrief asynchronously.
 
 **Actor 2: The Writer (`write-tweets`)**
-1. Receives the `StrategyBrief` and the Notion Idea page ID.
+1. Receives the `ValueBrief` and the Notion Idea page ID.
 2. Loads few-shot voice samples from `src/data/creator-voice-samples.json` (committed, reviewed production samples). `.tmp/creator-voice-samples.json` is only a regeneration/export artifact.
 3. Calls `buildWriterPrompt()` from `voice-dna.ts` which:
    - Maps `voiceMode` to a creator handle (Builder-Retrospective → Dreyshq, Tool-Curator → Sharbel, Case-Study → Zaimiri).
    - Selects the top 5 matching samples by engagement.
    - Injects mode-specific instructions (e.g., Sharbel: "Bookmark this" CTA allowed, Zaimiri: lowercase openers and "bro" allowed).
-   - Dynamically switches output format based on `strategyBrief.format`: Tweet/Thread (staccato) vs Article (long-form markdown with `##`/`###` headers).
-4. Generates text using **Grok-4.3** (`x-ai/grok-4.3`) at temperature `0.85`.
+   - Injects source facts, numbers, tools, examples, mechanism, and anti-invention guardrails.
+   - Dynamically switches output format based on `valueBrief.format`: Short, Mid-length, Thread, or Article.
+4. Generates text using **Grok-4.3** (`x-ai/grok-4.3`) at temperature `0.7`.
 5. Updates the Notion Idea with the draft:
    - First 2000 chars in `"Draft Tweet"` property.
    - Full un-truncated text in a toggle block (`▶️ Full Draft Tweet`).
@@ -185,10 +198,10 @@ The synthesis engine runs as a two-actor pipeline:
 
 ## Operational Notes / Known Failure Modes
 
-- **Ideas stuck in 💭 Raw:** Check the Idea page body for the Writer Dispatch note. If it has a child run ID, inspect that Trigger.dev run. If it has a failure note, fix the dispatch/runtime error and rerun `write-tweets` for that strategy brief.
+- **Ideas stuck in 💭 Raw:** Check Trigger.dev `write-tweets` logs and inspect the ValueBrief in the Idea page body. A successful `draft-ideas` run means Writer tasks were dispatched, not that every final draft has completed.
 - **Voice samples:** Production reads from `src/data/creator-voice-samples.json`. Regeneration scripts write to `.tmp/creator-voice-samples.json`; review and sanitize that output before promoting it into `src/data`.
 - **Frozen pillars:** Web3 and Psychology remain valid historical labels in Notion, but new matching, drafting, and category writes must ignore them or resolve them to `Unknown`.
-- **Async Writer behavior:** `draft-ideas` does not wait for Writer completion. A successful Strategist run means strategies were created and Writer tasks were dispatched, not that every final draft is complete.
+- **Async Writer behavior:** `draft-ideas` does not wait for Writer completion. This is intentional; quality comes from the full source handoff, while final draft completion is handled by the child Writer task.
 
 ---
 
@@ -201,7 +214,7 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 | **Apify IG Transcripts** | Max 3 concurrent actors + 2s cooldown between chunks | Prevents 8192MB free-tier memory exhaustion (was causing 402 errors) |
 | **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` and `maxDuration: 300s` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter, with 5 min safety buffer |
 | **Trigger.dev Batch Chunking** | Chunk raw content items into groups of 15 with 2s cooldown | Prevents parent orchestrator from hanging indefinitely in "waiting" state |
-| **OpenAI/OpenRouter Client** | 120s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, increased from 60s to handle parallel synthesis workloads |
+| **OpenAI/OpenRouter Client** | 120s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, increased from 60s to handle large source-study workloads |
 | **LLM Synthesis Parallelization** | Concurrency limit of 3 | Processes 3 active niche groups concurrently to prevent network/connection saturation while speeding up the pipeline |
 | **Notion batch reads** | `getScoutedContentByIds` chunks into batches of 5 + 350ms delay | Stays under Notion's 3 req/s rate limit |
 | **Notion writes throttle** | 350ms delay between consecutive `createIdea` requests | Strictly prevents Notion 429 rate limit errors when writing newly drafted ideas |

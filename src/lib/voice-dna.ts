@@ -158,20 +158,79 @@ export function selectVoiceSamples(
     .map((s) => s.text);
 }
 
-export interface StrategyBrief {
-  title: string;
+export type ContentFormat = "Short" | "Mid-length" | "Thread" | "Article";
+
+export interface ValueBrief {
+  ideaTitle: string;
+  sourcePageId: string;
+  sourceTitle: string;
+  sourceUrl: string;
+  platform: string;
   pillar: string;
   voiceMode: VoiceMode;
-  appliedFramework: string;
-  hookAngle: string;
-  whyItWorks: string;
-  format: string;
-  stealablePattern: string;
-  tweetStructure: string;
-  crossPollinationLogic: string;
+  format: ContentFormat;
+  sourceText: string;
+  sourceThesis: string;
+  sourceFacts: string[];
+  numbersMentioned: string[];
+  toolsMentioned: string[];
+  specificExamples: string[];
+  mechanism: string;
+  whyThisMatters: string;
+  valuableAngles: string[];
+  selectedAngle: string;
+  mustUseDetails: string[];
+  doNotInvent: string[];
+  suggestedStructure: string;
+  priority?: "🔥 Hot" | "💡 Good" | "📝 Maybe";
+  appliedFramework?: string;
+  stealablePattern?: string;
+  inspiredByLibraryId?: string;
 }
 
-export function buildWriterPrompt(strategyBrief: StrategyBrief, voiceMode: VoiceMode, fewShotSamples: any[]) {
+function formatList(items: string[]): string {
+  return items && items.length > 0
+    ? items.map((item) => `- ${item}`).join("\n")
+    : "- None found in source.";
+}
+
+function getFormatInstructions(format: ContentFormat): string {
+  if (format === "Short") {
+    return `Draft ONE short tweet.
+- 4-9 lines max.
+- One clear source-backed idea.
+- Must include at least one concrete source detail if available.
+- No thread numbering.
+- Output ONLY the tweet text.`;
+  }
+
+  if (format === "Mid-length") {
+    return `Draft ONE mid-length tweet.
+- 10-22 lines.
+- Build from hook → source-backed insight → mechanism → practical takeaway.
+- Use short paragraphs and line breaks.
+- No thread numbering.
+- Output ONLY the tweet text.`;
+  }
+
+  if (format === "Thread") {
+    return `Draft a valuable thread.
+- Use [1/n], [2/n], etc. markers.
+- Each post must add a concrete source-backed point.
+- Include mechanism, examples, and practical takeaways.
+- Do not pad the thread with generic setup.
+- Output ONLY the thread text.`;
+  }
+
+  return `Draft the final LONG-FORM ARTICLE.
+- Write a full, long-form article/blog post.
+- Use Markdown headers (##, ###) to structure the piece.
+- Turn the source into a useful breakdown with mechanisms, examples, and takeaways.
+- Maintain the creator's voice, but expand the thinking deeply.
+- Output ONLY the raw article text.`;
+}
+
+export function buildWriterPrompt(valueBrief: ValueBrief, voiceMode: VoiceMode, fewShotSamples: any[]) {
   // Filter samples based on the voice mode mapping
   // Builder-Retrospective -> Dreyshq samples
   // Tool-Curator -> Sharbel samples
@@ -211,36 +270,70 @@ export function buildWriterPrompt(strategyBrief: StrategyBrief, voiceMode: Voice
   );
 
   const systemPrompt = `You are an elite ghostwriter for a sharp founder/developer in the Tech/AI/Automation space.
-You write highly engaging, structured, and deeply authentic tweets based on a strategic brief.
+You write source-grounded, valuable tweets, threads, long tweets, and articles.
+
+The source is the authority. The brief is your map. Viral templates and voice samples are packaging only.
 
 ${VOICE_DNA_PROMPT}
 
 ---
 ${modeInstructions}
+
+STRICT GROUNDING RULES
+- Do not invent metrics, tools, steps, screenshots, timelines, revenue, users, or outcomes.
+- Do not write fake first-person experience. First-person is allowed only as commentary unless the source proves the creator personally did it.
+- Do not turn a summary into a generic motivational post.
+- If a detail is not in the source or brief, leave it out.
+- Every draft must teach something useful from the source: a mechanism, workflow, example, warning, or decision rule.
 `;
 
-  const formatInstructions = strategyBrief.format === "Article"
-    ? `Draft the final LONG-FORM ARTICLE.
-- Write a full, long-form article/blog post.
-- Use Markdown headers (##, ###) to structure the piece.
-- Maintain the creator's voice, but expand the thoughts deeply.
-- Output ONLY the raw article text.`
-    : `Draft the final tweet (or thread). 
-- If it's a thread, format each tweet with [1/n], [2/n], etc., separated by blank lines.
-- DO NOT use markdown code blocks (\`\`\`).
-- Output ONLY the raw tweet text ready to be copy-pasted and posted.`;
+  const formatInstructions = getFormatInstructions(valueBrief.format);
 
-  const userPrompt = `Here is the STRATEGY BRIEF for the content you need to write:
+  const userPrompt = `Here is the SOURCE-GROUNDED VALUE BRIEF for the content you need to write:
 
-Topic/Title: ${strategyBrief.title}
-Pillar: ${strategyBrief.pillar}
-Format Required: ${strategyBrief.format}
-Framework: ${strategyBrief.appliedFramework}
+Idea Title: ${valueBrief.ideaTitle}
+Pillar: ${valueBrief.pillar}
+Format Required: ${valueBrief.format}
+Platform: ${valueBrief.platform}
+Source Title: ${valueBrief.sourceTitle}
+Source URL: ${valueBrief.sourceUrl || "No URL provided"}
+Framework/Packaging: ${valueBrief.appliedFramework || "Source-grounded value breakdown"}
 
-Strategic Angle (The Hook): ${strategyBrief.hookAngle}
-Why it Works (Psychology): ${strategyBrief.whyItWorks}
-Structure to follow: ${strategyBrief.tweetStructure}
-Viral Pattern to emulate: ${strategyBrief.stealablePattern}
+Source Thesis:
+${valueBrief.sourceThesis}
+
+Selected Angle:
+${valueBrief.selectedAngle}
+
+Why This Matters:
+${valueBrief.whyThisMatters}
+
+Mechanism:
+${valueBrief.mechanism}
+
+Source Facts:
+${formatList(valueBrief.sourceFacts)}
+
+Numbers Mentioned:
+${formatList(valueBrief.numbersMentioned)}
+
+Tools Mentioned:
+${formatList(valueBrief.toolsMentioned)}
+
+Specific Examples:
+${formatList(valueBrief.specificExamples)}
+
+Must-Use Details:
+${formatList(valueBrief.mustUseDetails)}
+
+Do Not Invent:
+${formatList(valueBrief.doNotInvent)}
+
+Suggested Structure:
+${valueBrief.suggestedStructure}
+
+Viral Pattern to use only as packaging:
+${valueBrief.stealablePattern || "None. Prioritize source truth."}
 
 ---
 EXAMPLES OF THIS EXACT VOICE & STYLE:
@@ -252,6 +345,13 @@ ${matchedSamples.map((text, i) => `Example ${i + 1}:\n${text}\n`).join('\n')}
 YOUR TASK:
 ${formatInstructions}
 - DO NOT output JSON.
+- DO NOT use markdown code blocks (\`\`\`).
+- Use the source facts, tools, numbers, examples, and mechanism above.
+- The source is the authority. The template is only packaging.
+
+---
+FULL SOURCE TEXT / TRANSCRIPT:
+${valueBrief.sourceText}
 `;
 
   return { systemPrompt, userPrompt };

@@ -86,42 +86,51 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 
 ---
 
-### Step 5: The Two-Actor Idea Engine
-The idea engine runs as two decoupled tasks. The **Strategist** runs 6 times a week (Monday through Saturday at 8:00 AM UTC) and the **Writer Actor** is dispatched automatically after each strategy brief is saved.
+### Step 5: The Source-First Two-Actor Idea Engine
+The idea engine runs as two decoupled tasks. The **Value Strategist** studies one Scouted Content source at a time, then the **Writer Actor** turns that source-grounded brief into the final tweet, thread, long tweet, or article.
 
-#### Actor 1: The Strategist (`draft-ideas`)
+#### Actor 1: The Value Strategist (`draft-ideas`)
 1. **Automated Cleanup**: Archives any existing Idea Bank entries marked as "Rejected", severing their relation to scouted content and freeing it for reuse.
 2. Queries **Scouted Content** from the past 7 days, filtering out entries already linked to generated ideas.
 3. Reads the **Viral Post Library** for patterns rated ⭐⭐⭐⭐ or higher.
-4. Groups scouted content by the first active Notion `Niche` tag (exposed in code as `item.pillars`) and runs parallel LLM synthesis (concurrency limit: 3) to generate `StrategyBrief` objects containing:
-   - Topic title (2-5 word concise working title)
-   - Content pillar, voice mode, and applied framework
-   - Hook angle, psychological reasoning, tweet structure
-   - Format: `Short`, `Mid-length`, `Thread`, or `Article`
-5. Writes the strategy to the Ideas Bank (status: 💭 Raw), dispatches the Writer, and appends the Writer run ID to the Idea page for traceability.
+4. Reads the full source context for each page:
+   - `Title`, `Platform`, `URL`, `AI Summary`, `Key Takeaways`, and `Niche`.
+   - Full transcript/source text from the Notion page body toggle when present.
+   - X posts fall back to the full stored title/text plus summary/takeaways when no transcript exists.
+5. Processes each source independently. It does not combine unrelated scouted posts into one strategy pass.
+6. Uses the first active `Niche` tag exposed in code as `item.pillars` for category routing. Frozen Web3/Psychology tags are ignored for new drafting.
+7. Produces a `ValueBrief` containing source thesis, facts, numbers, tools, specific examples, mechanism, why it matters, selected angle, must-use details, and do-not-invent guardrails.
+8. Writes the ValueBrief metadata to the Ideas Bank (status: 💭 Raw) and dispatches the Writer asynchronously.
 
 #### Actor 2: The Writer (`write-tweets`)
-1. Receives the `StrategyBrief` and the Notion Idea page ID.
+1. Receives the `ValueBrief` and the Notion Idea page ID.
 2. Loads committed creator voice samples from `src/data/creator-voice-samples.json` and selects the top 5 matching examples based on voice mode:
    - **Builder-Retrospective** → Dreyshq samples (first-person, scar tissue)
    - **Tool-Curator** → Sharbel samples (analytical, metric-dense)
    - **Case-Study** → Zaimiri samples (operator wisdom, lowercase openers)
-3. Generates the draft using **Grok-4.3** (`x-ai/grok-4.3`) at temperature 0.85.
-4. Dynamically switches output format:
-   - **Tweets/Threads**: Staccato formatting with `[1/n]` markers
-   - **Articles**: Full long-form markdown with `##`/`###` headers
-5. Updates the Notion Idea with the draft and auto-sets status to 📝 Drafted.
+3. Treats the source as the authority and the viral template as packaging only.
+4. Requires the draft to use source facts, numbers, tools, examples, and mechanism where available.
+5. Bans invented metrics, fake personal experience, fake tools, fake steps, and unsupported claims.
+6. Generates the draft using **Grok-4.3** (`x-ai/grok-4.3`) at temperature 0.7.
+7. Dynamically switches output format:
+   - **Short**: One tight tweet.
+   - **Mid-length**: One longer value tweet.
+   - **Thread**: `[1/n]` formatted thread.
+   - **Article**: Full long-form markdown with `##`/`###` headers.
+8. Updates the Notion Idea with the draft and auto-sets status to 📝 Drafted.
 
 #### Example of a Remix:
 * **Scouted Input:** A transcript about using Claude Code to build static websites.
 * **Viral Post Template:**
   * *Pattern:* "How to do [Action] in [Time] (without [Pain point])"
   * *Structure:* "Step 1: ... \nStep 2: ... \nStep 3: ..."
-* **StrategyBrief Output:**
+* **ValueBrief Output:**
   * **Title:** "Claude Code Builds"
   * **Voice Mode:** Builder-Retrospective
   * **Format:** Thread
-  * **Hook Angle:** Direct benefit targeting low-code entrepreneurs
+  * **Source Facts:** concrete workflow details from the transcript
+  * **Mechanism:** how Claude Code turns prompt/context into deployable files
+  * **Do Not Invent:** no fake build time, fake revenue, or unsupported first-person claims
 * **Writer Output (via Grok-4.3):**
   ```text
   I built a full web app in 3 minutes using Claude Code.
@@ -137,18 +146,18 @@ The idea engine runs as two decoupled tasks. The **Strategist** runs 6 times a w
 
 ### Step 6: Write to "Ideas Bank" Database
 The generated drafts are written directly to the **Ideas Bank** database.
-* **Two-Phase Write**: The Strategist creates the Idea page (status: 💭 Raw) with the strategy metadata. The Writer Actor then updates the same page with the finished draft (status: 📝 Drafted).
-* **Writer Traceability**: Writer tasks stay async, but each dispatch logs the child Trigger.dev run ID and appends it to the Idea page. If dispatch fails, the page remains 💭 Raw with a diagnostic note instead of failing invisibly.
+* **Two-Phase Write**: The Value Strategist creates the Idea page (status: 💭 Raw) with the source-grounded ValueBrief metadata. The Writer Actor then updates the same page with the finished draft (status: 📝 Drafted).
+* **Source-Grounded Notes**: The Idea page body includes source title/URL, thesis, facts, numbers, tools, examples, mechanism, selected angle, must-use details, do-not-invent guardrails, and the full ValueBrief JSON for inspection.
 * **Ready-to-Post Drafts**: Each idea includes a full, ready-to-post tweet or article draft styled according to your custom **Voice DNA Profile** with three distinct voice modes mapped to real creator examples.
   * *Bypassing Notion's 2,000 Character Limit:* The first 2,000 characters of the draft are stored in the `"Draft Tweet"` database page property for a quick preview, while the **entire, un-truncated draft** is placed inside a collapsible toggle block (`▶️ Full Draft Tweet`) inside the page body.
-* **Deterministic Source Tracking**: The draft links back to its scouted catalyst page. To guarantee a 100% linking success rate, unique Notion Page IDs (e.g. `[ID: pageId]`) are passed to the LLM and returned in `"inspiredByScoutedIds"`. The code parses these via UUID regex, completely bypassing any LLM title-paraphrasing discrepancies (falling back to a title clean/substring match only if needed).
+* **Deterministic Source Tracking**: Each draft links back to its single scouted catalyst page by using the source page ID directly from Notion.
 * **Robust Pillar Mapping**: Generated pillars are passed through a validation check (`matchPillar()` in `src/lib/pillar-utils.ts`). It performs exact match, fuzzy substring checks, and custom heuristics to match the AI output with one of the 8 active pillars, preventing write validation errors or silent fallback to "Unknown".
 * **Error Prevention**: If the relation schema has changed or is missing, the script catches the error and saves the idea anyway, preventing data loss.
 
 ---
 
 ### Operational Notes / Known Failure Modes
-* **Raw Ideas Need Investigation**: A page stuck in 💭 Raw usually means the Writer task has not finished, failed after dispatch, or was never dispatched. Check the appended Writer Dispatch note for the child run ID.
+* **Raw Ideas Need Investigation**: A page stuck in 💭 Raw usually means the Writer task has not finished or failed after dispatch. Check Trigger.dev task logs for `write-tweets` and inspect the ValueBrief in the Idea page body.
 * **Voice Sample Source of Truth**: Production Writer prompts use `src/data/creator-voice-samples.json`. `.tmp/creator-voice-samples.json` is only a regeneration/export artifact and is not deployed.
 * **Frozen Pillars**: Web3/Psychology records remain in Notion for history, but new matching, drafting, and category writes should resolve those themes to `Unknown` or skip them.
 
@@ -233,7 +242,7 @@ src/
 │   ├── notion.ts       — Handles all database reads/writes, page creations, and idea updates.
 │   ├── twitter.ts      — Controls TwitterAPI.io requests and views filters.
 │   ├── llm.ts          — OpenRouter LLM client with modelOverride support for per-task model routing.
-│   ├── voice-dna.ts    — Voice DNA prompt, StrategyBrief type, buildWriterPrompt() with 3 creator voice modes.
+│   ├── voice-dna.ts    — Voice DNA prompt, ValueBrief type, buildWriterPrompt() with 3 creator voice modes.
 │   ├── pillar-utils.ts — Content pillar alias mapping, fuzzy matching, and category filtering.
 │   └── constants.ts    — Stores Notion database IDs, source IDs, and content pillars list.
 │
@@ -241,8 +250,8 @@ src/
     ├── idea-scout/
     │   ├── scout-content.ts   — Orchestrator. Fetches creators and starts scrapers.
     │   ├── process-content.ts — Filters content relevance and writes to Scouted Content.
-    │   ├── draft-ideas.ts     — STRATEGIST: Generates StrategyBriefs and dispatches the Writer.
-    │   └── write-tweets.ts    — WRITER ACTOR: Drafts tweets/articles via Grok-4.3, updates Notion.
+    │   ├── draft-ideas.ts     — VALUE STRATEGIST: Studies one source at a time, creates ValueBriefs, dispatches the Writer.
+    │   └── write-tweets.ts    — WRITER ACTOR: Drafts source-grounded tweets/articles via Grok-4.3, updates Notion.
     │
     └── viral-library/
         └── research-tweets.ts — Ported from n8n. Scrapes & analyzes top tweets to populate the Viral Post Library.
@@ -257,7 +266,7 @@ The system uses the following task registrations in Trigger.dev:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `scout-content` | `schedules.task` | Mon/Thu/Sat 8:30 AM UTC (`30 8 * * 1,4,6`) | 14400 seconds (4 hours) | 1 | — |
 | `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) | `xiaomi/mimo-v2.5-pro` |
-| `draft-ideas` | `schedules.task` | Mon-Sat 8:00 AM UTC (`0 8 * * 1-6`) | 900 seconds | 1 | `qwen/qwen3.6-plus` |
+| `draft-ideas` | `schedules.task` | Mon/Wed/Fri/Sun 4:30 AM UTC (`30 4 * * 1,3,5,0`) | 900 seconds | 1 | `x-ai/grok-4.3` |
 | `write-tweets` | `task` | Triggered by `draft-ideas` | 600 seconds (10 minutes) | — | `x-ai/grok-4.3` |
 | `research-tweets` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 | `xiaomi/mimo-v2.5-pro` |
 
