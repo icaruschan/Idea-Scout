@@ -177,6 +177,12 @@ export interface ValueBrief {
   specificExamples: string[];
   mechanism: string;
   whyThisMatters: string;
+  targetAudience: string;
+  audiencePain: string;
+  valueProposition: string;
+  readerOutcome: string;
+  whyNow: string;
+  contentPromise: string;
   valuableAngles: string[];
   selectedAngle: string;
   mustUseDetails: string[];
@@ -200,6 +206,7 @@ function getFormatInstructions(format: ContentFormat): string {
 - 4-9 lines max.
 - One clear source-backed idea.
 - Must include at least one concrete source detail if available.
+- Use only when the source has one punchy, self-contained insight.
 - No thread numbering.
 - Output ONLY the tweet text.`;
   }
@@ -208,6 +215,7 @@ function getFormatInstructions(format: ContentFormat): string {
     return `Draft ONE mid-length tweet.
 - 10-22 lines.
 - Build from hook → source-backed insight → mechanism → practical takeaway.
+- Best when the source has one strong mechanism or lesson.
 - Use short paragraphs and line breaks.
 - No thread numbering.
 - Output ONLY the tweet text.`;
@@ -218,6 +226,7 @@ function getFormatInstructions(format: ContentFormat): string {
 - Use [1/n], [2/n], etc. markers.
 - Each post must add a concrete source-backed point.
 - Include mechanism, examples, and practical takeaways.
+- Best when the source has 5-8 teachable steps, lessons, mistakes, or examples.
 - Do not pad the thread with generic setup.
 - Output ONLY the thread text.`;
   }
@@ -226,6 +235,7 @@ function getFormatInstructions(format: ContentFormat): string {
 - Write a full, long-form article/blog post.
 - Use Markdown headers (##, ###) to structure the piece.
 - Turn the source into a useful breakdown with mechanisms, examples, and takeaways.
+- Best when the source has a complete workflow, deep argument, multiple sections, several examples, or enough depth for a long-form breakdown.
 - Maintain the creator's voice, but expand the thinking deeply.
 - Output ONLY the raw article text.`;
 }
@@ -285,6 +295,41 @@ STRICT GROUNDING RULES
 - Do not turn a summary into a generic motivational post.
 - If a detail is not in the source or brief, leave it out.
 - Every draft must teach something useful from the source: a mechanism, workflow, example, warning, or decision rule.
+
+PLAIN-LANGUAGE RULE
+Write like a smart builder explaining it to a friend.
+
+Use simple grammar.
+Use short, clear sentences.
+Prefer concrete actions over abstract nouns.
+
+You can use niche terms when they are widely understood by the audience:
+Cursor, Claude Code, n8n, Zapier, webhook, API, MCP, agent, prompt, repo, scraper, workflow, funnel, MRR.
+
+But do not dress simple ideas in fake-smart language.
+
+Avoid fake-smart phrasing:
+- routing system
+- operational layer
+- qualification infrastructure
+- signal extraction workflow
+- leverage automation
+- optimize conversion pathways
+
+Prefer concrete wording:
+- qualify leads faster
+- send the best leads to Slack
+- check the form
+- pull company info
+- skip bad-fit leads
+- reply before they go cold
+
+HOOK RULES
+- Hooks must be simple, specific, and reader-centered.
+- Prefer a real pain, mistake, surprising mechanism, or concrete outcome.
+- Build the opening from audience pain + source mechanism + reader outcome.
+- Avoid abstract labels unless they are widely understood in the niche.
+- Do not use "Here's why", "AI is changing everything", or generic threadboi openers unless the source gives a stronger reason.
 `;
 
   const formatInstructions = getFormatInstructions(valueBrief.format);
@@ -307,6 +352,24 @@ ${valueBrief.selectedAngle}
 
 Why This Matters:
 ${valueBrief.whyThisMatters}
+
+Target Audience:
+${valueBrief.targetAudience}
+
+Audience Pain:
+${valueBrief.audiencePain}
+
+Value Proposition:
+${valueBrief.valueProposition}
+
+Reader Outcome:
+${valueBrief.readerOutcome}
+
+Why Now:
+${valueBrief.whyNow}
+
+Content Promise:
+${valueBrief.contentPromise}
 
 Mechanism:
 ${valueBrief.mechanism}

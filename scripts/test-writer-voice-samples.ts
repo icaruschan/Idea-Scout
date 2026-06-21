@@ -56,6 +56,12 @@ const sampleValueBrief: ValueBrief = {
   specificExamples: ["Inbound leads are scored before the handoff."],
   mechanism: "Use automation to classify, enrich, score, and route each lead.",
   whyThisMatters: "It shows builders how to remove repetitive qualification work.",
+  targetAudience: "solo founders qualifying inbound leads by hand",
+  audiencePain: "they reply late because every lead takes manual checking",
+  valueProposition: "show them how to qualify leads faster without hiring ops help",
+  readerOutcome: "they can design a simple n8n workflow that sends the best leads to Slack",
+  whyNow: "AI workflow tools are cheap enough for solo operators to use daily",
+  contentPromise: "learn how to turn messy lead forms into faster replies",
   valuableAngles: ["Lead triage as an automation primitive"],
   selectedAngle: "Turn lead triage into a routing system",
   mustUseDetails: ["n8n", "Airtable", "Slack", "lead qualification before human reply"],
@@ -98,6 +104,45 @@ for (const voiceMode of voiceModes) {
     `${voiceMode} prompt includes anti-invention rules`,
   );
 
+  assert(
+    prompt.systemPrompt.includes("Plain-language rule") ||
+      prompt.systemPrompt.includes("PLAIN-LANGUAGE RULE"),
+    `${voiceMode} prompt includes plain-language rule`,
+  );
+
+  assert(
+    prompt.systemPrompt.includes("routing system") &&
+      prompt.systemPrompt.includes("operational layer") &&
+      prompt.systemPrompt.includes("signal extraction workflow"),
+    `${voiceMode} prompt includes fake-smart language anti-patterns`,
+  );
+
+  assert(
+    prompt.systemPrompt.includes("Cursor") &&
+      prompt.systemPrompt.includes("Claude Code") &&
+      prompt.systemPrompt.includes("n8n") &&
+      prompt.systemPrompt.includes("MCP"),
+    `${voiceMode} prompt allows niche-native terms`,
+  );
+
+  assert(
+    prompt.userPrompt.includes("Target Audience:") &&
+      prompt.userPrompt.includes("solo founders qualifying inbound leads by hand"),
+    `${voiceMode} prompt includes target audience`,
+  );
+
+  assert(
+    prompt.userPrompt.includes("Value Proposition:") &&
+      prompt.userPrompt.includes("qualify leads faster"),
+    `${voiceMode} prompt includes value proposition`,
+  );
+
+  assert(
+    prompt.userPrompt.includes("Content Promise:") &&
+      prompt.userPrompt.includes("messy lead forms"),
+    `${voiceMode} prompt includes content promise`,
+  );
+
   const selected = selectVoiceSamples(
     samples,
     voiceMode === "Tool-Curator" ? "sharbel" : voiceMode === "Case-Study" ? "zaimiri" : "Dreyshq",
@@ -127,6 +172,41 @@ for (const [format, expectedInstruction] of Object.entries(formats) as [ContentF
     `${format} receives distinct format instructions`,
   );
 }
+
+const articlePrompt = buildWriterPrompt(
+  { ...sampleValueBrief, format: "Article" },
+  sampleValueBrief.voiceMode,
+  samples,
+);
+assert(
+  articlePrompt.userPrompt.includes("complete workflow") &&
+    articlePrompt.userPrompt.includes("deep argument") &&
+    articlePrompt.userPrompt.includes("several examples") &&
+    articlePrompt.userPrompt.includes("long-form breakdown"),
+  "Article format instructions mention workflow/depth triggers",
+);
+
+const threadPrompt = buildWriterPrompt(
+  { ...sampleValueBrief, format: "Thread" },
+  sampleValueBrief.voiceMode,
+  samples,
+);
+assert(
+  threadPrompt.userPrompt.includes("5-8 teachable steps") &&
+    threadPrompt.userPrompt.includes("lessons") &&
+    threadPrompt.userPrompt.includes("examples"),
+  "Thread format instructions mention steps/lessons/examples",
+);
+
+const shortPrompt = buildWriterPrompt(
+  { ...sampleValueBrief, format: "Short" },
+  sampleValueBrief.voiceMode,
+  samples,
+);
+assert(
+  shortPrompt.userPrompt.includes("one punchy, self-contained insight"),
+  "Short format instructions stay narrow",
+);
 
 const builderPrompt = buildWriterPrompt(
   { ...sampleValueBrief, voiceMode: "Builder-Retrospective" },

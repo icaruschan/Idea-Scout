@@ -40,10 +40,10 @@ VOICE MODES:
 - Case-Study: micro-case study, first-$/users/revenue breakdown, builder journey, or operator principle.
 
 FORMAT CONTRACTS:
-- Short: one tight tweet.
-- Mid-length: one longer value tweet.
-- Thread: multiple posts with [1/n] markers.
-- Article: long-form markdown article.
+- Article: choose when the transcript has a complete workflow, deep argument, multiple sections, several examples, or enough depth for a long-form breakdown.
+- Thread: choose when the source has 5-8 teachable steps, lessons, mistakes, or examples.
+- Mid-length: choose when the source has one strong mechanism or lesson.
+- Short: choose only when the source has one punchy, self-contained insight.
 
 RULES:
 - Return 1 brief by default.
@@ -51,6 +51,12 @@ RULES:
 - Never combine this source with unrelated sources.
 - Preserve source IDs and URLs exactly.
 - Extract facts, mechanisms, tools, examples, and numbers from the source.
+- Extract the exact target audience, their pain, the value proposition, reader outcome, why now, and the content promise from the source.
+- Hooks must come from audiencePain + source mechanism + readerOutcome.
+- Hooks should be simple, specific, and reader-centered.
+- Prefer opening with a real pain, mistake, surprising mechanism, or concrete outcome.
+- Avoid abstract labels unless they are widely understood in the niche.
+- Do not use "Here's why", "AI is changing everything", or generic threadboi openers unless the source gives a stronger reason.
 - Add "doNotInvent" guardrails for anything the source does not prove.
 - Do not invent personal experience, revenue, user counts, screenshots, steps, tools, or claims.
 - If the source is too thin to support a useful draft, return an empty "briefs" array.
@@ -213,7 +219,42 @@ async function generateValueBriefsForSource(input: {
   const { source, pillar, templates, existingTitles, underservedPillars } = input;
   const viralSummary = templates.map(formatViralTemplate).join("\n\n---\n\n");
 
-  const prompt = `Study this ONE source and produce source-grounded ValueBriefs.
+  const prompt = buildValueStrategistPrompt({
+    source,
+    pillar,
+    viralSummary,
+    existingTitles,
+    underservedPillars,
+  });
+
+  const generated = await generateJSON(
+    prompt,
+    VALUE_STRATEGIST_SYSTEM_PROMPT,
+    0.45,
+    "x-ai/grok-4.3",
+  );
+
+  const rawBriefs = Array.isArray(generated?.briefs)
+    ? generated.briefs
+    : Array.isArray(generated?.ideas)
+      ? generated.ideas
+      : [];
+
+  return rawBriefs
+    .slice(0, 3)
+    .map((brief: any) => normalizeValueBrief(brief, source, pillar))
+    .filter((brief: ValueBrief | null): brief is ValueBrief => brief !== null);
+}
+
+export function buildValueStrategistPrompt(input: {
+  source: ScoutedContentForDraft;
+  pillar: string;
+  viralSummary: string;
+  existingTitles: string[];
+  underservedPillars: string[];
+}): string {
+  const { source, pillar, viralSummary, existingTitles, underservedPillars } = input;
+  return `Study this ONE source and produce source-grounded ValueBriefs.
 
 SOURCE METADATA
 ID: ${source.pageId}
@@ -236,6 +277,19 @@ ${existingTitles.slice(0, 30).join("\n") || "None yet"}
 UNDERSERVED PILLARS
 ${underservedPillars.join(", ") || "None"}
 
+FORMAT SELECTION
+- Choose "Article" when the transcript has a complete workflow, deep argument, multiple sections, several examples, or enough depth for a long-form breakdown.
+- Choose "Thread" when the source has 5-8 teachable steps, lessons, mistakes, or examples.
+- Choose "Mid-length" when the source has one strong mechanism or lesson.
+- Choose "Short" only when the source has one punchy, self-contained insight.
+
+HOOK APPROACH
+- Hooks should be simple, specific, and reader-centered.
+- Build the hook from: audiencePain + source mechanism + readerOutcome.
+- Prefer opening with a real pain, mistake, surprising mechanism, or concrete outcome.
+- Avoid abstract labels unless they are widely understood in the niche.
+- Do not use "Here's why", "AI is changing everything", or generic threadboi openers unless the source gives a stronger reason.
+
 RETURN JSON IN THIS SHAPE:
 {
   "briefs": [
@@ -256,6 +310,12 @@ RETURN JSON IN THIS SHAPE:
       "specificExamples": ["Concrete examples/cases/stories from the source"],
       "mechanism": "The actual how/why behind the source insight",
       "whyThisMatters": "Why a builder/founder/operator should care",
+      "targetAudience": "The exact reader this content is for",
+      "audiencePain": "The problem/friction this reader already feels",
+      "valueProposition": "What is in it for the reader",
+      "readerOutcome": "What the reader can do, understand, avoid, or decide after reading",
+      "whyNow": "Why this matters now, grounded in the source",
+      "contentPromise": "The promise the hook/opening should make",
       "valuableAngles": ["Distinct valuable angles found in the source"],
       "selectedAngle": "The strongest angle for this draft",
       "mustUseDetails": ["Concrete source details the Writer must use"],
@@ -268,27 +328,9 @@ RETURN JSON IN THIS SHAPE:
     }
   ]
 }`;
-
-  const generated = await generateJSON(
-    prompt,
-    VALUE_STRATEGIST_SYSTEM_PROMPT,
-    0.45,
-    "x-ai/grok-4.3",
-  );
-
-  const rawBriefs = Array.isArray(generated?.briefs)
-    ? generated.briefs
-    : Array.isArray(generated?.ideas)
-      ? generated.ideas
-      : [];
-
-  return rawBriefs
-    .slice(0, 3)
-    .map((brief: any) => normalizeValueBrief(brief, source, pillar))
-    .filter((brief: ValueBrief | null): brief is ValueBrief => brief !== null);
 }
 
-function normalizeValueBrief(raw: any, source: ScoutedContentForDraft, fallbackPillar: string): ValueBrief | null {
+export function normalizeValueBrief(raw: any, source: ScoutedContentForDraft, fallbackPillar: string): ValueBrief | null {
   const pillar = matchPillar(String(raw?.pillar || fallbackPillar));
   if (!CONTENT_PILLARS.includes(pillar)) return null;
 
@@ -329,6 +371,12 @@ function normalizeValueBrief(raw: any, source: ScoutedContentForDraft, fallbackP
     specificExamples: ensureStringArray(raw?.specificExamples),
     mechanism: stringOrFallback(raw?.mechanism, "Explain the practical mechanism directly from the source."),
     whyThisMatters: stringOrFallback(raw?.whyThisMatters, "This gives builders a concrete lesson from the source."),
+    targetAudience: stringOrFallback(raw?.targetAudience, "Builders, founders, and operators who care about this source topic."),
+    audiencePain: stringOrFallback(raw?.audiencePain, "They need a clearer way to understand or apply the source insight."),
+    valueProposition: stringOrFallback(raw?.valueProposition, "A practical, source-backed lesson they can use."),
+    readerOutcome: stringOrFallback(raw?.readerOutcome, "They can make a better decision or try a clearer workflow after reading."),
+    whyNow: stringOrFallback(raw?.whyNow, "The source shows this is relevant to current builder workflows."),
+    contentPromise: stringOrFallback(raw?.contentPromise, "A simple breakdown of the useful lesson inside the source."),
     valuableAngles: ensureStringArray(raw?.valuableAngles),
     selectedAngle: stringOrFallback(raw?.selectedAngle || raw?.hookAngle, raw?.sourceThesis || source.aiSummary || source.title),
     mustUseDetails,
@@ -506,7 +554,7 @@ Why it works:
 ${whyItWorksVal}`;
 }
 
-function buildIdeaPageRawData(valueBrief: ValueBrief): string {
+export function buildIdeaPageRawData(valueBrief: ValueBrief): string {
   return [
     `Source Title:\n${valueBrief.sourceTitle}`,
     valueBrief.sourceUrl ? `Source URL:\n${valueBrief.sourceUrl}` : "",
@@ -514,6 +562,12 @@ function buildIdeaPageRawData(valueBrief: ValueBrief): string {
     `Source Thesis:\n${valueBrief.sourceThesis}`,
     `Selected Angle:\n${valueBrief.selectedAngle}`,
     `Why This Matters:\n${valueBrief.whyThisMatters}`,
+    `Target Audience:\n${valueBrief.targetAudience}`,
+    `Audience Pain:\n${valueBrief.audiencePain}`,
+    `Value Proposition:\n${valueBrief.valueProposition}`,
+    `Reader Outcome:\n${valueBrief.readerOutcome}`,
+    `Why Now:\n${valueBrief.whyNow}`,
+    `Content Promise:\n${valueBrief.contentPromise}`,
     `Mechanism:\n${valueBrief.mechanism}`,
     `Source Facts:\n${formatLines(valueBrief.sourceFacts)}`,
     `Numbers Mentioned:\n${formatLines(valueBrief.numbersMentioned)}`,

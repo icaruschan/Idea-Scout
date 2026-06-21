@@ -99,7 +99,7 @@ The idea engine runs as two decoupled tasks. The **Value Strategist** studies on
    - X posts fall back to the full stored title/text plus summary/takeaways when no transcript exists.
 5. Processes each source independently. It does not combine unrelated scouted posts into one strategy pass.
 6. Uses the first active `Niche` tag exposed in code as `item.pillars` for category routing. Frozen Web3/Psychology tags are ignored for new drafting.
-7. Produces a `ValueBrief` containing source thesis, facts, numbers, tools, specific examples, mechanism, why it matters, selected angle, must-use details, and do-not-invent guardrails.
+7. Produces a `ValueBrief` containing source thesis, facts, numbers, tools, specific examples, mechanism, audience, value proposition, reader outcome, selected angle, must-use details, and do-not-invent guardrails.
 8. Writes the ValueBrief metadata to the Ideas Bank (status: 💭 Raw) and dispatches the Writer asynchronously.
 
 #### Actor 2: The Writer (`write-tweets`)
@@ -109,14 +109,14 @@ The idea engine runs as two decoupled tasks. The **Value Strategist** studies on
    - **Tool-Curator** → Sharbel samples (analytical, metric-dense)
    - **Case-Study** → Zaimiri samples (operator wisdom, lowercase openers)
 3. Treats the source as the authority and the viral template as packaging only.
-4. Requires the draft to use source facts, numbers, tools, examples, and mechanism where available.
-5. Bans invented metrics, fake personal experience, fake tools, fake steps, and unsupported claims.
+4. Requires the draft to use source facts, numbers, tools, examples, mechanism, target audience, audience pain, value proposition, reader outcome, and content promise where available.
+5. Bans invented metrics, fake personal experience, fake tools, fake steps, unsupported claims, and fake-smart abstract wording.
 6. Generates the draft using **Grok-4.3** (`x-ai/grok-4.3`) at temperature 0.7.
 7. Dynamically switches output format:
-   - **Short**: One tight tweet.
-   - **Mid-length**: One longer value tweet.
-   - **Thread**: `[1/n]` formatted thread.
-   - **Article**: Full long-form markdown with `##`/`###` headers.
+   - **Short**: One tight tweet for one punchy, self-contained insight.
+   - **Mid-length**: One longer value tweet for one strong mechanism or lesson.
+   - **Thread**: `[1/n]` formatted thread for 5-8 teachable steps, lessons, mistakes, or examples.
+   - **Article**: Full long-form markdown for complete workflows, deep arguments, multiple sections, several examples, or long-form depth.
 8. Updates the Notion Idea with the draft and auto-sets status to 📝 Drafted.
 
 #### Example of a Remix:
@@ -128,6 +128,8 @@ The idea engine runs as two decoupled tasks. The **Value Strategist** studies on
   * **Title:** "Claude Code Builds"
   * **Voice Mode:** Builder-Retrospective
   * **Format:** Thread
+  * **Target Audience:** builders who want to ship simple static sites with Claude Code
+  * **Value Proposition:** understand the workflow without guessing from a vague summary
   * **Source Facts:** concrete workflow details from the transcript
   * **Mechanism:** how Claude Code turns prompt/context into deployable files
   * **Do Not Invent:** no fake build time, fake revenue, or unsupported first-person claims
@@ -147,8 +149,9 @@ The idea engine runs as two decoupled tasks. The **Value Strategist** studies on
 ### Step 6: Write to "Ideas Bank" Database
 The generated drafts are written directly to the **Ideas Bank** database.
 * **Two-Phase Write**: The Value Strategist creates the Idea page (status: 💭 Raw) with the source-grounded ValueBrief metadata. The Writer Actor then updates the same page with the finished draft (status: 📝 Drafted).
-* **Source-Grounded Notes**: The Idea page body includes source title/URL, thesis, facts, numbers, tools, examples, mechanism, selected angle, must-use details, do-not-invent guardrails, and the full ValueBrief JSON for inspection.
+* **Source-Grounded Notes**: The Idea page body includes source title/URL, thesis, facts, numbers, tools, examples, mechanism, target audience, audience pain, value proposition, reader outcome, content promise, selected angle, must-use details, do-not-invent guardrails, and the full ValueBrief JSON for inspection.
 * **Ready-to-Post Drafts**: Each idea includes a full, ready-to-post tweet or article draft styled according to your custom **Voice DNA Profile** with three distinct voice modes mapped to real creator examples.
+  * *Plain-Language Rule:* Drafts should read like a smart builder explaining it to a friend: simple grammar, short sentences, niche-native terms when useful, and no fake-smart abstractions like "operational layer" or "signal extraction workflow".
   * *Bypassing Notion's 2,000 Character Limit:* The first 2,000 characters of the draft are stored in the `"Draft Tweet"` database page property for a quick preview, while the **entire, un-truncated draft** is placed inside a collapsible toggle block (`▶️ Full Draft Tweet`) inside the page body.
 * **Deterministic Source Tracking**: Each draft links back to its single scouted catalyst page by using the source page ID directly from Notion.
 * **Robust Pillar Mapping**: Generated pillars are passed through a validation check (`matchPillar()` in `src/lib/pillar-utils.ts`). It performs exact match, fuzzy substring checks, and custom heuristics to match the AI output with one of the 8 active pillars, preventing write validation errors or silent fallback to "Unknown".
