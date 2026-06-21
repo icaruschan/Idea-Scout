@@ -1,6 +1,6 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
-import { generateJSON } from "../../lib/llm";
+import { generateJSONFree } from "../../lib/llm";
 import {
   createScoutedContent,
   checkUrlExists,
@@ -129,7 +129,7 @@ Return JSON:
     };
 
     try {
-      filterResult = await generateJSON(filterPrompt, RELEVANCE_SYSTEM_PROMPT, 0.3, "xiaomi/mimo-v2.5-pro");
+      filterResult = await generateJSONFree(filterPrompt, RELEVANCE_SYSTEM_PROMPT, 0.3, "xiaomi/mimo-v2.5-pro");
     } catch (err) {
       console.error("LLM filter failed:", err);
       return { scoutedContentId: null, filtered: true };
@@ -170,7 +170,7 @@ Return JSON:
     };
 
     try {
-      summaryResult = await generateJSON(summaryPrompt, RELEVANCE_SYSTEM_PROMPT, 0.5, "xiaomi/mimo-v2.5-pro");
+      summaryResult = await generateJSONFree(summaryPrompt, RELEVANCE_SYSTEM_PROMPT, 0.5, "xiaomi/mimo-v2.5-pro");
     } catch (err) {
       console.error("LLM summary failed:", err);
       // Still store the content, just without a summary

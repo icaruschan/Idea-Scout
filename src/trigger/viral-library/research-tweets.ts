@@ -6,7 +6,7 @@ import {
   cleanContentUrl,
 } from "../../lib/notion";
 import { searchCreatorPosts, getArticle } from "../../lib/twitter";
-import { generateJSON } from "../../lib/llm";
+import { generateJSONFree } from "../../lib/llm";
 
 export interface ResearchTweetsPayload {
   modelOverride?: string;
@@ -105,13 +105,13 @@ export const researchTweets = task({
   id: "research-tweets",
   maxDuration: 14400, // 4 hours — accounts for extensive searches and sequential LLM processing
   run: async (payload?: ResearchTweetsPayload) => {
-    const model = payload?.modelOverride || "xiaomi/mimo-v2.5-pro";
+    const fallbackModel = payload?.modelOverride || "xiaomi/mimo-v2.5-pro";
     const minViews = payload?.minViews ?? 3000;
     const minBookmarks = payload?.minBookmarks ?? 10;
     const limit = payload?.limit ?? 150;
 
     console.log(`🚀 Starting Twitter content research manual run.`);
-    console.log(`Params -> Model: ${model}, Min Views: ${minViews}, Min Bookmarks: ${minBookmarks}, Limit: ${limit}`);
+    console.log(`Params -> Model: MiniMax-M3 (fallback: ${fallbackModel}), Min Views: ${minViews}, Min Bookmarks: ${minBookmarks}, Limit: ${limit}`);
 
     // 1. Fetch Focus Creators
     console.log("👤 Fetching active focus creators from Notion...");
@@ -266,7 +266,7 @@ ${fullText}
 
       let analysis: any = {};
       try {
-        analysis = await generateJSON(userPrompt, SYSTEM_PROMPT, 0.5, model);
+        analysis = await generateJSONFree(userPrompt, SYSTEM_PROMPT, 0.5, fallbackModel);
       } catch (err) {
         console.error(`❌ LLM analysis failed for tweet ${tweet.postUrl}:`, err);
         analysis = {

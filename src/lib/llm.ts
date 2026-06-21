@@ -20,6 +20,20 @@ function getClient() {
   return _client;
 }
 
+// ─── TokenRouter client (MiniMax-M3 — free tier) ────────────────────────────
+const MINIMAX_MODEL = "MiniMax-M3";
+let _tokenRouterClient: OpenAI | null = null;
+function getTokenRouterClient() {
+  if (!_tokenRouterClient) {
+    _tokenRouterClient = new OpenAI({
+      apiKey: process.env.TOKENROUTER_API_KEY || "",
+      baseURL: "https://api.tokenrouter.com/v1",
+      timeout: 120000,
+    });
+  }
+  return _tokenRouterClient;
+}
+
 const defaultModel = process.env.OPENROUTER_MODEL || "qwen/qwen3.6-plus";
 
 // Dynamically generate the pillar section from CONTENT_PILLARS constant
@@ -126,6 +140,47 @@ Respond only with pure JSON — no markdown fences, no explanation`,
       console.error("Failed to parse JSON response after repair attempt:", content);
       throw new Error("LLM generated invalid JSON");
     }
+  }
+}
+
+/**
+ * generateJSONFree — tries MiniMax-M3 via TokenRouter (free) first.
+ * Falls back to the specified OpenRouter model on any error.
+ * Automatically strips MiniMax's <think> chain-of-thought tags before parsing.
+ */
+export async function generateJSONFree(
+  prompt: string,
+  systemPrompt: string,
+  temperature: number = 1,
+  fallbackModel: string = "xiaomi/mimo-v2.5-pro"
+) {
+  try {
+    const response = await getTokenRouterClient().chat.completions.create({
+      model: MINIMAX_MODEL,
+      stream: false as any,
+      temperature,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
+    });
+
+    const raw = response.choices[0]?.message?.content || "";
+    // Strip <think> chain-of-thought tags MiniMax-M3 emits
+    const content = raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    const cleaned = content.replace(/```json/g, "").replace(/```/g, "").trim();
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    const jsonStr = match ? match[0] : cleaned;
+
+    try {
+      return JSON.parse(jsonStr);
+    } catch {
+      console.warn("⚠️ MiniMax JSON.parse failed, attempting repair...");
+      return JSON.parse(repairJson(jsonStr));
+    }
+  } catch (err) {
+    console.warn(`⚠️ MiniMax-M3 failed, falling back to ${fallbackModel}:`, (err as Error).message);
+    return generateJSON(prompt, systemPrompt, temperature, fallbackModel);
   }
 }
 
