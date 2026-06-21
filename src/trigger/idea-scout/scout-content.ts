@@ -28,7 +28,7 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 
 export const scoutContent = schedules.task({
   id: "scout-content",
-  cron: "30 8 * * 1,4,6", // Mon/Thu/Sat 8:30 AM UTC (9:30 AM WAT)
+  cron: "30 3 * * 1,4,0", // Mon/Thu/Sun 3:30 AM UTC (4:30 AM WAT)
   maxDuration: 14400, // 4 hours — accounts for Apify actor wait times
   run: async (payload: any) => {
     const runTimestamp = payload?.timestamp ?? new Date().toISOString();

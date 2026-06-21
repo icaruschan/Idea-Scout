@@ -505,7 +505,7 @@ Return JSON:
 
 export const draftIdeas = schedules.task({
   id: "draft-ideas",
-  cron: "0 8 * * 1-6", // Mon-Sat 8:00 AM UTC (9:00 AM WAT)
+  cron: "30 4 * * 1,3,5,0", // Mon/Wed/Fri/Sun 4:30 AM UTC (5:30 AM WAT)
   maxDuration: 900,
   retry: {
     maxAttempts: 2,
