@@ -87,7 +87,7 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 ---
 
 ### Step 5: The Source-First Two-Actor Idea Engine
-The idea engine runs as two decoupled tasks. The **Value Strategist** studies one Scouted Content source at a time, then the **Writer Actor** turns that source-grounded brief into the final tweet, thread, long tweet, or article.
+The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/Thu/Sun), it immediately dispatches **draft-ideas** with that run's scouted page IDs. **draft-ideas** also runs on a Wed/Fri catch-all cron to draft any unlinked scouted content added manually or outside scout runs. The **Value Strategist** studies one source at a time, then the **Writer Actor** turns each ValueBrief into the final tweet, thread, long tweet, or article.
 
 #### Actor 1: The Value Strategist (`draft-ideas`)
 1. **Automated Cleanup**: Archives any existing Idea Bank entries marked as "Rejected", severing their relation to scouted content and freeing it for reuse.
@@ -267,9 +267,9 @@ The system uses the following task registrations in Trigger.dev:
 
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency | Model |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `scout-content` | `schedules.task` | Mon/Thu/Sat 8:30 AM UTC (`30 8 * * 1,4,6`) | 14400 seconds (4 hours) | 1 | — |
+| `scout-content` | `schedules.task` | Mon/Thu/Sun 3:30 AM UTC (`30 3 * * 1,4,0`) | 14400 seconds (4 hours) | 1 | — |
 | `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) | `xiaomi/mimo-v2.5-pro` |
-| `draft-ideas` | `schedules.task` | Mon/Wed/Fri/Sun 4:30 AM UTC (`30 4 * * 1,3,5,0`) | 900 seconds | 1 | `x-ai/grok-4.3` |
+| `draft-ideas` | `schedules.task` | Triggered by `scout-content` (immediate) + Wed/Fri 4:30 AM UTC catch-all (`30 4 * * 3,5`) | 900 seconds | 1 | `x-ai/grok-4.3` |
 | `write-tweets` | `task` | Triggered by `draft-ideas` | 600 seconds (10 minutes) | — | `x-ai/grok-4.3` |
 | `research-tweets` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 | `xiaomi/mimo-v2.5-pro` |
 

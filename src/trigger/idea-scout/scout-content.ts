@@ -1,4 +1,4 @@
-import { schedules, task } from "@trigger.dev/sdk/v3";
+import { schedules, tasks } from "@trigger.dev/sdk/v3";
 import {
   getYouTubeCreators,
   getInstagramCreators,
@@ -19,11 +19,12 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 // ═══════════════════════════════════════════════════════════════
 // IDEA SCOUT — Orchestrator
 // ═══════════════════════════════════════════════════════════════
-// Runs every Monday, Thursday, and Saturday at 8:30 AM UTC.
+// Runs every Monday, Thursday, and Sunday at 3:30 AM UTC.
 // Step 1: Query creators from 3 platforms (YT: 10, IG: 10, X: 24)
 // Step 2: Scrape content from each platform
 // Step 3: Dispatch each piece of content to process-content task
-// Step 4: Once all processing is done, dispatch draft-ideas
+// Step 4: Update Last Checked for processed creators
+// Step 5: Dispatch draft-ideas with this run's scouted content IDs (no standalone draft cron)
 // ═══════════════════════════════════════════════════════════════
 
 export const scoutContent = schedules.task({
@@ -315,7 +316,28 @@ export const scoutContent = schedules.task({
     }
     console.log(`📅 Updated Last Checked for ${uniqueCreatorIds.length} creators`);
 
-    // ─── STEP 5: Dispatch synthesis/draft step (decoupled) ──────────────────
+    // ─── STEP 5: Dispatch draft-ideas for this run's fresh scouted content ──
+
+    let draftIdeasRunId: string | undefined;
+
+    if (processResults.length > 0) {
+      console.log(
+        `🚀 Dispatching draft-ideas for ${processResults.length} freshly scouted item(s)...`,
+      );
+      try {
+        const draftHandle = await tasks.trigger("draft-ideas", {
+          scoutedContentIds: processResults,
+        });
+        draftIdeasRunId = draftHandle.id;
+        console.log(`🧾 draft-ideas dispatched | run=${draftIdeasRunId}`);
+      } catch (dispatchErr) {
+        const message =
+          dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
+        console.error(`❌ Failed to dispatch draft-ideas:`, message);
+      }
+    } else {
+      console.log("⏭️ Skipping draft-ideas — no new scouted content stored this run.");
+    }
 
     if (failedCreators.length > 0) {
       console.warn(
@@ -331,6 +353,8 @@ export const scoutContent = schedules.task({
       creatorsProcessed: uniqueCreatorIds.length,
       creatorsFailedCount: failedCreators.length,
       failedCreators,
+      scoutedContentIds: processResults,
+      draftIdeasRunId,
     };
   },
 });

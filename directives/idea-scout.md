@@ -77,9 +77,9 @@ The filter checks content relevance against these specific domains. If a piece o
 ## 4. Pipeline Architecture & Execution Flow
 
 ```
-Trigger.dev Mon/Thu/Sat Cron
+Trigger.dev Mon/Thu/Sun Cron
 │
-└── scout-content (Runs 8:30 AM UTC Mon/Thu/Sat | maxDuration: 14400s)
+└── scout-content (Runs 3:30 AM UTC Mon/Thu/Sun | maxDuration: 14400s)
     ├── 1. Gather active creators (YT: 10, IG: 10, X: 24) sorted by Last Checked (oldest first)
     ├── 2. Scrape content streams (with 5s cooldowns between phases):
     │      ├── YT: Scrapes newest 5 videos (Apify Actor) — sequential per creator
@@ -95,11 +95,15 @@ Trigger.dev Mon/Thu/Sat Cron
     │      ├── D. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
     │      ├── E. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
     │      └── F. Notion insert: Create Scouted Content page, establishing creator relation
-    └── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
+    ├── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
+    └── 5. Dispatch draft-ideas with this run's `scoutedContentIds` (skipped when no new content was stored)
 
-Trigger.dev Mon-Sat Cron
+Triggered two ways (hybrid):
+│   • Immediately by scout-content with this run's scoutedContentIds (Mon/Thu/Sun)
+│   • Catch-all cron Wed/Fri 4:30 AM UTC for unlinked scouted content (manual/orphaned)
+│   • Manual dashboard / trigger-draft.ts also supported
 │
-└── draft-ideas [VALUE STRATEGIST] (Runs 4:30 AM UTC Mon/Wed/Fri/Sun | maxDuration: 900s)
+└── draft-ideas [VALUE STRATEGIST] (maxDuration: 900s)
     ├── 1. Clean up rejected ideas (archive to sever relations and free scouted content)
     ├── 2. Gather context from all sources:
     │      ├── A. Unused Scouted Content (from past 7 days, filtering out those already linked to Ideas)

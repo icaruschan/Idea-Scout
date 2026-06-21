@@ -85,7 +85,9 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
     : [];
 
   console.log(
-    `💡 Draft Ideas starting — ${scoutedContentIds.length > 0 ? scoutedContentIds.length : "all recent"} scouted items to study`,
+    scoutedContentIds.length > 0
+      ? `💡 Draft Ideas starting — ${scoutedContentIds.length} item(s) from scout-content dispatch`
+      : `💡 Draft Ideas starting — catch-all mode, querying recent unlinked scouted content (past 7 days)`,
   );
 
   const cleanedCount = await cleanRejectedIdeas();
@@ -197,15 +199,24 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
   return { ideasCreated };
 }
 
+// Hybrid scheduling:
+// - scout-content dispatches draft-ideas immediately with scoutedContentIds (Mon/Thu/Sun)
+// - Wed/Fri cron catches manual/orphaned unlinked scouted content (no scout run those days)
 export const draftIdeas = schedules.task({
   id: "draft-ideas",
-  cron: "30 4 * * 1,3,5,0", // Mon/Wed/Fri/Sun 4:30 AM UTC (5:30 AM WAT)
+  cron: "30 4 * * 3,5", // Wed/Fri 4:30 AM UTC catch-all backfill
   maxDuration: 900,
   retry: {
     maxAttempts: 2,
   },
-  run: async (payload): Promise<{ ideasCreated: number }> => {
-    return runDraftIdeas(payload as DraftIdeasPayload);
+  run: async (payload: unknown): Promise<{ ideasCreated: number }> => {
+    const draftPayload =
+      payload &&
+      typeof payload === "object" &&
+      "scoutedContentIds" in payload
+        ? (payload as DraftIdeasPayload)
+        : undefined;
+    return runDraftIdeas(draftPayload);
   },
 });
 
