@@ -38,7 +38,33 @@ export interface ScoutedContentForDraft {
   pillars: string[];
   creatorPageId: string;
   transcriptPreview: string;
+  /** Transcript/caption/post body only — excludes metadata wrapper used in sourceText */
+  rawSourceText: string;
   sourceText: string;
+}
+
+/** Length of actual source content (transcript/caption/post), not the wrapped strategist context. */
+export function getRawSourceDepth(
+  source: Pick<ScoutedContentForDraft, "rawSourceText" | "transcriptPreview" | "title">,
+): number {
+  const raw = source.rawSourceText || source.transcriptPreview || source.title || "";
+  return raw.trim().length;
+}
+
+const IDEAS_BANK_WHY_IT_WORKS_KEYS = [
+  "Why it works",
+  "Why It Works",
+  "💡 Why It Works",
+] as const;
+
+function applyWhyItWorksProperty(
+  properties: Record<string, any>,
+  value: string,
+  propertyKey: (typeof IDEAS_BANK_WHY_IT_WORKS_KEYS)[number] = IDEAS_BANK_WHY_IT_WORKS_KEYS[0],
+): void {
+  properties[propertyKey] = {
+    rich_text: [{ text: { content: value.substring(0, 2000) } }],
+  };
 }
 
 export interface ScoutedContentInput {
@@ -360,6 +386,8 @@ async function mapScoutedPageForDraft(page: any): Promise<ScoutedContentForDraft
   const url = p["URL"]?.url || "";
   const pageBodyText = await getBlockChildrenPlainText(page.id);
 
+  const rawSourceText = pageBodyText || transcriptPreview || title;
+
   return {
     pageId: page.id,
     title,
@@ -370,6 +398,7 @@ async function mapScoutedPageForDraft(page: any): Promise<ScoutedContentForDraft
     pillars: p["Niche"]?.multi_select?.map((s: any) => s.name) || [],
     creatorPageId,
     transcriptPreview,
+    rawSourceText,
     sourceText: buildSourceTextFromScoutedContentFields({
       title,
       platform,
@@ -801,11 +830,7 @@ export async function createIdea(
       };
     }
     if (options.whyItWorks) {
-      properties["Why It Works"] = {
-        rich_text: [
-          { text: { content: options.whyItWorks.substring(0, 2000) } },
-        ],
-      };
+      applyWhyItWorksProperty(properties, options.whyItWorks);
     }
     if (options.draftTweet) {
       properties["Draft Tweet"] = {
@@ -870,6 +895,36 @@ export async function createIdea(
       }
       return response.id;
     } catch (error: any) {
+      const message = String(error?.message || "");
+
+      // Retry with alternate Ideas Bank property casing for Why it works
+      if (
+        options.whyItWorks &&
+        error?.code === "validation_error" &&
+        message.toLowerCase().includes("why it works")
+      ) {
+        for (const propertyKey of IDEAS_BANK_WHY_IT_WORKS_KEYS.slice(1)) {
+          try {
+            const retryBody = {
+              ...pageBody,
+              properties: { ...pageBody.properties },
+            };
+            for (const key of IDEAS_BANK_WHY_IT_WORKS_KEYS) {
+              delete retryBody.properties[key];
+            }
+            applyWhyItWorksProperty(retryBody.properties, options.whyItWorks, propertyKey);
+            const response = await notion.pages.create(retryBody);
+            if (pageBodyBlocks.length > 0) {
+              await appendBlocksInBatches(response.id, pageBodyBlocks);
+            }
+            console.log(`Why it works written using property key "${propertyKey}"`);
+            return response.id;
+          } catch (retryError: any) {
+            if (retryError?.code !== "validation_error") throw retryError;
+          }
+        }
+      }
+
       // If the error is related to an invalid/missing relation ID, retry without it
       const isRelationError =
         (error?.code === "validation_error" &&

@@ -27,6 +27,153 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 // Step 5: Dispatch draft-ideas with this run's scouted content IDs (no standalone draft cron)
 // ═══════════════════════════════════════════════════════════════
 
+function isLikelyThreadStarter(text: string): boolean {
+  return (
+    text.includes("🧵") ||
+    /\bthread\b/i.test(text) ||
+    text.trim().endsWith("👇") ||
+    /\[1\/\d+\]/.test(text) ||
+    /\(1\/\d+\)/.test(text) ||
+    /\b1\/\d+\b/.test(text)
+  );
+}
+
+function sortTweetsChronologically(tweets: any[]): any[] {
+  return [...tweets].sort(
+    (a, b) =>
+      new Date(a.createdAt || a.created_at || 0).getTime() -
+      new Date(b.createdAt || b.created_at || 0).getTime(),
+  );
+}
+
+function stitchThreadTexts(tweets: any[]): string {
+  const ordered = sortTweetsChronologically(tweets);
+  return ordered
+    .map((tweet, idx) => `[${idx + 1}/${ordered.length}] ${tweet.text || ""}`)
+    .join("\n\n");
+}
+
+function getTweetConversationId(tweet: any): string {
+  return String(tweet.conversationId || tweet.id);
+}
+
+function isXArticle(tweet: any, tweetUrl: string): boolean {
+  return (
+    (tweet.article !== null && tweet.article !== undefined) ||
+    tweetUrl.includes("/article/") ||
+    (tweet.entities?.urls || []).some((u: any) =>
+      u.expanded_url?.includes("/article/"),
+    )
+  );
+}
+
+async function buildXContentItems(
+  handle: string,
+  creatorPageId: string,
+  creatorName: string,
+  recentTweets: any[],
+): Promise<RawContentItem[]> {
+  const conversationGroups = new Map<string, any[]>();
+
+  for (const tweet of recentTweets) {
+    const conversationId = getTweetConversationId(tweet);
+    if (!conversationGroups.has(conversationId)) {
+      conversationGroups.set(conversationId, []);
+    }
+    conversationGroups.get(conversationId)!.push(tweet);
+  }
+
+  const items: RawContentItem[] = [];
+
+  for (const [conversationId, groupTweets] of conversationGroups) {
+    const orderedGroup = sortTweetsChronologically(groupTweets);
+    const rootTweet =
+      orderedGroup.find((tweet) => String(tweet.id) === conversationId) ||
+      orderedGroup[0];
+
+    let fullText = rootTweet.text || "";
+    const rootUrl =
+      rootTweet.url || `https://x.com/${handle}/status/${rootTweet.id}`;
+
+    if (isXArticle(rootTweet, rootUrl) && rootTweet.id) {
+      console.log(`📄 Detected X Article for @${handle}, fetching full text via REST...`);
+      try {
+        const articleText = await getArticle(rootTweet.id);
+        if (articleText) fullText = articleText;
+      } catch (error) {
+        console.warn(`Failed to fetch article text for ${rootTweet.id}:`, error);
+      }
+    } else {
+      const isReplyInThread =
+        rootTweet.conversationId &&
+        String(rootTweet.id) !== String(rootTweet.conversationId);
+      const shouldFetchThread =
+        orderedGroup.length > 1 ||
+        isLikelyThreadStarter(fullText) ||
+        isReplyInThread;
+
+      if (shouldFetchThread && rootTweet.id) {
+        console.log(
+          `🧵 Thread candidate for @${handle} (conversation ${conversationId}, ${orderedGroup.length} tweet(s) in batch)`,
+        );
+        try {
+          const threadTweets = await getTweetThread(handle, conversationId);
+          if (threadTweets.length > 1) {
+            fullText = stitchThreadTexts(threadTweets);
+            console.log(`🧵 Stitched ${threadTweets.length} tweets from API thread fetch`);
+          } else if (orderedGroup.length > 1) {
+            fullText = stitchThreadTexts(orderedGroup);
+            console.log(`🧵 Stitched ${orderedGroup.length} tweets from in-batch conversation group`);
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch thread for conversation ${conversationId}:`, error);
+          if (orderedGroup.length > 1) {
+            fullText = stitchThreadTexts(orderedGroup);
+          }
+        }
+      }
+    }
+
+    const engagementTweet = orderedGroup.reduce((best, tweet) => {
+      const views = tweet.viewCount || tweet.viewsCount || tweet.views || 0;
+      const bestViews = best.viewCount || best.viewsCount || best.views || 0;
+      return views > bestViews ? tweet : best;
+    }, rootTweet);
+
+    items.push({
+      platform: "X",
+      creatorPageId,
+      creatorName,
+      title: fullText.substring(0, 200),
+      text: fullText,
+      url: rootUrl,
+      likes:
+        engagementTweet.likeCount ||
+        engagementTweet.likesCount ||
+        engagementTweet.likes ||
+        0,
+      views:
+        engagementTweet.viewCount ||
+        engagementTweet.viewsCount ||
+        engagementTweet.views ||
+        0,
+      comments:
+        engagementTweet.replyCount ||
+        engagementTweet.repliesCount ||
+        engagementTweet.replies ||
+        0,
+      publishedDate:
+        rootTweet.createdAt ||
+        rootTweet.created_at ||
+        rootTweet.publishedDate ||
+        "",
+      transcript: fullText,
+    });
+  }
+
+  return items;
+}
+
 export const scoutContent = schedules.task({
   id: "scout-content",
   cron: "30 3 * * 1,4,0", // Mon/Thu/Sun 3:30 AM UTC (4:30 AM WAT)
@@ -206,65 +353,13 @@ export const scoutContent = schedules.task({
         const recentTweets = nonDuplicateTweets.slice(0, 10);
         console.log(`X @${creator.handle}: ${recentTweets.length} new tweets scraped (from ${tweets.length} original results)`);
 
-        for (const tweet of recentTweets) {
-          let fullText = tweet.text || "";
-          const tweetUrl = tweet.url || `https://x.com/${creator.handle}/status/${tweet.id}`;
-
-          // Detect articles via flag, URL structure, or entities
-          const isArticle = tweet.article !== null && tweet.article !== undefined || 
-                           tweetUrl.includes('/article/') ||
-                           (tweet.entities?.urls || []).some((u: any) => u.expanded_url?.includes('/article/'));
-
-          if (isArticle && tweet.id) {
-            console.log(`📄 Detected X Article for @${creator.handle}, fetching full text via REST...`);
-            try {
-              const articleText = await getArticle(tweet.id);
-              if (articleText) fullText = articleText;
-            } catch (e) {
-              console.warn(`Failed to fetch article text for ${tweet.id}:`, e);
-            }
-          } else {
-            // Check if it is a thread and fetch/stitch
-            const isLikelyThread = 
-              fullText.includes("🧵") || 
-              /\bthread\b/i.test(fullText) || 
-              fullText.trim().endsWith("👇") ||
-              /\[1\/\d+\]/.test(fullText) ||
-              /\(1\/\d+\)/.test(fullText) ||
-              /\b1\/\d+\b/.test(fullText);
-
-            if (isLikelyThread && tweet.id) {
-              const conversationId = tweet.conversationId || tweet.id;
-              console.log(`🧵 Detected likely X thread for @${creator.handle} (Conversation ID: ${conversationId}). Fetching thread...`);
-              try {
-                const threadTweets = await getTweetThread(creator.handle, conversationId);
-                if (threadTweets && threadTweets.length > 0) {
-                  // Sort by date/timestamp to reconstruct chronological order
-                  threadTweets.sort((a: any, b: any) => new Date(a.createdAt || a.created_at || 0).getTime() - new Date(b.createdAt || b.created_at || 0).getTime());
-                  // Concatenate text
-                  fullText = threadTweets.map((t: any, idx: number) => `[${idx + 1}/${threadTweets.length}] ${t.text || ""}`).join("\n\n");
-                  console.log(`🧵 Stitched ${threadTweets.length} tweets into combined text for thread`);
-                }
-              } catch (err) {
-                console.warn(`Failed to fetch thread for tweet ${tweet.id}:`, err);
-              }
-            }
-          }
-
-          allRawContent.push({
-            platform: "X",
-            creatorPageId: creator.pageId,
-            creatorName: creator.name,
-            title: fullText.substring(0, 200),
-            text: fullText,
-            url: tweetUrl,
-            likes: tweet.likeCount || tweet.likesCount || tweet.likes || 0,
-            views: tweet.viewCount || tweet.viewsCount || tweet.views || 0,
-            comments: tweet.replyCount || tweet.repliesCount || tweet.replies || 0,
-            publishedDate: tweet.createdAt || tweet.created_at || tweet.publishedDate || "",
-            transcript: fullText,
-          });
-        }
+        const xContentItems = await buildXContentItems(
+          creator.handle,
+          creator.pageId,
+          creator.name,
+          recentTweets,
+        );
+        allRawContent.push(...xContentItems);
 
         processedCreatorIds.push(creator.pageId);
       } catch (err) {

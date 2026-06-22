@@ -28,6 +28,8 @@ const source: ScoutedContentForDraft = {
   pillars: ["Automation"],
   creatorPageId: "creator-id",
   transcriptPreview: "Short preview",
+  rawSourceText:
+    "The founder checks forms, pulls company context, and sends qualified leads to Slack.",
   sourceText: "FULL TRANSCRIPT: The founder checks forms, pulls company context, and sends qualified leads to Slack.",
 };
 

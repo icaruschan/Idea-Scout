@@ -11,6 +11,7 @@ import {
   getPillarDistribution,
   createIdea,
   cleanRejectedIdeas,
+  getRawSourceDepth,
   CreateIdeaOptions,
   ScoutedContentForDraft,
 } from "../../lib/notion";
@@ -81,6 +82,35 @@ const VALID_FORMATS: ContentFormat[] = [
 
 const VALID_PRIORITIES: Priority[] = ["🔥 Hot", "💡 Good", "📝 Maybe"];
 
+const YT_IG_TARGET_SHARE = 0.7;
+const X_TARGET_SHARE = 0.3;
+const MIN_RAW_SOURCE_DEPTH = 300;
+
+/** Prioritize all YT/IG sources, then cap X to ~30% of the YT/IG count. */
+export function prioritizeSourcesByPlatform(
+  scoutedContent: ScoutedContentForDraft[],
+): ScoutedContentForDraft[] {
+  const ytIgSources = scoutedContent
+    .filter((s) => s.platform === "YouTube" || s.platform === "Instagram")
+    .sort((a, b) => getRawSourceDepth(b) - getRawSourceDepth(a));
+
+  const xSources = scoutedContent
+    .filter((s) => s.platform === "X")
+    .sort((a, b) => getRawSourceDepth(b) - getRawSourceDepth(a));
+
+  const ytIgSelected = ytIgSources;
+
+  let xCap: number;
+  if (ytIgSelected.length === 0) {
+    xCap = xSources.length;
+  } else {
+    xCap = Math.max(1, Math.round((ytIgSelected.length * X_TARGET_SHARE) / YT_IG_TARGET_SHARE));
+    xCap = Math.min(xCap, xSources.length);
+  }
+
+  return [...ytIgSelected, ...xSources.slice(0, xCap)];
+}
+
 export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ ideasCreated: number }> {
   const scoutedContentIds = Array.isArray(payload?.scoutedContentIds)
     ? payload.scoutedContentIds
@@ -128,35 +158,25 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
     return { ideasCreated: 0 };
   }
 
-  // Separate by platform
-  const ytIgSources = scoutedContent.filter(s => s.platform === "YouTube" || s.platform === "Instagram");
-  const xSources = scoutedContent.filter(s => s.platform === "X");
+  const prioritizedSources = prioritizeSourcesByPlatform(scoutedContent);
+  const ytIgCount = prioritizedSources.filter(
+    (s) => s.platform === "YouTube" || s.platform === "Instagram",
+  ).length;
+  const xCount = prioritizedSources.filter((s) => s.platform === "X").length;
 
-  // Target: 70% YT/IG, 30% X
-  const totalBudget = scoutedContent.length;
-  const ytIgBudget = Math.ceil(totalBudget * 0.7);
-  const xBudget = totalBudget - ytIgBudget;
-
-  // Sort each group by source depth (longest sourceText first)
-  ytIgSources.sort((a, b) => (b.sourceText || "").length - (a.sourceText || "").length);
-  xSources.sort((a, b) => (b.sourceText || "").length - (a.sourceText || "").length);
-
-  // Take budget from each, prioritizing depth
-  const prioritizedSources = [
-    ...ytIgSources.slice(0, ytIgBudget),
-    ...xSources.slice(0, xBudget),
-  ];
-
-  console.log(`📊 Platform weighting: ${ytIgSources.slice(0, ytIgBudget).length} YT/IG + ${xSources.slice(0, xBudget).length} X = ${prioritizedSources.length} total (out of ${scoutedContent.length} available)`);
+  console.log(
+    `📊 Platform weighting: ${ytIgCount} YT/IG + ${xCount} X = ${prioritizedSources.length} total (out of ${scoutedContent.length} available)`,
+  );
 
   let ideasCreated = 0;
 
   for (const source of prioritizedSources) {
     try {
-      // Minimum source depth gate — skip any source with < 300 chars of total source text
-      const sourceLength = (source.sourceText || "").length;
-      if (sourceLength < 300) {
-        console.log(`⏭️ Skipping "${source.title.substring(0, 60)}" — source too thin (${sourceLength} chars)`);
+      const rawDepth = getRawSourceDepth(source);
+      if (rawDepth < MIN_RAW_SOURCE_DEPTH) {
+        console.log(
+          `⏭️ Skipping "${source.title.substring(0, 60)}" — raw source too thin (${rawDepth} chars, need ${MIN_RAW_SOURCE_DEPTH})`,
+        );
         continue;
       }
 
@@ -308,11 +328,11 @@ Platform: ${source.platform}
 URL: ${source.url || "No URL"}
 Primary active pillar: ${pillar}
 Niche tags from Notion: ${source.pillars.join(", ") || "None"}
-SOURCE DEPTH: ${source.sourceText?.length || 0} characters.
-${(source.sourceText?.length || 0) < 500 ? "⚠️ VERY SHORT — Short format only." : ""}
-${(source.sourceText?.length || 0) >= 500 && (source.sourceText?.length || 0) < 2000 ? "⚠️ SHORT — Mid-length or Short only." : ""}
-${(source.sourceText?.length || 0) >= 2000 && (source.sourceText?.length || 0) < 5000 ? "Moderate depth. Mid-length or Thread." : ""}
-${(source.sourceText?.length || 0) >= 5000 ? "Strong depth. All formats available." : ""}
+RAW SOURCE DEPTH: ${getRawSourceDepth(source)} characters (transcript/caption/post body only).
+${getRawSourceDepth(source) < 500 ? "⚠️ VERY SHORT — Short format only." : ""}
+${getRawSourceDepth(source) >= 500 && getRawSourceDepth(source) < 2000 ? "⚠️ SHORT — Mid-length or Short only." : ""}
+${getRawSourceDepth(source) >= 2000 && getRawSourceDepth(source) < 5000 ? "Moderate depth. Mid-length or Thread." : ""}
+${getRawSourceDepth(source) >= 5000 ? "Strong depth. All formats available." : ""}
 
 FULL SOURCE CONTEXT
 ${source.sourceText}
@@ -392,12 +412,12 @@ export function normalizeValueBrief(raw: any, source: ScoutedContentForDraft, fa
     ? raw.format
     : inferFormat(raw);
 
-  const sourceLength = source.sourceText?.length || 0;
-  if (sourceLength < 500) {
+  const rawDepth = getRawSourceDepth(source);
+  if (rawDepth < 500) {
     format = "Short";
-  } else if (sourceLength < 2000 && (format === "Article" || format === "Thread")) {
+  } else if (rawDepth < 2000 && (format === "Article" || format === "Thread")) {
     format = "Mid-length";
-  } else if (sourceLength < 5000 && format === "Article") {
+  } else if (rawDepth < 5000 && format === "Article") {
     format = "Thread";
   }
 
@@ -671,49 +691,28 @@ function cleanNotionId(value: any): string | undefined {
 }
 
 function inferVoiceMode(raw: any, source: ScoutedContentForDraft): VoiceMode {
-  const text = `${raw?.selectedAngle || ""} ${raw?.sourceThesis || ""} ${source.sourceText} ${source.title}`.toLowerCase();
-  if (
-    text.includes("tool") ||
-    text.includes("repo") ||
-    text.includes("github") ||
-    text.includes("open-source") ||
-    text.includes("open source") ||
-    text.includes(" api ") ||
-    text.includes("model") ||
-    text.includes("npm") ||
-    text.includes("library") ||
-    text.includes("package") ||
-    text.includes("framework") ||
-    text.includes("mcp") ||
-    text.includes("extension") ||
-    text.includes("integration") ||
-    text.includes("workflow")
-  ) {
+  const text = `${raw?.selectedAngle || ""} ${raw?.sourceThesis || ""} ${source.rawSourceText || ""} ${source.title}`.toLowerCase();
+
+  const isToolCurator =
+    /\b(tool|repo|github|open[- ]source|npm|library|package|framework|mcp|extension|integration)\b/.test(text) ||
+    /\b(api|sdk|plugin)\b/.test(text) ||
+    /\b(ai model|llm|gpt-|claude|gemini|openrouter)\b/.test(text) ||
+    (text.includes("comparison") && (text.includes(" vs ") || text.includes(" versus ")));
+
+  if (isToolCurator) {
     return "Tool-Curator";
   }
-  if (
-    text.includes("first $") ||
-    text.includes("revenue") ||
-    text.includes("mrr") ||
-    text.includes("case study") ||
-    text.includes("someone built") ||
-    text.includes("growth") ||
-    text.includes("monetize") ||
-    text.includes("monetisation") ||
-    text.includes("audience") ||
-    text.includes("newsletter") ||
-    text.includes("users") ||
-    text.includes("acquisition") ||
-    text.includes("subscriber") ||
-    text.includes("client") ||
-    text.includes("sales") ||
-    text.includes("funnel") ||
-    text.includes("formula") ||
-    text.includes("playbook") ||
-    text.includes("operator")
-  ) {
+
+  const isCaseStudy =
+    /\b(first \$|revenue|mrr|arr|case study|someone built|someone made)\b/.test(text) ||
+    /\b(monetiz(e|ation|ing)|newsletter growth|subscriber growth)\b/.test(text) ||
+    /\b(acquisition|playbook|operator wisdom|market insight)\b/.test(text) ||
+    (text.includes("bro") && (text.includes("built") || text.includes("made") || text.includes("sold")));
+
+  if (isCaseStudy) {
     return "Case-Study";
   }
+
   return "Builder-Retrospective";
 }
 
