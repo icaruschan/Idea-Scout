@@ -11,7 +11,7 @@ import {
   scrapeYouTubeChannel,
   scrapeInstagramReels,
 } from "../../lib/apify";
-import { searchCreatorPosts, getArticle } from "../../lib/twitter";
+import { searchCreatorPosts, getArticle, getTweetThread } from "../../lib/twitter";
 import { processContent } from "./process-content";
 import type { RawContentItem } from "./process-content";
 import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
@@ -223,6 +223,32 @@ export const scoutContent = schedules.task({
             } catch (e) {
               console.warn(`Failed to fetch article text for ${tweet.id}:`, e);
             }
+          } else {
+            // Check if it is a thread and fetch/stitch
+            const isLikelyThread = 
+              fullText.includes("🧵") || 
+              /\bthread\b/i.test(fullText) || 
+              fullText.trim().endsWith("👇") ||
+              /\[1\/\d+\]/.test(fullText) ||
+              /\(1\/\d+\)/.test(fullText) ||
+              /\b1\/\d+\b/.test(fullText);
+
+            if (isLikelyThread && tweet.id) {
+              const conversationId = tweet.conversationId || tweet.id;
+              console.log(`🧵 Detected likely X thread for @${creator.handle} (Conversation ID: ${conversationId}). Fetching thread...`);
+              try {
+                const threadTweets = await getTweetThread(creator.handle, conversationId);
+                if (threadTweets && threadTweets.length > 0) {
+                  // Sort by date/timestamp to reconstruct chronological order
+                  threadTweets.sort((a: any, b: any) => new Date(a.createdAt || a.created_at || 0).getTime() - new Date(b.createdAt || b.created_at || 0).getTime());
+                  // Concatenate text
+                  fullText = threadTweets.map((t: any, idx: number) => `[${idx + 1}/${threadTweets.length}] ${t.text || ""}`).join("\n\n");
+                  console.log(`🧵 Stitched ${threadTweets.length} tweets into combined text for thread`);
+                }
+              } catch (err) {
+                console.warn(`Failed to fetch thread for tweet ${tweet.id}:`, err);
+              }
+            }
           }
 
           allRawContent.push({
@@ -236,7 +262,7 @@ export const scoutContent = schedules.task({
             views: tweet.viewCount || tweet.viewsCount || tweet.views || 0,
             comments: tweet.replyCount || tweet.repliesCount || tweet.replies || 0,
             publishedDate: tweet.createdAt || tweet.created_at || tweet.publishedDate || "",
-            transcript: "",
+            transcript: fullText,
           });
         }
 

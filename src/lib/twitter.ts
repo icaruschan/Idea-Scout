@@ -150,3 +150,19 @@ export async function getArticle(tweetId: string) {
     return ""; // Soft fail: return empty so we can fallback to preview text
   }
 }
+
+export async function getTweetThread(handle: string, conversationId: string) {
+  try {
+    const response = await getWithRetry("/tweet/advanced_search", {
+      params: {
+        query: `from:${handle} conversation_id:${conversationId}`,
+        queryType: "Latest",
+      },
+    });
+    return response.data?.tweets || [];
+  } catch (error) {
+    console.error(`Error fetching thread for conversation ${conversationId}:`, error);
+    return [];
+  }
+}
+

@@ -34,10 +34,12 @@ Goal: extract useful value, not generic advice.
 ACTIVE CONTENT PILLARS:
 ${CONTENT_PILLARS.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 
-VOICE MODES:
-- Builder-Retrospective: commentary from a builder/operator POV. First-person is allowed only as commentary unless the source supports direct experience.
-- Tool-Curator: external tool/repo/workflow spotlight. Best for concrete tools, specs, pricing, features, or comparisons.
-- Case-Study: micro-case study, first-$/users/revenue breakdown, builder journey, or operator principle.
+VOICE MODES & SELECTION CRITICAL RULES:
+- Builder-Retrospective: commentary from a builder/operator POV. Use when source describes personal build/workflow/shipping/operational lesson. First-person is allowed only as commentary unless the source supports direct experience.
+- Tool-Curator: external tool/repo/workflow spotlight. Use when source spotlights a specific tool, repo, API, model, or comparison. Arrow-heavy lists with specs, pricing, features.
+- Case-Study: micro-case study, first-$/users/revenue breakdown, builder journey, or operator principle. Use when source describes someone else's win, revenue, market insight, or principle. Lowercase openers, "bro" emphasis, operator wisdom.
+
+DO NOT default to Builder-Retrospective. Match the mode to the SOURCE content.
 
 FORMAT CONTRACTS:
 - Article: choose when the transcript has a complete workflow, deep argument, multiple sections, several examples, or enough depth for a long-form breakdown.
@@ -126,10 +128,38 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
     return { ideasCreated: 0 };
   }
 
+  // Separate by platform
+  const ytIgSources = scoutedContent.filter(s => s.platform === "YouTube" || s.platform === "Instagram");
+  const xSources = scoutedContent.filter(s => s.platform === "X");
+
+  // Target: 70% YT/IG, 30% X
+  const totalBudget = scoutedContent.length;
+  const ytIgBudget = Math.ceil(totalBudget * 0.7);
+  const xBudget = totalBudget - ytIgBudget;
+
+  // Sort each group by source depth (longest sourceText first)
+  ytIgSources.sort((a, b) => (b.sourceText || "").length - (a.sourceText || "").length);
+  xSources.sort((a, b) => (b.sourceText || "").length - (a.sourceText || "").length);
+
+  // Take budget from each, prioritizing depth
+  const prioritizedSources = [
+    ...ytIgSources.slice(0, ytIgBudget),
+    ...xSources.slice(0, xBudget),
+  ];
+
+  console.log(`📊 Platform weighting: ${ytIgSources.slice(0, ytIgBudget).length} YT/IG + ${xSources.slice(0, xBudget).length} X = ${prioritizedSources.length} total (out of ${scoutedContent.length} available)`);
+
   let ideasCreated = 0;
 
-  for (const source of scoutedContent) {
+  for (const source of prioritizedSources) {
     try {
+      // Minimum source depth gate — skip any source with < 300 chars of total source text
+      const sourceLength = (source.sourceText || "").length;
+      if (sourceLength < 300) {
+        console.log(`⏭️ Skipping "${source.title.substring(0, 60)}" — source too thin (${sourceLength} chars)`);
+        continue;
+      }
+
       const pillar = getPrimaryPillar(source);
       if (!CONTENT_PILLARS.includes(pillar)) {
         console.log(
@@ -175,6 +205,10 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
         console.log(
           `💡 Created source-grounded idea "${valueBrief.ideaTitle}" from "${source.title.substring(0, 60)}"`,
         );
+
+        // Add to existingTitles to prevent duplicate/similar ideas in the same run
+        existingTitles.push(valueBrief.ideaTitle);
+        existingTitles.push(valueBrief.selectedAngle);
 
         await tasks.trigger("write-tweets", {
           notionIdeaId,
@@ -274,6 +308,11 @@ Platform: ${source.platform}
 URL: ${source.url || "No URL"}
 Primary active pillar: ${pillar}
 Niche tags from Notion: ${source.pillars.join(", ") || "None"}
+SOURCE DEPTH: ${source.sourceText?.length || 0} characters.
+${(source.sourceText?.length || 0) < 500 ? "⚠️ VERY SHORT — Short format only." : ""}
+${(source.sourceText?.length || 0) >= 500 && (source.sourceText?.length || 0) < 2000 ? "⚠️ SHORT — Mid-length or Short only." : ""}
+${(source.sourceText?.length || 0) >= 2000 && (source.sourceText?.length || 0) < 5000 ? "Moderate depth. Mid-length or Thread." : ""}
+${(source.sourceText?.length || 0) >= 5000 ? "Strong depth. All formats available." : ""}
 
 FULL SOURCE CONTEXT
 ${source.sourceText}
@@ -349,9 +388,18 @@ export function normalizeValueBrief(raw: any, source: ScoutedContentForDraft, fa
     ? raw.voiceMode
     : inferVoiceMode(raw, source);
 
-  const format = VALID_FORMATS.includes(raw?.format)
+  let format = VALID_FORMATS.includes(raw?.format)
     ? raw.format
     : inferFormat(raw);
+
+  const sourceLength = source.sourceText?.length || 0;
+  if (sourceLength < 500) {
+    format = "Short";
+  } else if (sourceLength < 2000 && (format === "Article" || format === "Thread")) {
+    format = "Mid-length";
+  } else if (sourceLength < 5000 && format === "Article") {
+    format = "Thread";
+  }
 
   const priority = VALID_PRIORITIES.includes(raw?.priority)
     ? raw.priority
@@ -623,13 +671,23 @@ function cleanNotionId(value: any): string | undefined {
 }
 
 function inferVoiceMode(raw: any, source: ScoutedContentForDraft): VoiceMode {
-  const text = `${raw?.selectedAngle || ""} ${raw?.sourceThesis || ""} ${source.sourceText}`.toLowerCase();
+  const text = `${raw?.selectedAngle || ""} ${raw?.sourceThesis || ""} ${source.sourceText} ${source.title}`.toLowerCase();
   if (
     text.includes("tool") ||
     text.includes("repo") ||
     text.includes("github") ||
     text.includes("open-source") ||
-    text.includes("open source")
+    text.includes("open source") ||
+    text.includes(" api ") ||
+    text.includes("model") ||
+    text.includes("npm") ||
+    text.includes("library") ||
+    text.includes("package") ||
+    text.includes("framework") ||
+    text.includes("mcp") ||
+    text.includes("extension") ||
+    text.includes("integration") ||
+    text.includes("workflow")
   ) {
     return "Tool-Curator";
   }
@@ -638,7 +696,21 @@ function inferVoiceMode(raw: any, source: ScoutedContentForDraft): VoiceMode {
     text.includes("revenue") ||
     text.includes("mrr") ||
     text.includes("case study") ||
-    text.includes("someone built")
+    text.includes("someone built") ||
+    text.includes("growth") ||
+    text.includes("monetize") ||
+    text.includes("monetisation") ||
+    text.includes("audience") ||
+    text.includes("newsletter") ||
+    text.includes("users") ||
+    text.includes("acquisition") ||
+    text.includes("subscriber") ||
+    text.includes("client") ||
+    text.includes("sales") ||
+    text.includes("funnel") ||
+    text.includes("formula") ||
+    text.includes("playbook") ||
+    text.includes("operator")
   ) {
     return "Case-Study";
   }

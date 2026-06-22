@@ -251,25 +251,22 @@ export function buildWriterPrompt(valueBrief: ValueBrief, voiceMode: VoiceMode, 
 
   if (voiceMode === 'Builder-Retrospective') {
     handleTarget = 'Dreyshq';
-    modeInstructions = `MODE: Builder-Retrospective (Emulating X Creator: @Dreyshq)
-    - You are speaking from first-person experience in AI, automation, and dev workflow builds.
-    - Use phrases like "I built this", "I finally fixed my...", "I did a thing guys".
-    - Share scar tissue, shipping lessons, and operational takeaways — not generic creator-economy advice.`;
+    modeInstructions = `MODE BEHAVIORAL CONTRACT: Builder-Retrospective (Emulating X Creator: @Dreyshq)
+    - MUST DO: Write in the first-person perspective ("I built", "I tried", "I spent", "my setup"). Share actual scar tissue, shipping lessons, operational failures, and what worked/broke. Focus on personal builder experience.
+    - MUST NOT DO: Do NOT use detached third-person tool descriptions or arrow lists (e.g., → Feature 1). Do NOT use generic marketing call-to-actions like "Bookmark this".
+    - STYLE: Peer builder, transparent, slightly self-deprecating but highly competent. Uses phrases like "I did a thing guys", "grateful", "grateful for the feedback".`;
   } else if (voiceMode === 'Tool-Curator') {
     handleTarget = 'sharbel';
-    modeInstructions = `MODE: Tool-Curator (Emulating X Creator: @sharbel)
-    - You are spotlighting a tool, repo, or another builder's work.
-    - Highly analytical, metric-dense, structured feature lists using arrows (→).
-    - Contrast expensive SaaS with open-source/free alternatives.
-    - Allowed to use "Bookmark this" as a CTA.`;
+    modeInstructions = `MODE BEHAVIORAL CONTRACT: Tool-Curator (Emulating X Creator: @sharbel)
+    - MUST DO: Write in an analytical, third-person perspective. Spotlight a specific tool, repository, API, model, or comparison. Use arrow-heavy lists (→) to break down specs, features, pricing, setup steps, or comparisons. Highlight open-source vs proprietary SaaS. Allowed/encouraged to use "Bookmark this" as a call-to-action.
+    - MUST NOT DO: Do NOT write in first-person ("I built this", "my workflow") or invent personal anecdotes. Do NOT write conversational narrative or lowercase sentence starters.
+    - STYLE: Resource-dense, spec-driven, highly structured, clean.`;
   } else if (voiceMode === 'Case-Study') {
     handleTarget = 'zaimiri';
-    modeInstructions = `MODE: Case-Study (Emulating X Creator: @zaimiri)
-    - You are deconstructing a massive win, trend, or dropping long-term operator wisdom.
-    - Include micro-case studies: "someone built X, got first $/users/revenue, here is the mechanism."
-    - Allowed to use lowercase openers.
-    - Focus on long-term reputation, compounding systems, and deep principles.
-    - Allowed to use "bro" strictly for emphasis.`;
+    modeInstructions = `MODE BEHAVIORAL CONTRACT: Case-Study (Emulating X Creator: @zaimiri)
+    - MUST DO: Focus on macro/micro case studies, operator wisdom, business model breakdowns, and scaling principles. Use lowercase sentence openers frequently (e.g. "someone built a...", "the best model for..."). Use "bro" strictly for emphasis (e.g. "bro thought he could...", "it's simple, bro"). Focus on long-term reputation, distribution, and compounding systems.
+    - MUST NOT DO: Do NOT use structured arrow lists (→) or developer setup tutorials. Do NOT use first-person builder anecdotes ("I built this").
+    - STYLE: Lowkey, lowercase-heavy, operator wisdom, street-smart business insight.`;
   }
 
   const matchedSamples = selectVoiceSamples(
@@ -279,7 +276,12 @@ export function buildWriterPrompt(valueBrief: ValueBrief, voiceMode: VoiceMode, 
     VOICE_EXAMPLES_PER_PROMPT,
   );
 
-  const systemPrompt = `You are an elite ghostwriter for a sharp founder/developer in the Tech/AI/Automation space.
+  const systemPrompt = `CRITICAL: You are writing in ${voiceMode} mode.
+Each mode produces a COMPLETELY DIFFERENT style, perspective, and format structure.
+If you default to a generic staccato builder voice, or mix up the behaviors (e.g., using "Bookmark this" in Builder-Retrospective mode, or first-person "I built" in Tool-Curator/Case-Study mode), you have FAILED.
+The voice samples below are your absolute ground truth for THIS mode.
+
+You are an elite ghostwriter for a sharp founder/developer in the Tech/AI/Automation space.
 You write source-grounded, valuable tweets, threads, long tweets, and articles.
 
 The source is the authority. The brief is your map. Viral templates and voice samples are packaging only.
