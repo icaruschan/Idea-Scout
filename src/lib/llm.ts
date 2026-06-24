@@ -21,7 +21,12 @@ function getClient() {
 }
 
 // ─── TokenRouter client (MiniMax-M3 — free tier) ────────────────────────────
-const MINIMAX_MODEL = "MiniMax-M3";
+export const MODELS = {
+  STRATEGIST: "MiniMax-M3",
+  WRITER: "x-ai/grok-4.3",
+} as const;
+
+const MINIMAX_MODEL = MODELS.STRATEGIST;
 let _tokenRouterClient: OpenAI | null = null;
 function getTokenRouterClient() {
   if (!_tokenRouterClient) {
@@ -59,6 +64,36 @@ export async function generateText(
   });
 
   return response.choices[0]?.message?.content || "";
+}
+
+export interface TokenRouterTextResult {
+  content: string;
+  finishReason: string | null;
+}
+
+/** Writer path — TokenRouter only (Idea Scout). */
+export async function generateTextTokenRouter(
+  prompt: string,
+  systemPrompt: string,
+  temperature: number = 0.7,
+  model: string = MODELS.WRITER,
+  maxTokens?: number,
+): Promise<TokenRouterTextResult> {
+  const response = await getTokenRouterClient().chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: prompt },
+    ],
+    temperature,
+    ...(maxTokens ? { max_tokens: maxTokens } : {}),
+  });
+
+  const choice = response.choices[0];
+  return {
+    content: choice?.message?.content || "",
+    finishReason: choice?.finish_reason ?? null,
+  };
 }
 
 export async function generateJSON(
@@ -152,8 +187,9 @@ export async function generateJSONFree(
   prompt: string,
   systemPrompt: string,
   temperature: number = 1,
-  fallbackModel: string = "xiaomi/mimo-v2.5-pro"
-) {
+  _ignoredFallbackModel?: string,
+  retries: number = 1
+): Promise<any> {
   try {
     const response = await getTokenRouterClient().chat.completions.create({
       model: MINIMAX_MODEL,
@@ -179,8 +215,45 @@ export async function generateJSONFree(
       return JSON.parse(repairJson(jsonStr));
     }
   } catch (err) {
-    console.warn(`⚠️ MiniMax-M3 failed, falling back to ${fallbackModel}:`, (err as Error).message);
-    return generateJSON(prompt, systemPrompt, temperature, fallbackModel);
+    if (retries > 0) {
+      console.warn(`⚠️ MiniMax-M3 failed, retrying (${retries} left)... Error:`, (err as Error).message);
+      return generateJSONFree(prompt, systemPrompt, temperature, undefined, retries - 1);
+    }
+    console.error("❌ MiniMax-M3 failed after retries. Error:", (err as Error).message);
+    throw err;
+  }
+}
+
+/**
+ * Strategist path — MiniMax M3 via TokenRouter only. No OpenRouter fallback.
+ * Idea Scout skips the source on failure.
+ */
+export async function generateJSONStrategist(
+  prompt: string,
+  systemPrompt: string,
+  temperature: number = 0.4,
+): Promise<Record<string, unknown>> {
+  const response = await getTokenRouterClient().chat.completions.create({
+    model: MINIMAX_MODEL,
+    stream: false as any,
+    temperature,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: prompt },
+    ],
+  });
+
+  const raw = response.choices[0]?.message?.content || "";
+  const content = raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  const cleaned = content.replace(/```json/g, "").replace(/```/g, "").trim();
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  const jsonStr = match ? match[0] : cleaned;
+
+  try {
+    return JSON.parse(jsonStr) as Record<string, unknown>;
+  } catch {
+    console.warn("⚠️ Strategist JSON.parse failed, attempting repair...");
+    return JSON.parse(repairJson(jsonStr)) as Record<string, unknown>;
   }
 }
 

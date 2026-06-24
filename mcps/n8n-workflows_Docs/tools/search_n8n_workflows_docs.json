@@ -1,0 +1,18 @@
+{
+  "name": "search_n8n_workflows_docs",
+  "description": "Semantically search within the fetched documentation from GitHub repository: Zie619/n8n-workflows. Useful for specific queries.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The search query to find relevant documentation"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

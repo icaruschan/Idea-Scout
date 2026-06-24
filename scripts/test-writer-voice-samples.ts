@@ -156,9 +156,9 @@ for (const voiceMode of voiceModes) {
 
 const formats: Record<ContentFormat, string> = {
   Short: "Draft ONE short tweet.",
-  "Mid-length": "Draft ONE mid-length tweet.",
-  Thread: "Draft a valuable thread.",
-  Article: "Draft the final LONG-FORM ARTICLE.",
+  "Mid-length": "Draft ONE mid-length tweet",
+  Thread: "Draft a valuable thread",
+  Article: "Draft the final LONG-FORM ARTICLE",
 };
 
 for (const [format, expectedInstruction] of Object.entries(formats) as [ContentFormat, string][]) {
@@ -174,16 +174,23 @@ for (const [format, expectedInstruction] of Object.entries(formats) as [ContentF
 }
 
 const articlePrompt = buildWriterPrompt(
-  { ...sampleValueBrief, format: "Article" },
+  {
+    ...sampleValueBrief,
+    format: "Article",
+    comprehensionSummary: "n8n lead triage walkthrough",
+    detailedOutline: [
+      { heading: "Hook", purpose: "Pain", sourceUnits: [], mustInclude: ["n8n"] },
+    ],
+    hookFilledExample: "Stop qualifying leads by hand",
+  },
   sampleValueBrief.voiceMode,
   samples,
 );
 assert(
-  articlePrompt.userPrompt.includes("complete workflow") &&
-    articlePrompt.userPrompt.includes("deep argument") &&
-    articlePrompt.userPrompt.includes("several examples") &&
-    articlePrompt.userPrompt.includes("long-form breakdown"),
-  "Article format instructions mention workflow/depth triggers",
+  articlePrompt.userPrompt.includes("LONG-FORM ARTICLE") &&
+    articlePrompt.userPrompt.includes("FULL paragraphs") &&
+    articlePrompt.userPrompt.includes("DETAILED OUTLINE"),
+  "Article format instructions include depth contract and outline",
 );
 
 const threadPrompt = buildWriterPrompt(
@@ -192,10 +199,10 @@ const threadPrompt = buildWriterPrompt(
   samples,
 );
 assert(
-  threadPrompt.userPrompt.includes("5-8 teachable steps") &&
-    threadPrompt.userPrompt.includes("lessons") &&
-    threadPrompt.userPrompt.includes("examples"),
-  "Thread format instructions mention steps/lessons/examples",
+  threadPrompt.userPrompt.includes("posts minimum") &&
+    threadPrompt.userPrompt.includes("[1/n]") &&
+    threadPrompt.userPrompt.includes("teachable unit"),
+  "Thread format instructions mention post count and structure",
 );
 
 const shortPrompt = buildWriterPrompt(

@@ -1,4 +1,5 @@
-import { prioritizeSourcesByPlatform, normalizeValueBrief } from "../src/trigger/idea-scout/draft-ideas";
+import { prioritizeSourcesByPlatform } from "../src/trigger/idea-scout/draft-ideas";
+import { selectOutputs } from "../src/trigger/idea-scout/comprehend-source";
 import { getRawSourceDepth, ScoutedContentForDraft } from "../src/lib/notion";
 
 let failed = 0;
@@ -73,23 +74,30 @@ assert(
   "Raw depth ignores wrapped strategist metadata padding",
 );
 
-const thinNormalized = normalizeValueBrief(
-  {
-    ideaTitle: "Thin Post",
-    pillar: "Automation",
-    voiceMode: "Builder-Retrospective",
-    format: "Article",
-    sourceThesis: "A short update.",
-    sourceFacts: ["Only a title exists."],
-    mustUseDetails: ["final push"],
-    selectedAngle: "Short update",
-    mechanism: "No depth available.",
-  },
+const thinSelected = selectOutputs(
+  [
+    {
+      workingTitle: "Thin Post",
+      format: "Short",
+      angle: "Short update",
+      isPrimaryValueBomb: true,
+      targetAudience: "builders",
+      painAddressed: "noise",
+      valueProposition: "one insight",
+      readerOutcome: "skip",
+      hookDirection: "punchy",
+      sourceUnitsUsed: [],
+      transcriptGemsUsed: [],
+      estimatedDepth: "6 lines",
+      priority: "💡 Good",
+      rationale: "thin source",
+      formatFitScore: 8,
+    },
+  ],
   thinSource,
-  "Automation",
 );
 
-assert(thinNormalized?.format === "Short", "Thin raw source forces Short format");
+assert(thinSelected.length === 1 && thinSelected[0].format === "Short", "Thin source still selects short output");
 
 console.log("\n======================================");
 if (failed > 0) {

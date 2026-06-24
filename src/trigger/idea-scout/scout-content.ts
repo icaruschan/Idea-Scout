@@ -1,4 +1,4 @@
-import { schedules, tasks } from "@trigger.dev/sdk/v3";
+import { task, tasks } from "@trigger.dev/sdk/v3";
 import {
   getYouTubeCreators,
   getInstagramCreators,
@@ -174,9 +174,8 @@ async function buildXContentItems(
   return items;
 }
 
-export const scoutContent = schedules.task({
+export const scoutContent = task({
   id: "scout-content",
-  cron: "30 3 * * 1,4,0", // Mon/Thu/Sun 3:30 AM UTC (4:30 AM WAT)
   maxDuration: 14400, // 4 hours — accounts for Apify actor wait times
   run: async (payload: any) => {
     const runTimestamp = payload?.timestamp ?? new Date().toISOString();

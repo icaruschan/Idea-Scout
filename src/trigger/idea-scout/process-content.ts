@@ -148,7 +148,7 @@ Return JSON:
 
     // ─── Step 3: AI Summary + Key Takeaways ─────────────────────
 
-    const summaryPrompt = `Summarize this ${platform} content for a Twitter creator looking for tweet ideas:
+    const summaryPrompt = `Study this ${platform} content for guide-worthy material (workflows, how-tos, tools, operator lessons).
 
 CREATOR: ${creatorName}
 TITLE: ${title}
@@ -158,13 +158,27 @@ ${contentBody}
 
 Return JSON:
 {
-  "summary": "2-3 sentence summary of the core message/insight",
-  "keyTakeaways": "3-5 bullet points of specific, actionable takeaways that could become tweets. Use → arrows for each bullet. Focus on numbers, tools, techniques, or contrarian angles.",
-  "tweetAngle": "One sentence describing the strongest tweet angle from this content"
+  "summary": "2-4 sentences — what this content IS and what the creator is doing",
+  "creatorDoing": "What the creator is literally doing (screen recording, teaching, demoing, arguing, etc.)",
+  "contentType": "workflow-walkthrough | tool-demo | case-study | contrarian-essay | listicle | personal-story | news-reaction",
+  "targetAudience": "Who this content is for",
+  "primaryPain": "Main problem/friction the content addresses",
+  "teachableUnits": ["3-8 distinct teachable chunks — NOT tweet bullets, real sections of value"],
+  "transcriptGems": ["2-5 specific details only visible in the full content (numbers, configs, mistakes, tools)"],
+  "guidePotential": "low | medium | high",
+  "keyTakeaways": "3-5 actionable bullets with → arrows. Focus on mechanisms, tools, steps, warnings.",
+  "tweetAngle": "One sentence — strongest single value bomb if forced to one post"
 }`;
 
     let summaryResult: {
       summary: string;
+      creatorDoing?: string;
+      contentType?: string;
+      targetAudience?: string;
+      primaryPain?: string;
+      teachableUnits?: string[];
+      transcriptGems?: string[];
+      guidePotential?: "low" | "medium" | "high";
       keyTakeaways: string;
       tweetAngle: string;
     };
@@ -183,6 +197,22 @@ Return JSON:
 
     // ─── Step 4: Write to Scouted Content DB ────────────────────
 
+    const guidePotential = summaryResult.guidePotential || "medium";
+    const scoutAnalysis =
+      summaryResult.creatorDoing && summaryResult.teachableUnits?.length
+        ? {
+            summary: summaryResult.summary,
+            creatorDoing: summaryResult.creatorDoing,
+            contentType: summaryResult.contentType || "workflow-walkthrough",
+            targetAudience: summaryResult.targetAudience || "",
+            primaryPain: summaryResult.primaryPain || "",
+            teachableUnits: summaryResult.teachableUnits || [],
+            transcriptGems: summaryResult.transcriptGems || [],
+            guidePotential,
+            keyTakeaways: summaryResult.keyTakeaways,
+          }
+        : undefined;
+
     const scoutedContentId = await createScoutedContent({
       title: title.substring(0, 200),
       platform,
@@ -196,6 +226,7 @@ Return JSON:
       transcript,
       creatorPageId,
       pillars: filterResult.matchedPillars,
+      scoutAnalysis,
     });
 
     console.log(

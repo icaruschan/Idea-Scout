@@ -2,6 +2,10 @@ import { Client } from "@notionhq/client";
 import dotenv from "dotenv";
 import { NOTION_DATABASE_IDS, NOTION_DATA_SOURCE_IDS } from "./constants";
 import { filterCategoryList } from "./pillar-utils";
+import {
+  parseScoutAnalysisFromPageBody,
+  extractRawTranscriptFromPageBody,
+} from "./scout-analysis";
 dotenv.config({ override: true });
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -26,6 +30,8 @@ export interface CreateIdeaOptions {
   tweetStructure?: string;
   whyItWorks?: string;
   draftTweet?: string;
+  /** When false, draft is saved but Status stays 💭 Raw (depth-gate failures). Default true. */
+  promoteToDrafted?: boolean;
 }
 
 export interface ScoutedContentForDraft {
@@ -41,6 +47,7 @@ export interface ScoutedContentForDraft {
   /** Transcript/caption/post body only — excludes metadata wrapper used in sourceText */
   rawSourceText: string;
   sourceText: string;
+  scoutAnalysis?: import("./content-intelligence").ScoutAnalysis;
 }
 
 /** Length of actual source content (transcript/caption/post), not the wrapped strategist context. */
@@ -80,6 +87,7 @@ export interface ScoutedContentInput {
   transcript: string;
   creatorPageId: string;
   pillars?: string[];
+  scoutAnalysis?: import("./content-intelligence").ScoutAnalysis;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -351,6 +359,26 @@ async function getBlockChildrenPlainText(blockId: string): Promise<string> {
   return chunks.filter(Boolean).join("\n\n");
 }
 
+export function formatScoutAnalysisBlock(
+  scout?: import("./content-intelligence").ScoutAnalysis,
+): string {
+  if (!scout) return "";
+  return [
+    `SCOUT ANALYSIS (helper only — transcript wins on conflict):`,
+    `Summary: ${scout.summary}`,
+    `Creator doing: ${scout.creatorDoing}`,
+    `Content type: ${scout.contentType}`,
+    `Target audience: ${scout.targetAudience}`,
+    `Primary pain: ${scout.primaryPain}`,
+    `Guide potential: ${scout.guidePotential}`,
+    `Teachable units: ${scout.teachableUnits.join(" | ") || "None"}`,
+    `Transcript gems: ${scout.transcriptGems.join(" | ") || "None"}`,
+    scout.keyTakeaways ? `Key takeaways: ${scout.keyTakeaways}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 export function buildSourceTextFromScoutedContentFields(input: {
   title: string;
   platform: string;
@@ -359,15 +387,26 @@ export function buildSourceTextFromScoutedContentFields(input: {
   keyTakeaways: string;
   transcriptPreview?: string;
   pageBodyText?: string;
+  scoutAnalysis?: import("./content-intelligence").ScoutAnalysis;
 }): string {
   const fullSourceText = input.pageBodyText || input.transcriptPreview || input.title;
+  const scoutBlock = formatScoutAnalysisBlock(input.scoutAnalysis);
+
   return [
-    `SOURCE TITLE:\n${input.title}`,
-    `PLATFORM:\n${input.platform}`,
-    input.url ? `SOURCE URL:\n${input.url}` : "",
-    input.aiSummary ? `AI SUMMARY:\n${input.aiSummary}` : "",
-    input.keyTakeaways ? `KEY TAKEAWAYS:\n${input.keyTakeaways}` : "",
-    `FULL TRANSCRIPT / SOURCE TEXT:\n${fullSourceText}`,
+    `FULL TRANSCRIPT / SOURCE TEXT (AUTHORITATIVE):\n${fullSourceText}`,
+    scoutBlock || (input.aiSummary || input.keyTakeaways
+      ? [
+          `SCOUT ANALYSIS (helper only):`,
+          input.aiSummary ? `Summary: ${input.aiSummary}` : "",
+          input.keyTakeaways ? `Key takeaways: ${input.keyTakeaways}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : ""),
+    `SOURCE METADATA:`,
+    `Title: ${input.title}`,
+    `Platform: ${input.platform}`,
+    input.url ? `URL: ${input.url}` : "",
   ].filter(Boolean).join("\n\n---\n\n");
 }
 
@@ -386,7 +425,14 @@ async function mapScoutedPageForDraft(page: any): Promise<ScoutedContentForDraft
   const url = p["URL"]?.url || "";
   const pageBodyText = await getBlockChildrenPlainText(page.id);
 
-  const rawSourceText = pageBodyText || transcriptPreview || title;
+  const scoutAnalysis =
+    parseScoutAnalysisFromPageBody(pageBodyText) || undefined;
+
+  const rawSourceText = extractRawTranscriptFromPageBody(
+    pageBodyText,
+    transcriptPreview,
+    title,
+  );
 
   return {
     pageId: page.id,
@@ -399,6 +445,7 @@ async function mapScoutedPageForDraft(page: any): Promise<ScoutedContentForDraft
     creatorPageId,
     transcriptPreview,
     rawSourceText,
+    scoutAnalysis,
     sourceText: buildSourceTextFromScoutedContentFields({
       title,
       platform,
@@ -406,7 +453,8 @@ async function mapScoutedPageForDraft(page: any): Promise<ScoutedContentForDraft
       aiSummary,
       keyTakeaways,
       transcriptPreview,
-      pageBodyText,
+      pageBodyText: rawSourceText,
+      scoutAnalysis,
     }),
   };
 }
@@ -482,17 +530,49 @@ export async function createScoutedContent(
       },
     };
 
-    if (input.transcript && input.transcript.trim()) {
-      pageParams.children = [
-        {
-          object: "block" as const,
-          type: "toggle" as const,
-          toggle: {
-            rich_text: [{ text: { content: "▶️ Full Transcript" } }],
-            children: splitIntoParagraphBlocks(input.transcript),
-          },
+    const children: any[] = [];
+
+    if (input.scoutAnalysis) {
+      const sa = input.scoutAnalysis;
+      children.push({
+        object: "block" as const,
+        type: "heading_2" as const,
+        heading_2: {
+          rich_text: [{ text: { content: "Scout Analysis" } }],
         },
-      ];
+      });
+      children.push(
+        ...splitIntoParagraphBlocks(
+          [
+            `Summary: ${sa.summary}`,
+            `Creator doing: ${sa.creatorDoing}`,
+            `Content type: ${sa.contentType}`,
+            `Target audience: ${sa.targetAudience}`,
+            `Primary pain: ${sa.primaryPain}`,
+            `Guide potential: ${sa.guidePotential}`,
+            `Teachable units: ${sa.teachableUnits.join(" | ")}`,
+            `Transcript gems: ${sa.transcriptGems.join(" | ")}`,
+            sa.keyTakeaways ? `Key takeaways: ${sa.keyTakeaways}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        ),
+      );
+    }
+
+    if (input.transcript && input.transcript.trim()) {
+      children.push({
+        object: "block" as const,
+        type: "toggle" as const,
+        toggle: {
+          rich_text: [{ text: { content: "▶️ Full Transcript" } }],
+          children: splitIntoParagraphBlocks(input.transcript),
+        },
+      });
+    }
+
+    if (children.length > 0) {
+      pageParams.children = children;
     }
 
     const response = await notion.pages.create(pageParams);
@@ -1322,8 +1402,9 @@ export async function updateIdea(pageId: string, updates: Partial<CreateIdeaOpti
       properties["Draft Tweet"] = {
         rich_text: splitIntoRichText(updates.draftTweet.substring(0, 2000)),
       };
-      // Once it's drafted by the Writer Actor, we update the status so it moves across the kanban board.
-      properties["Status"] = { select: { name: "📝 Drafted" } };
+      if (updates.promoteToDrafted !== false) {
+        properties["Status"] = { select: { name: "📝 Drafted" } };
+      }
     }
 
     if (Object.keys(properties).length > 0) {

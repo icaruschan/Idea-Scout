@@ -1,0 +1,800 @@
+[
+  {
+    "number": 1,
+    "template": "Never confuse [term] with [Commonly mis-used similar term]",
+    "original": "Never confuse leadership with management",
+    "examples": [
+      "Never confuse losing fat with losing weight"
+    ]
+  },
+  {
+    "number": 2,
+    "template": "If I could only [use X tools/tactics/options] for the rest of my life, here’s exactly what I’d [use]",
+    "original": "If I could only take 5 supplements for the rest of my life, here’s exactly what I’d take",
+    "examples": [
+      "I if could only ask 3 questions on every sales call for the rest of my life, here’s exactly what I’d ask"
+    ]
+  },
+  {
+    "number": 3,
+    "template": "Never ever ever **ever** [make unknown but common mistake]",
+    "original": "Never ever ever **ever** send a client a link to pay",
+    "examples": [
+      "Never ever ever **ever** do cardio after working out"
+    ]
+  },
+  {
+    "number": 4,
+    "template": "Everyone tells you to [popular advice], but no one actually shows you how to do it. Here’s a [X] second [guide] that you can save",
+    "original": "Everyone tells you to invest in a Roth IRA in 2025, but no one shows you how to actually do it. Here’s a 45 second tutorial that you can save",
+    "examples": [
+      "Everyone tells you to post valuable content, but no one actually shows you how to do it. Here’s a 60-second guide that you can save"
+    ]
+  },
+  {
+    "number": 5,
+    "template": "If you’re looking to lose all your [results], here are the [X] worst ways to [action]",
+    "original": "If you’re looking to lose all your gains, Here are the 3 worst ways to workout",
+    "examples": [
+      "If you’re looking to lose all your leads, here are the 2 worst ways to message a prospect"
+    ]
+  },
+  {
+    "number": 6,
+    "template": "I [do action] for a living and this is my number 1 rule",
+    "original": "I write content scripts for a living & this is my number 1 rule",
+    "examples": [
+      "I sell houses for a living and this is my number 1 rule"
+    ]
+  },
+  {
+    "number": 7,
+    "template": "What if I told you this [unassuming thing] could [get you a measurable result]",
+    "original": "What if I told you this berry could take 12 minutes off your marathon time",
+    "examples": [
+      "What if I told you this IPO could make you $20,000"
+    ]
+  },
+  {
+    "number": 8,
+    "template": "This is how to [desirable goal] without actually having to [do difficult task].",
+    "original": "This is how to get paid to exist without actually having to go viral",
+    "examples": [
+      "This is how to lose your belly fat without actually having to track calories"
+    ]
+  },
+  {
+    "number": 9,
+    "template": "If you can’t [achieve result], it’s not because you’re not [assumed positive trait] it’s because you don’t know how to [action].",
+    "original": "If you can’t make money it is not because you are not smart it is because you don’t know how to talk",
+    "examples": [
+      "If you can’t build muscle, it’s not because you’re not genetically gifted. it’s because you don’t know how to train"
+    ]
+  },
+  {
+    "number": 10,
+    "template": "There’s 1 thing you can do to make your [—] 10 times better and it only takes [X] minutes a day",
+    "original": "There’s 1 thing you can do to make your body look 10 times better and it only takes 10 minutes a day",
+    "examples": [
+      "There’s 1 thing you can do to make your back pain feel 10 times better and it only takes 5 minutes a day"
+    ]
+  },
+  {
+    "number": 11,
+    "template": "The greatest [——] cheat code just dropped you’re never missing your [result] after this",
+    "original": "The greatest protein cheat code just dropped you’re never missing your macros after this",
+    "examples": [
+      "The greatest content cheat code just dropped you’re never missing an upload after this"
+    ]
+  },
+  {
+    "number": 12,
+    "template": "Here’s a [X] minute thing that will drastically improve [specific outcome]",
+    "original": "Here’s a five minute thing that will drastically improve the way that your manager sees you",
+    "examples": [
+      "Here’s a 3 minute thing that will drastically improve your video’s watch time"
+    ]
+  },
+  {
+    "number": 13,
+    "template": "Guys will deadass gatekeep really good [——] by just making them sound super complicated so let me simplify it",
+    "original": "Guys will deadass gatekeep really good sales techniques by just making them sound super complicated so let me simplify it",
+    "examples": [
+      "Guys will deadass gatekeep really good investing advice by just making them sound super complicated so let me simplify it"
+    ]
+  },
+  {
+    "number": 14,
+    "template": "The biggest green flag that you’re gonna [achieve result] is you’re focused on this [X] thing[s]",
+    "original": "The biggest green flag that you’re gonna make a whole bunch of money in your life is you’re focused on this one thing",
+    "examples": [
+      "The biggest green flag that you’re gonna blow up on social media is you’re focused on these 2 things"
+    ]
+  },
+  {
+    "number": 15,
+    "template": "I love [——] but [boring action] kind of sucks, so here are [X] things I do to make [boring action] suck a lot less",
+    "original": "I love chicken but cooking it kind of sucks so here are 3 things i do to make cooking it suck a lot less",
+    "examples": [
+      "I love posting content but editing the content kind of sucks, so here are 4 things I do to make editing suck a lot less"
+    ]
+  },
+  {
+    "number": 16,
+    "template": "99% of your success depends of this one thing",
+    "original": "99% of your success depends of this one thing",
+    "examples": []
+  },
+  {
+    "number": 17,
+    "template": "If you’re a [person] and you [struggle with specific problem], then this video will either piss you off or make your day",
+    "original": "If you’re a woman and you can’t seem to lose that lower stupid belly fat. then this video will either piss you off or potentially make your day",
+    "examples": [
+      "If you’re a creator and you can’t crack 1K views no matter what, then this video will either piss you off or make your day"
+    ]
+  },
+  {
+    "number": 18,
+    "template": "I [did action] every day for [X] days this is what happened.",
+    "original": "I took creatine everyday for 30 days this is what happened",
+    "examples": [
+      "I invested $50 every day for 365 days this is what happened."
+    ]
+  },
+  {
+    "number": 19,
+    "template": "Here’s what [elite people] don’t want you to know about your [topic]",
+    "original": "Here’s what rich kids don’t want you to know about your career",
+    "examples": [
+      "Here’s what top closers don’t want you to know about your sales process"
+    ]
+  },
+  {
+    "number": 20,
+    "template": "If you’re going to make your first [results], it’s not going to come from [popular method] and that’s something that people don’t get",
+    "original": "If you’re going to make your first $100K it’s not going to come from investing, and that’s something that people don’t get",
+    "examples": [
+      "if you’re going to get your first 10K month, it’s not going to come from sending DMs all day, and that’s something that people don’t get"
+    ]
+  },
+  {
+    "number": 21,
+    "template": "If you don’t take this extra step in your [—], you’re going to mess up [important outcome]",
+    "original": "If you don’t take this extra step in your Roth IRA you’re going to mess up your retirement",
+    "examples": [
+      "If you don’t take this extra step in your bulk, you’re going to mess up your gains"
+    ]
+  },
+  {
+    "number": 22,
+    "template": "I shouldn’t be giving this away for free, but here’s how to steal [—— for yourself] in under [X] seconds using [tool]",
+    "original": "I shouldn’t be giving this away for free but here’s how to steal any cinematic color grade and apply it to your own video in under 60 seconds using AI",
+    "examples": [
+      "I shouldn’t be giving this away for free, but here’s how to steal your competitors’ best ads for your own business in under 45 seconds using this website"
+    ]
+  },
+  {
+    "number": 23,
+    "template": "This one [information source] contains more knowledge than a [degree]",
+    "original": "This one book contains more knowledge than a psychology degree",
+    "examples": [
+      "This one YouTube video contains more knowledge than a business degree"
+    ]
+  },
+  {
+    "number": 24,
+    "template": "The easiest way to [cause negative outcome] is to [——]",
+    "original": "The easiest way to turn off wealthy clients is to sound like you’re unsure of your value",
+    "examples": [
+      "The easiest way to to close less clients is to talk with an upwards inflection"
+    ]
+  },
+  {
+    "number": 25,
+    "template": "what if I told you that you can [do small action] and potentially [multiply] your [results]? let me show you",
+    "original": "what if I told you that you can copy and paste a little piece of code onto your website and potentially triple your revenue? Let me show you",
+    "examples": [
+      "What if I told you that you can swap 3 different foods and potentially double your weight loss? Let me show you"
+    ]
+  },
+  {
+    "number": 26,
+    "template": "Here’s a dirty little secret [industry experts] don’t want you to know",
+    "original": "Here’s a dirty little secret prompt engineers don’t want you to know",
+    "examples": [
+      "Here’s a dirty little secret crypto-traders don’t want you to know"
+    ]
+  },
+  {
+    "number": 27,
+    "template": "top [X ——] you’re sleeping on. Wake yo ass up",
+    "original": "top 5 instagram updates you’re sleeping on. Wake yo ass up",
+    "examples": [
+      "Top 3 bicep exercises you’re sleeping on. Wake yo ass up"
+    ]
+  },
+  {
+    "number": 28,
+    "template": "Here’s a decade-plus of [niche] lessons, summarized in 60 seconds",
+    "original": "Here’s a decade-plus of business lessons, summarized in 60 seconds",
+    "examples": [
+      "Here's a decade-plus of fitness lessons, summarized in 60 seconds"
+    ]
+  },
+  {
+    "number": 29,
+    "template": "Don’t tell me [common excuse/complaint]",
+    "original": "Don’t tell me eating healthy is too expensive",
+    "examples": [
+      "Don’t tell me your leads are low quality"
+    ]
+  },
+  {
+    "number": 30,
+    "template": "You don’t need [positive trait] to [achieve desirable outcome]",
+    "original": "You don’t need discipline to lose weight",
+    "examples": [
+      "You don’t need intelligence to make money"
+    ]
+  },
+  {
+    "number": 31,
+    "template": "It took me [X] years to master [a skill], but I’m going to teach you the [X] most powerful lessons in the next [X] seconds",
+    "original": "It took me 5 years to master my communication, but I’m going to teach you the 5 most powerful lessons in the next 60 seconds",
+    "examples": [
+      "It took me 5 years to master sales, but I’m going to teach you the 3 most powerful lessons in the next 45 seconds"
+    ]
+  },
+  {
+    "number": 32,
+    "template": "Nothing quite says I’m gonna be [funny desirable outcome] quite like [doing action]",
+    "original": "Nothing quite says I’m gonna be fuckable, every day of the summer, quite like hitting a daily protein goal",
+    "examples": [
+      "Nothing quite says I’m gonna be using $100 bills as napkins quite like averaging 42x ROAS"
+    ]
+  },
+  {
+    "number": 33,
+    "template": "This is how to turn your [——] into a [results] machine",
+    "original": "This is how to turn your body into a fat burning machine",
+    "examples": [
+      "This is how to turn your Instagram DMs into a sales machine"
+    ]
+  },
+  {
+    "number": 34,
+    "template": "All it takes is [X] hours per week to completely change your [———] and I’ll prove it to you in [X] seconds",
+    "original": "All it takes is 4 hours per week to completely change your body and I’ll prove it to you in 90 seconds",
+    "examples": [
+      "All it takes is 2 hours per week to completely change your finances and I’ll prove it to you in 60 seconds"
+    ]
+  },
+  {
+    "number": 35,
+    "template": "[X] [things] that rarely fail, so you can steal their homework",
+    "original": "6 business that rarely fail, so you can steal their homework",
+    "examples": [
+      "3 Ads that rarely fail, so you can steal their homework"
+    ]
+  },
+  {
+    "number": 36,
+    "template": "For the love of god, whatever you do [in situation] do not forget to [use unknown tactic/technique]",
+    "original": "For the love of god, whatever you do during the interview process do not forget to ask “the higher performer question”",
+    "examples": [
+      "For the love of god, whatever you do when recording your videos do not forget to speak in absolutes"
+    ]
+  },
+  {
+    "number": 37,
+    "template": "Do you want [popular desire] or do you want [true desire]?",
+    "original": "Do you want to lose weight? Or do you want to lose fat?",
+    "examples": [
+      "Do you want more followers? Or do you want more clients?"
+    ]
+  },
+  {
+    "number": 38,
+    "template": "I’ve spent [X hours testing different methods]. Don’t waste your time, here’s the [X] that’ve actually [given me a benefit]",
+    "original": "I’ve spent 100s of hours using different chat GPT prompts. Don’t waste your time, here’s the 3 that’ve actually saved me time",
+    "examples": [
+      "I’ve spent 237 hours in cold calls testing different openers. Don’t waste your time here’s the 3 that actually lead to sales"
+    ]
+  },
+  {
+    "number": 39,
+    "template": "I’ve [consumed] over [X] [content-types] on [topic]. 50% pretty useless, 25% were just wrong, but [X] really changed how I think about [your niche] forever",
+    "original": "I’ve listened to over 1000 podcasts on making money. 50% pretty useless, 25% were just wrong, but 11 really changed how I think about finance forever",
+    "examples": [
+      "I’ve read over 50 books on persuasion. 50% pretty useless, 25% were just wrong, but 7 really changed how I think about sales forever"
+    ]
+  },
+  {
+    "number": 40,
+    "template": "Here’s the one thing that [specific archetype] do completely differently to [opposite archetype]",
+    "original": "Here’s the one thing that rich people do completely differently to middle-class and poor people",
+    "examples": [
+      "Here’s the one thing that D1 athletes do completely differently to high school athletes"
+    ]
+  },
+  {
+    "number": 41,
+    "template": "I don’t know who needs to hear this, but your [——] aren’t [getting results] because your [——] sucks",
+    "original": "I don’t know who needs to hear this, but your videos aren’t getting any views because your storytelling sucks.",
+    "examples": [
+      "I don’t know who needs to hear this, but your chest isn’t growing because your bench press sucks"
+    ]
+  },
+  {
+    "number": 42,
+    "template": "In the next 60 seconds, I’m going to show you how to see [desirable information]",
+    "original": "In the next 60 seconds, I’m going to show you how to see everything your competition is up to",
+    "examples": [
+      "In the next 60 seconds, I'm going to show you how to see when a stock is about to crash"
+    ]
+  },
+  {
+    "number": 43,
+    "template": "Professional [occupation] here, give me [X] seconds and I’ll tell you how to [skill] and it’ll save you a fucking [——] degree",
+    "original": "Professional editor here, give me 60 seconds and I’ll tell you how to edit your videos and it’ll save you a fucking film degree",
+    "examples": [
+      "Professional bodybuilder here, give me 60 seconds and I’ll teach you how to diet, and it will save you a fucking nutrition degree."
+    ]
+  },
+  {
+    "number": 44,
+    "template": "The reason you can’t [create desirable result] and [get desirable outcome] you keep talking about is because…",
+    "original": "The reason you can’t fill out your jeans and get that fat ass you keep talking about is because…",
+    "examples": [
+      "The reason you can’t make sales and bring in the money you keep talking about is because…"
+    ]
+  },
+  {
+    "number": 45,
+    "template": "Remember [unknown, simple-sounding concept] for your next [——]",
+    "original": "Remember light-light-dark for your next outfit",
+    "examples": [
+      "Remember 3-1-1 for your next workout"
+    ]
+  },
+  {
+    "number": 46,
+    "template": "There’s one habit silently destroying your [——], and it has nothing to do with how [well you do an action]",
+    "original": "There’s one habit silently destroying your workouts, and it has nothing to do with how hard you train",
+    "examples": [
+      "There’s one habit silently destroying your finances, and it has nothing to do with how you invest"
+    ]
+  },
+  {
+    "number": 47,
+    "template": "Here's how you turn [small number of thing] into [bigger number of thing]",
+    "original": "Here's how you turn 1k followers into 10k followers",
+    "examples": [
+      "Here's how you turn 1 client into 5 clients"
+    ]
+  },
+  {
+    "number": 48,
+    "template": "I’m gonna take you from [topic] beginner to expert with my [X] step framework",
+    "original": "I’m gonna take you from ChatGPT beginner to expert with my 4 step framework",
+    "examples": [
+      "I’m gonna take you from hook beginner to expert with my 3 step framework"
+    ]
+  },
+  {
+    "number": 49,
+    "template": "One of the biggest scams in [niche] is [popular thing]",
+    "original": "One of the biggest scams in real estate is a will",
+    "examples": [
+      "One of the biggest scams in fitness is protein powder"
+    ]
+  },
+  {
+    "number": 50,
+    "template": "If I woke up [in undesirable state] tomorrow and wanted to [get result] [in time], here’s exactly what I’d do.",
+    "original": "If i woke up 30lbs overweight tomorrow and wanted to lose it all by summer here’s exactly what i do",
+    "examples": [
+      "If i woke up dead broke tomorrow, and wanted to make $100K in 90 days, here’s exactly what i would do"
+    ]
+  },
+  {
+    "number": 51,
+    "template": "If you don't *[do bad advice]*, I hate to break it to you, but you are never, ever, ever going to *[get dream result]*.\r\n\r\nAnd that statement is completely fucking wrong, and I am going to say this.",
+    "original": "If you don't *do an hour on the Stairmaster every day*, I hate to break it to you, but you are never, ever, ever going to *see your abs*. \r\n\r\nAnd that statement is completely fucking wrong, and I am going to say this.",
+    "examples": [
+      "If you don't *stop buying coffee*, I hate to break it to you, but you are never, ever, ever going to save enough to retire. \r And that statement is completely fucking wrong, and I am going to say this."
+    ]
+  },
+  {
+    "number": 52,
+    "template": "This guy *[does approach A]*. But this guy *[does approach B]*. Who will end up *[with the better result]*?",
+    "original": "This guy *gets a super deep stretch on every rep*. But this guy *just trains hard using a standard range of motion*. Who will end up *bigger and stronger*?",
+    "examples": [
+      "This guy *buys properties in hot markets*. But this guy *buys in boring, overlooked towns*. Who will end up *with more cash flow*?"
+    ]
+  },
+  {
+    "number": 53,
+    "template": "Not to flex but I’m pretty fucking good at [action]\r\n\r\nIf I had to wake-up tomorrow and [do action well] this is what I’d do",
+    "original": "Not to flex but I’m pretty fucking good at being productive\r\n\r\nIf I had to wake-up tomorrow and be the most productive version of myself this is what I’d do",
+    "examples": [
+      "Not to flex but I’m pretty fucking good at getting listings\r If I had to wake-up tomorrow and get 10 new listings this is what I’d do"
+    ]
+  },
+  {
+    "number": 54,
+    "template": "We all know that *[common action is important]*, but you still have to *[do other action]* correctly and I would bet you're making these three common mistakes.",
+    "original": "We all know that *abs are made in the kitchen*, but you still have to *train them* correctly and I would bet you're making these three common mistakes.",
+    "examples": [
+      "We all know that WHAT you say matters in sales, but you still have to say it correctly and I would bet you're making these three common mistakes."
+    ]
+  },
+  {
+    "number": 55,
+    "template": "*[Doing common thing]* won't *[get you desired result]*, but *[these X things]* will.",
+    "original": "*Putting hashtags in your captions* won't make you *go viral*, but *these two Instagram hacks* will.",
+    "examples": [
+      "*Doing sit-ups* won't *get you abs*, but *these two exercises* will."
+    ]
+  },
+  {
+    "number": 56,
+    "template": "Here are some things you can do to become disgustingly *[desirable trait]*.",
+    "original": "Here are some things you can do to become disgustingly *well spoken*.",
+    "examples": [
+      "Here are some things you can do to become disgustingly *lean*."
+    ]
+  },
+  {
+    "number": 57,
+    "template": "Using *[this specific thing]*, I got *[desirable result]* without *[expected requirement]*.",
+    "original": "Using *this script*, I got *55,000 American Express points* without *opening up any credit card*.",
+    "examples": [
+      "Using *this offer sheet*, I closed *a $12,000 deal* without *ever getting on another call*."
+    ]
+  },
+  {
+    "number": 58,
+    "template": "Taking my *[result]* from this to this was simply a case of understanding how to *[do specific thing]*.",
+    "original": "Taking my *back* from this to this was simply a case of understanding how to *rotate exercise variations properly*.",
+    "examples": [
+      "Taking my *close rate* from this to this was simply a case of understanding how to *control the pace of a call*."
+    ]
+  },
+  {
+    "number": 59,
+    "template": "You're *[doing common niche action]* — this is by far the dumbest thing you could do and here's why.",
+    "original": "You're *holding on to the treadmill during your incline walk* — this is by far the dumbest thing you could do and here's why.",
+    "examples": [
+      "You're *using discounts to make sales* — this is by far the dumbest thing you could do and here's why."
+    ]
+  },
+  {
+    "number": 60,
+    "template": "You wanna know why [action] is absolutely non negotiable for [avatar]? Im gonna tell you.",
+    "original": "You wanna know why lifting weights is absolutely non negotiable for women? Im gonna tell you.",
+    "examples": [
+      "You wanna know why posting daily is absolutely non negotiable for business owners? Im gonna tell you."
+    ]
+  },
+  {
+    "number": 61,
+    "template": "If you don’t do this when [taking important action], you might end up [with negative outcome]",
+    "original": "If you don’t do this when buying a home, you might end up paying more money.",
+    "examples": [
+      "If you don’t do this when trying to cut, you might end up gaining weight."
+    ]
+  },
+  {
+    "number": 62,
+    "template": "Here's why you need to stop [common industry norm] if you're actually serious about [desired outcome]",
+    "original": "Heres why you need to stop doing 3 sets of 10 reps if youre actually serious about muscle growth",
+    "examples": [
+      "Here's why you need to stop following up if you're actually serious about closing sales."
+    ]
+  },
+  {
+    "number": 63,
+    "template": "[achieving desirable outcome], for dummies.",
+    "original": "Losing fat off the lower tummy, for dummies.",
+    "examples": [
+      "Creating hooks that actually go viral, for dummies."
+    ]
+  },
+  {
+    "number": 64,
+    "template": "I genuinely believe that anybody can [get dream result] if you just learn to [do action].",
+    "original": "I genuinely believe that anybody can go viral if you just learn to test your hooks.",
+    "examples": [
+      "I genuinely believe that anybody can get shredded if you just learn to make working out fun."
+    ]
+  },
+  {
+    "number": 65,
+    "template": "Here are the top red flags when *[doing niche-specific thing]* so you don't *[uniquely framed negative]*",
+    "original": "Here are the top red flags when *screening tenants* so you don't *lose your ass.*",
+    "examples": [
+      "Here are the top red flags when *getting on a sales call* so you don't *waste an hour of your life*"
+    ]
+  },
+  {
+    "number": 66,
+    "template": "[Thing] checklist:\r\nIf you tick all X, you have a perfect [Thing]",
+    "original": "Squat checklist:\r\nIf you tick all 5, you have a perfect squat",
+    "examples": [
+      "Hook checklist:\r If you tick all 4, you have a perfect hook"
+    ]
+  },
+  {
+    "number": 67,
+    "template": "Here’s how to fuck up your [——] in less than 60 seconds",
+    "original": "Here’s how to fuck up your storytelling in less than 60 seconds",
+    "examples": [
+      "Here’s how to fuck up your diet in less than 60 seconds"
+    ]
+  },
+  {
+    "number": 68,
+    "template": "Most [measurably improvable thing]s suck, here’s how to have them suck less.",
+    "original": "Most landing pages suck, here’s how to have them suck less.",
+    "examples": [
+      "Most investing strategies suck, here’s how to have them suck less."
+    ]
+  },
+  {
+    "number": 69,
+    "template": "Your [———] [looks] like shit! Said no one ever… because every time they [see my ———] they say [compliment].\r\n\r\nSo here’s [X] [positive adjective] [things] you can do so that no one ever says that to you",
+    "original": "Your apartment smells like shit! Said no one ever… because every time they come into my apartment they say “it smells amazing”.\r\n\r\nSo here’s 5 easy things you can do so that no one ever says that to you",
+    "examples": [
+      "Your video sounds like shit! Said no one ever… Because every time they hear my videos they say “it sounds like butter”.\r So here’s 3 simple affordable microphones you can buy so that no one ever says that to you"
+    ]
+  },
+  {
+    "number": 70,
+    "template": "Im going to teach you guys how to [achieve desirable outcome] in a way that a 10 year old could understand it.",
+    "original": "Im going to teach you guys how to lose weight in a way that a 10 year old could understand it.",
+    "examples": [
+      "Im going to teach you guys how to write viral hooks in a way that a 10 year old could understand it."
+    ]
+  },
+  {
+    "number": 71,
+    "template": "It pisses me off that people are [doing common action] wrong",
+    "original": "It pisses me off that people are using these cards wrong",
+    "examples": [
+      "It pisses me off that people are doing their bench press wrong"
+    ]
+  },
+  {
+    "number": 72,
+    "template": "This is [X] Seconds of the best [specific topic] advice you’re gonna find on social media.",
+    "original": "This is 90 Seconds of the best kitchen design advice you’re gonna find on social media.",
+    "examples": [
+      "This is 60 Seconds of the best weight loss advice you’re gonna find on social media."
+    ]
+  },
+  {
+    "number": 73,
+    "template": "This is smart guy vs dumb guy when it comes to [doing common action]",
+    "original": "This is smart guy vs dumb guy when it comes to eating out",
+    "examples": [
+      "This is smart guy vs dumb guy when it comes to buying a house"
+    ]
+  },
+  {
+    "number": 74,
+    "template": "90% of *[niche-identifier]* ignore this one thing about *[specific thing]*, and that's why 90% *[stay in undesirable state]*.",
+    "original": "90% of *traders* ignore this one thing about *timeframes*, and that's why 90% *remain unprofitable*.",
+    "examples": [
+      "90% of *closers* ignore this one thing about *their opener*, and that's why 90% *of them are broke*."
+    ]
+  },
+  {
+    "number": 75,
+    "template": "This is how *[niche thing]* used to work. This is how it works today.",
+    "original": "This is how *Facebook ads* used to work. This is how it works today.",
+    "examples": [
+      "This is how *property investing* used to work. This is how it works today."
+    ]
+  },
+  {
+    "number": 76,
+    "template": "My number one *[result-getter]* is not *[popular option]*. It's this.",
+    "original": "My number one *rear delt builder* is not a *face pull*. It's this.",
+    "examples": [
+      "My number one *objection handler* is not a *reframe*. It's this."
+    ]
+  },
+  {
+    "number": 77,
+    "template": "I paid *[authority] [amount]* to learn this so you don't have to.\r\n\r\nand the information I’m about to share with you can easily save you *[bigger amount]* or more",
+    "original": "I paid *my lawyer $10,000* to learn this so you don't have to.\r\n\r\nand the information I’m about to share with you can easily save you *$20,000* or more",
+    "examples": [
+      "I paid *a real estate agent $25,000* to learn this so you don't have to.\r and the information I’m about to share with you can easily save you *$100,00* or more"
+    ]
+  },
+  {
+    "number": 78,
+    "template": "*[Thing]* is not a good *[option for action]*. It's the best *[option for action]*.",
+    "original": "*Merino wool* is not a good *fabric for hiking*. It's the best *fabric for hiking*.",
+    "examples": [
+      "*Walking* is not a good *way to lose fat*. It's the best *way to lose fat*."
+    ]
+  },
+  {
+    "number": 79,
+    "template": "I wouldn't *[use]* any of this/these. This is exactly how not to *[do action]*.",
+    "original": "I wouldn't *wear* any of this. This is exactly how not to *dress*.",
+    "examples": [
+      "I wouldn't *eat* any of this. This is exactly how not to *build muscle*."
+    ]
+  },
+  {
+    "number": 80,
+    "template": "If you ever look at your [——] and think fuck this, this video’s for you",
+    "original": "If you ever look at yourself shirtless and think fuck this, this video’s for you",
+    "examples": [
+      "If you ever look at your views and think fuck this, this video’s for you"
+    ]
+  },
+  {
+    "number": 81,
+    "template": "I wasn’t born a genius but I do know how to [do action]\r\n\r\nSo here’s how you can get [results] *like these* just by [doing action] the right way and not by being a genius",
+    "original": "I wasn’t born a genius but I do know how to study\r\n\r\nSo here’s how you can get grades *like this* just just by studying the right way and not by being a genius",
+    "examples": [
+      "I wasn’t born a genius but I do know how to write hooks\r So here’s how you can get views *like this* just just by writing hooks the right way and not by being a genius"
+    ]
+  },
+  {
+    "number": 82,
+    "template": "*[Term]* versus *[Similar Term]* — so what's the difference?",
+    "original": "*Net Profit* versus *gross profit* — so what's the difference?",
+    "examples": [
+      "*Views* versus *reach* — so what's the difference?"
+    ]
+  },
+  {
+    "number": 83,
+    "template": "Using *[this specific thing]*, I got *[desirable result]* without *[expected requirement]*.",
+    "original": "Using *this script*, I got *55,000 American Express points* without *opening up any credit card*.",
+    "examples": [
+      "Using *this offer sheet*, I closed *a $12,000 deal* without *ever getting on another call*."
+    ]
+  },
+  {
+    "number": 84,
+    "template": "I *[do action X times]* a day/week/month, and this is the most effective *[method]* I found to *[get result]*.",
+    "original": "I *work out five days* a week, and this is the most effective *training split* I found to *build muscle*.",
+    "examples": [
+      "I post 7 times a week, and this is the most effective *content plan* I found to *get new followers*."
+    ]
+  },
+  {
+    "number": 85,
+    "template": "My *[body part / niche result]* went from this to this. *[X things]* made the biggest difference.",
+    "original": "My *back* went from this to this. *Four exercises* made the biggest difference.",
+    "examples": [
+      "My *portfolio* went from this to this. *Three investments* made the biggest difference."
+    ]
+  },
+  {
+    "number": 86,
+    "template": "[niche solution] is a great [mechanism] to [achieve desired outcome]. But only if you do it right.",
+    "original": "The bench press is a great exercise  to build your upper body. But only if you do it right",
+    "examples": [
+      "Investing in real estate is a great strategy to create passive income. But only if you do it right"
+    ]
+  },
+  {
+    "number": 87,
+    "template": "Stop *[doing common harmful habit]*. Seriously, stop.",
+    "original": "Stop *sleeping in warm bedrooms*. Seriously, stop.",
+    "examples": [
+      "Stop *opening your sales calls with small talk*. Seriously, stop."
+    ]
+  },
+  {
+    "number": 88,
+    "template": "You'll never *[reach dream goal]* if you're *[experiencing the problem]*. And no, *[common solution]* is not the fix.",
+    "original": "You'll never *make the UFC* if you're *gassing out in fights*. And no, *more long runs* is not the fix.",
+    "examples": [
+      "You'll never *get college offers* if you're *not talking to coaches*. And no, *posting your highlights* is not the fix."
+    ]
+  },
+  {
+    "number": 89,
+    "template": "[——] vs [——] in 2026\r\n*2 commonly compared terms",
+    "original": "Building a house vs buying one in 2026",
+    "examples": [
+      "posting on instagram vs posting on tikTok in 2026"
+    ]
+  },
+  {
+    "number": 90,
+    "template": "The only difference between [X & Y] is [underwhelming input]",
+    "original": "The only difference between a normal person and a supermodel is the development of the maxilla.",
+    "examples": [
+      "The only difference between a low view video and a viral video is emotion"
+    ]
+  },
+  {
+    "number": 91,
+    "template": "If you do these X things, you will [achieve desired outcome] 100% of the time.",
+    "original": "If you do these 5 things, you will win with money 100% of the time.",
+    "examples": [
+      "If you do these 3 things, you will go viral 100% of the time."
+    ]
+  },
+  {
+    "number": 92,
+    "template": "Top X disgustingly easy [improvement] tips.",
+    "original": "Top 5 disgustingly easy cognitive function maxing tips.",
+    "examples": [
+      "Top 4 disgustingly easy calorie deficit tips."
+    ]
+  },
+  {
+    "number": 93,
+    "template": "How the fuck do [avatar] [achieve impressive result]?",
+    "original": "How the fuck do private equity guys make so much money?",
+    "examples": [
+      "How the fuck do pro fighters drop 20 pounds in 1 day?"
+    ]
+  },
+  {
+    "number": 94,
+    "template": "If I wanted to [start action] in 2026, this is exactly what I would do.",
+    "original": "If I wanted to start a faceless YouTube channel in 2026, this is exactly what I would do.",
+    "examples": [
+      "If I wanted to sell AI automation in 2026, this is exactly what I would do."
+    ]
+  },
+  {
+    "number": 95,
+    "template": "If you're in your [years] or [years], do this tonight.",
+    "original": "If you're in your 20’s or 30’s, do this tonight.",
+    "examples": [
+      "If you're in your 30’s or 40’s, do this tonight."
+    ]
+  },
+  {
+    "number": 96,
+    "template": "X years of [adj] absolutely fucking [positive trait] in 60 seconds",
+    "original": "4 years of being absolutely fucking shredded in 60 seconds",
+    "examples": [
+      "2 years of going absolutely fucking viral in 60 seconds"
+    ]
+  },
+  {
+    "number": 97,
+    "template": "The most important [element] for [specific result] is not [assumed answer 1], its not  [assumed answer 2], its [unexpected answer].",
+    "original": "The most important muscle for aging is not your arms, its not your chest, its your legs.",
+    "examples": [
+      "The most important metric for going viral is not likes, its not shares, its watch time."
+    ]
+  },
+  {
+    "number": 98,
+    "template": "If you aren’t [doing beneficial action], give me X seconds & I’ll explain why you should be.",
+    "original": "If you aren’t using creatine, give me 60 seconds & I’ll explain why you should be.",
+    "examples": [
+      "If you aren’t Investing in Index Funds, give me 45 seconds & I’ll explain why you should be."
+    ]
+  },
+  {
+    "number": 99,
+    "template": "I do not recommend you do this, but if you want to [achieve desirable outcome] fast, then here’s how to do it.",
+    "original": "I do not recommend you do this, but if you want to get shredded fast, then here’s how to do it.",
+    "examples": [
+      "I do not recommend you do this, but if you want to make $10k fast, then here’s how to do it."
+    ]
+  },
+  {
+    "number": 100,
+    "template": "> \r Never ever ever say [common response] when [person] asks “[common question]”",
+    "original": "Never ever ever say “no” when a college coach asks \r\n“do you have any questions for me?”",
+    "examples": [
+      "Never ever ever say your price when someone asks you, “how much much do you charge?”"
+    ]
+  }
+]

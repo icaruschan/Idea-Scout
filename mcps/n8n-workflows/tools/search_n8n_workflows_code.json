@@ -1,0 +1,22 @@
+{
+  "name": "search_n8n_workflows_code",
+  "description": "Search for code within the GitHub repository: \"Zie619/n8n-workflows\" using the GitHub Search API (exact match). Returns matching files for you to query further if relevant.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The search query to find relevant code files"
+      },
+      "page": {
+        "type": "number",
+        "description": "Page number to retrieve (starting from 1). Each page contains 30 results."
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false,
+    "$schema": "http://json-schema.org/draft-07/schema#"
+  }
+}

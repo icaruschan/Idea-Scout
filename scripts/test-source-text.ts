@@ -42,13 +42,27 @@ const sourceText = buildSourceTextFromScoutedContentFields({
   keyTakeaways: "Classify, enrich, score, route.",
   transcriptPreview: "Preview text that should be replaced when body exists.",
   pageBodyText: bodyText,
+  scoutAnalysis: {
+    summary: "Lead triage workflow",
+    creatorDoing: "Building n8n pipeline on screen",
+    contentType: "workflow-walkthrough",
+    targetAudience: "founders",
+    primaryPain: "manual lead checking",
+    teachableUnits: ["qualify first"],
+    transcriptGems: ["n8n node config"],
+    guidePotential: "high",
+    keyTakeaways: "→ automate triage",
+  },
 });
 
-assert(sourceText.includes("SOURCE TITLE:\nLead triage automation"), "Source text includes title");
-assert(sourceText.includes("AI SUMMARY:\nA workflow for qualifying inbound leads."), "Source text includes AI Summary");
-assert(sourceText.includes("KEY TAKEAWAYS:\nClassify, enrich, score, route."), "Source text includes key takeaways");
-assert(sourceText.includes("FULL TRANSCRIPT / SOURCE TEXT:\nFull Transcript"), "Source text includes page body transcript");
-assert(!sourceText.includes("Preview text that should be replaced"), "Page body transcript wins over Transcript property preview");
+assert(
+  sourceText.indexOf("FULL TRANSCRIPT / SOURCE TEXT (AUTHORITATIVE)") <
+    sourceText.indexOf("SCOUT ANALYSIS"),
+  "Transcript appears before scout analysis",
+);
+assert(sourceText.includes("n8n, Airtable, and Slack"), "Source text includes page body transcript");
+assert(sourceText.includes("Creator doing: Building n8n pipeline"), "Source text includes scout analysis");
+assert(sourceText.includes("Title: Lead triage automation"), "Source metadata at end");
 
 const xSourceText = buildSourceTextFromScoutedContentFields({
   title: "X post: Use smaller automation loops",
@@ -58,7 +72,10 @@ const xSourceText = buildSourceTextFromScoutedContentFields({
   keyTakeaways: "Keep the handoff simple.",
 });
 
-assert(xSourceText.includes("FULL TRANSCRIPT / SOURCE TEXT:\nX post: Use smaller automation loops"), "X posts without transcripts fall back to stored title/text");
+assert(
+  xSourceText.includes("FULL TRANSCRIPT / SOURCE TEXT (AUTHORITATIVE):"),
+  "X posts include authoritative source block",
+);
 
 console.log("\n======================================");
 if (failed > 0) {

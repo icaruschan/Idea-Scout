@@ -1,3 +1,8 @@
+import * as fs from "fs";
+import * as path from "path";
+import type { ExecutionPlanPayload, OutlineSection } from "./content-intelligence";
+import { IDEA_SCOUT_CONFIG } from "./idea-scout-config";
+
 export const VOICE_DNA_PROMPT = `# 🧬 VOICE DNA DOCUMENT: THE TRENCH-BUILDER CURATOR
 *System Prompt Injection Ready | Pivot Context: Tech/AI/Automation Developer-Builder*
 
@@ -15,8 +20,8 @@ export const VOICE_DNA_PROMPT = `# 🧬 VOICE DNA DOCUMENT: THE TRENCH-BUILDER C
 
 ---
 
-## 2. SENTENCE ARCHITECTURE & TECHNICAL CONSTRAINTS
-**[FIXED MECHANICAL BASELINE - DO NOT ALTER]**
+## 2. SENTENCE ARCHITECTURE & TECHNICAL CONSTRAINTS (SHORT / MID-LENGTH ONLY)
+**[APPLIES TO SHORT AND MID-LENGTH TWEETS ONLY — NOT ARTICLES OR THREADS]**
 - Word Limits: 6-12 words per line block. Max 14 words per line.
 - Block Constraints: Max 2 lines per paragraph. Never cluster >3 consecutive lines without visual break.
 - Visual Spacing: Exactly 1 empty line between thoughts. Double line break before list, quote, or CTA.
@@ -45,7 +50,20 @@ export const VOICE_DNA_PROMPT = `# 🧬 VOICE DNA DOCUMENT: THE TRENCH-BUILDER C
 - **Never force engagement.** No "drop a 🔥", no "follow for more", no "what do you think?". Let the content stand alone.
 `;
 
+export const VOICE_DNA_LONG = `# LONG-FORM VOICE DNA (ARTICLES & THREADS)
+
+IGNORE all short-tweet line constraints (6-12 words per line, 42% empty lines, max 2 lines per paragraph).
+
+Write like a sharp builder publishing a guide or native X Article:
+- Full paragraphs (3-6 sentences each) with conversational flow
+- Section headers (## / ###) for articles; [n/m] markers for threads
+- Teach mechanisms, workflows, examples, and warnings from the source
+- Depth over brevity — expand thinking, do not summarize into tweet spacing
+- Stay plain-language; no corporate fluff or fake-smart jargon
+`;
+
 export const VOICE_EXAMPLES_PER_PROMPT = 5;
+export const THREAD_EXAMPLES_PER_PROMPT = 3;
 
 const BUILDER_POSITIVE_TERMS = [
   "i built",
@@ -194,13 +212,50 @@ export interface ValueBrief {
   inspiredByLibraryId?: string;
 }
 
+/** Writer input — ValueBrief + comprehension-first execution fields */
+export interface ExecutionPlan extends ValueBrief {
+  comprehensionSummary?: string;
+  creatorDoing?: string;
+  contentArchetype?: string;
+  primaryValueBomb?: {
+    insight: string;
+    pain: string;
+    mechanism: string;
+    proof: string;
+    bestFormat: ContentFormat;
+    whyThisFormat: string;
+    sourceEvidence: string[];
+  };
+  detailedOutline?: OutlineSection[];
+  hookTemplate?: string;
+  hookFilledExample?: string;
+  hookRationale?: string;
+  viralTweetStructure?: string;
+  viralWhyItWorks?: string;
+  minWordTarget?: number;
+  minSectionCount?: number;
+  minPostCount?: number;
+}
+
+export interface ArticleExample {
+  author: string;
+  title: string;
+  url: string;
+  text: string;
+  wordCount: number;
+  archetype: string;
+  pillar: string;
+}
+
 function formatList(items: string[]): string {
   return items && items.length > 0
     ? items.map((item) => `- ${item}`).join("\n")
     : "- None found in source.";
 }
 
-function getFormatInstructions(format: ContentFormat): string {
+function getFormatInstructions(format: ContentFormat, plan?: ExecutionPlan): string {
+  const targets = IDEA_SCOUT_CONFIG.formatWordTargets;
+
   if (format === "Short") {
     return `Draft ONE short tweet.
 - 4-9 lines max.
@@ -212,35 +267,109 @@ function getFormatInstructions(format: ContentFormat): string {
   }
 
   if (format === "Mid-length") {
-    return `Draft ONE mid-length tweet.
-- 10-22 lines.
+    return `Draft ONE mid-length tweet (${targets.midLength.minLines}-25 lines).
+- ONE complete value bomb: pain → mechanism → proof → takeaway.
 - Build from hook → source-backed insight → mechanism → practical takeaway.
-- Best when the source has one strong mechanism or lesson.
+- Must include at least 2 concrete source details (tools, numbers, steps).
 - Use short paragraphs and line breaks.
 - No thread numbering.
+- CLOSER: End with ONE of these shapes (pick the best fit — do NOT default to "Bookmark this" every time):
+  1. Action step: "Try [specific step from source] this week."
+  2. Decision rule: "If [condition], use [approach]. Otherwise, [alternative]."
+  3. Source pointer: "Full breakdown in the source — worth 10 minutes."
+  4. Bookmark CTA (Tool-Curator only): "Bookmark this for [specific use case]."
+- Never repeat the same closer phrasing across drafts.
 - Output ONLY the tweet text.`;
   }
 
   if (format === "Thread") {
-    return `Draft a valuable thread.
-- Use [1/n], [2/n], etc. markers.
-- Each post must add a concrete source-backed point.
-- Include mechanism, examples, and practical takeaways.
+    const minPosts = plan?.minPostCount || targets.thread.minPosts;
+    return `Draft a valuable thread (${minPosts}-${targets.thread.idealPosts} posts minimum).
+- Use [1/n], [2/n], etc. markers on EVERY post.
+- Post 1 = hook (adapt the hook template provided).
+- Posts 2..n-1 = one teachable unit each with source proof (mechanism, example, or warning).
+- Final post = summary + what the reader should do next.
+- Each post must be at least 2 sentences with concrete source-backed value.
 - Best when the source has 5-8 teachable steps, lessons, mistakes, or examples.
-- Do not pad the thread with generic setup.
+- No "thread incoming" or filler setup posts.
+- Follow the DETAILED OUTLINE post-by-post.
 - Output ONLY the thread text.`;
   }
 
-  return `Draft the final LONG-FORM ARTICLE.
-- Write a full, long-form article/blog post.
-- Use Markdown headers (##, ###) to structure the piece.
-- Turn the source into a useful breakdown with mechanisms, examples, and takeaways.
-- Best when the source has a complete workflow, deep argument, multiple sections, several examples, or enough depth for a long-form breakdown.
-- Maintain the creator's voice, but expand the thinking deeply.
-- Output ONLY the raw article text.`;
+  const minWords = plan?.minWordTarget || targets.article.min;
+  const minSections = plan?.minSectionCount || targets.article.minSections;
+  return `Draft the final LONG-FORM ARTICLE (${minWords}-${targets.article.ideal} words minimum).
+- Write a full native X Article / guide — NOT a thread with headers.
+- IGNORE staccato tweet formatting. Write FULL paragraphs (3-6 sentences each).
+- Structure: strong opening hook → problem framing → ${minSections}+ titled sections (## / ###).
+- Each section MUST include: mechanism + concrete example + takeaway from the source.
+- Turn the source into a useful breakdown with workflows, tools, steps, and warnings.
+- Best when the source has a complete workflow, deep argument, multiple sections, or several examples.
+- Follow the DETAILED OUTLINE section-by-section.
+- Close with an actionable summary the reader can execute.
+- Output ONLY the raw article text (markdown headers allowed).`;
 }
 
-export function buildWriterPrompt(valueBrief: ValueBrief, voiceMode: VoiceMode, fewShotSamples: any[]) {
+function getModeFormatGuidance(voiceMode: VoiceMode, format: ContentFormat): string {
+  if (format !== "Article" && format !== "Thread") return "";
+
+  if (voiceMode === "Builder-Retrospective") {
+    return format === "Article"
+      ? "ARTICLE MODE: First-person builder commentary on workflows and scar tissue. Share operational lessons from the source."
+      : "THREAD MODE: Each post = one lesson learned. First-person allowed as commentary only if source supports it.";
+  }
+  if (voiceMode === "Tool-Curator") {
+    return format === "Article"
+      ? "ARTICLE MODE: Spec-dense guide with → lists, pricing, setup steps, comparisons. Third-person analytical."
+      : "THREAD MODE: One tool feature, capability, or spec per post. Arrow lists encouraged.";
+  }
+  return format === "Article"
+    ? "ARTICLE MODE: Operator essay — lowercase openers, business mechanics, reputation and systems thinking."
+    : "THREAD MODE: One operator principle per post. Lowercase openers. 'bro' for emphasis only.";
+}
+
+export function loadArticleExamples(): ArticleExample[] {
+  const p = path.resolve(process.cwd(), "src/data/article-examples.json");
+  if (!fs.existsSync(p)) return [];
+  return JSON.parse(fs.readFileSync(p, "utf-8"));
+}
+
+export function selectThreadSamples(
+  fewShotSamples: any[],
+  handleTarget: string,
+  voiceMode: VoiceMode,
+  limit = THREAD_EXAMPLES_PER_PROMPT,
+): string[] {
+  return fewShotSamples
+    .filter((s) => s.handle === handleTarget)
+    .filter((s) => /\[1\/\d+\]|\[1\/\]|\(1\/\d+\)/.test(s.text))
+    .map((s) => ({
+      text: s.text as string,
+      rankScore: scoreVoiceSample(s.text, voiceMode, s.likes ?? 0),
+    }))
+    .sort((a, b) => b.rankScore - a.rankScore)
+    .slice(0, limit)
+    .map((s) => s.text);
+}
+
+function formatOutline(outline: OutlineSection[] | undefined): string {
+  if (!outline?.length) return "Follow suggested structure from the brief.";
+  return outline
+    .map(
+      (s, i) =>
+        `${i + 1}. ${s.heading}\n   Purpose: ${s.purpose}\n   Must include: ${s.mustInclude.join("; ") || "source-backed details"}`,
+    )
+    .join("\n");
+}
+
+export function buildWriterPrompt(
+  valueBrief: ValueBrief | ExecutionPlan,
+  voiceMode: VoiceMode,
+  fewShotSamples: any[],
+) {
+  const plan = valueBrief as ExecutionPlan;
+  const format = valueBrief.format;
+  const isLongForm = format === "Article" || format === "Thread";
   // Filter samples based on the voice mode mapping
   // Builder-Retrospective -> Dreyshq samples
   // Tool-Curator -> Sharbel samples
@@ -269,12 +398,27 @@ export function buildWriterPrompt(valueBrief: ValueBrief, voiceMode: VoiceMode, 
     - STYLE: Lowkey, lowercase-heavy, operator wisdom, street-smart business insight.`;
   }
 
-  const matchedSamples = selectVoiceSamples(
-    fewShotSamples,
-    handleTarget,
-    voiceMode,
-    VOICE_EXAMPLES_PER_PROMPT,
-  );
+  let matchedSamples: string[];
+  if (format === "Thread") {
+    const threadSamples = selectThreadSamples(fewShotSamples, handleTarget, voiceMode);
+    matchedSamples =
+      threadSamples.length > 0
+        ? threadSamples
+        : selectVoiceSamples(fewShotSamples, handleTarget, voiceMode, VOICE_EXAMPLES_PER_PROMPT);
+  } else {
+    matchedSamples = selectVoiceSamples(
+      fewShotSamples,
+      handleTarget,
+      voiceMode,
+      VOICE_EXAMPLES_PER_PROMPT,
+    );
+  }
+
+  const articleExamples =
+    format === "Article" ? loadArticleExamples().slice(0, 3) : [];
+
+  const voiceDna = isLongForm ? VOICE_DNA_LONG : VOICE_DNA_PROMPT;
+  const modeFormatGuidance = getModeFormatGuidance(voiceMode, format);
 
   const systemPrompt = `CRITICAL: You are writing in ${voiceMode} mode.
 Each mode produces a COMPLETELY DIFFERENT style, perspective, and format structure.
@@ -286,10 +430,11 @@ You write source-grounded, valuable tweets, threads, long tweets, and articles.
 
 The source is the authority. The brief is your map. Viral templates and voice samples are packaging only.
 
-${VOICE_DNA_PROMPT}
-
+${voiceDna}
+${isLongForm ? "\nCRITICAL: Do NOT apply short-tweet line constraints to this format.\n" : ""}
 ---
 ${modeInstructions}
+${modeFormatGuidance ? `\n${modeFormatGuidance}\n` : ""}
 
 STRICT GROUNDING RULES
 - Do not invent metrics, tools, steps, screenshots, timelines, revenue, users, or outcomes.
@@ -334,11 +479,11 @@ HOOK RULES
 - Do not use "Here's why", "AI is changing everything", or generic threadboi openers unless the source gives a stronger reason.
 `;
 
-  const formatInstructions = getFormatInstructions(valueBrief.format);
+  const formatInstructions = getFormatInstructions(format, plan);
 
-  const userPrompt = `Here is the SOURCE-GROUNDED VALUE BRIEF for the content you need to write:
+  const userPrompt = `Here is the SOURCE-GROUNDED EXECUTION PLAN for the content you need to write:
 
-Idea Title: ${valueBrief.ideaTitle}
+${plan.comprehensionSummary ? `COMPREHENSION — What this source is about:\n${plan.comprehensionSummary}\n\n` : ""}${plan.creatorDoing ? `CREATOR IS DOING:\n${plan.creatorDoing}\n\n` : ""}Idea Title: ${valueBrief.ideaTitle}
 Pillar: ${valueBrief.pillar}
 Format Required: ${valueBrief.format}
 Platform: ${valueBrief.platform}
@@ -397,14 +542,15 @@ ${formatList(valueBrief.doNotInvent)}
 Suggested Structure:
 ${valueBrief.suggestedStructure}
 
-Viral Pattern to use only as packaging:
+${plan.detailedOutline?.length ? `DETAILED OUTLINE (follow this):\n${formatOutline(plan.detailedOutline)}\n\n` : ""}${plan.hookFilledExample ? `HOOK (lines 1-2 MUST adapt this):\nTemplate: ${plan.hookTemplate || "n/a"}\nFilled: ${plan.hookFilledExample}\nWhy: ${plan.hookRationale || "scroll-stop opener"}\n\n` : ""}${plan.viralTweetStructure ? `VIRAL BODY STRUCTURE (packaging flow):\n${plan.viralTweetStructure}\n\n` : ""}Viral Pattern to use only as packaging:
 ${valueBrief.stealablePattern || "None. Prioritize source truth."}
 
 ---
 EXAMPLES OF THIS EXACT VOICE & STYLE:
 Read these carefully to match the pacing, line breaks, formatting, and vocabulary perfectly.
 
-${matchedSamples.map((text, i) => `Example ${i + 1}:\n${text}\n`).join('\n')}
+${matchedSamples.map((text, i) => `Example ${i + 1}:\n${text}\n`).join("\n")}
+${articleExamples.length > 0 ? `\n---\nFULL ARTICLE DEPTH EXAMPLES (match this depth and structure — do NOT truncate your output):\n${articleExamples.map((a, i) => `Article Example ${i + 1} (@${a.author} — ${a.wordCount} words):\n${a.text}\n`).join("\n")}` : ""}
 
 ---
 YOUR TASK:

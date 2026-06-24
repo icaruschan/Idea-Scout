@@ -1,8 +1,8 @@
-# Directive: Consolidated Idea Scout Pipeline (v3)
+# Directive: Consolidated Idea Scout Pipeline (v4 — Comprehension-First)
 
 ## Goal
 
-Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter) every Monday, Thursday, and Saturday at 8:30 AM UTC (9:30 AM local time), evaluates new uploads for relevance against 8 active content pillars, and saves summaries in Notion. A decoupled two-actor engine running every Monday through Saturday at 8:00 AM UTC (9:00 AM local time) then synthesizes strategic briefs (Strategist) and drafts publication-ready tweets and articles (Writer Actor via Grok-4.3) in the Notion Ideas Bank by cross-pollinating newly scouted concepts with templates from a Viral Post Library. Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
+Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter), evaluates relevance against 8 active content pillars, and saves guide-oriented scout analysis in Notion. A **comprehension-first** two-actor engine then: **Comprehend → Brainstorm → Plan → Write → Validate** — using MiniMax M3 (strategist) and `x-ai/grok-4.3` via TokenRouter (writer), 100 hook templates (openers), and Viral Post Library patterns (body structure). Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
 
 ---
 
@@ -14,9 +14,12 @@ Ensure these are populated in `.env` for local testing and loaded into the Trigg
 # Notion API Configuration
 NOTION_API_KEY=
 
-# OpenRouter / LLM Client Configuration
+# TokenRouter (Idea Scout — required)
+TOKENROUTER_API_KEY=
+
+# OpenRouter (other tasks/scripts only — optional for Idea Scout)
 OPENROUTER_API_KEY=
-OPENROUTER_MODEL=qwen/qwen3.6-plus   # Default model fallback
+OPENROUTER_MODEL=qwen/qwen3.6-plus
 
 # Twitter API (TwitterAPI.io wrapper client)
 BACKUP_TWITTER_API_KEY=
@@ -116,10 +119,12 @@ Triggered two ways (hybrid):
     │      └── X posts without transcript fall back to stored title/text + summary/takeaways
     ├── 4. Resolve the first active "Niche" tag exposed as item.pillars
     │      Frozen Web3/Psychology tags resolve to Unknown/skip for new drafting
-    ├── 5. Study one source at a time with Grok-4.3
-    │      Output: ValueBrief JSON with source thesis, facts, numbers, tools, examples, mechanism, selected angle, must-use details, and do-not-invent rules
-    │      Format options: "Short" | "Mid-length" | "Thread" | "Article"
-    │      Title constraint: 2-5 word concise working titles (not clickbait)
+    ├── 5. Comprehension pipeline per source (MiniMax M3 via TokenRouter):
+    │      Phase 1 COMPREHEND — what is content about, creator doing, audience, pain, teachable units
+    │      Phase 2 BRAINSTORM — article/thread/mid/short products + value bombs
+    │      Phase 3 SELECT — up to 2 outputs (format diversity when score ≥ 7)
+    │      Phase 4 PLAN — detailedOutline, hook template, viral tweetStructure
+    │      Output: ExecutionPlan for writer
     ├── 6. Sequentially write ValueBriefs to Ideas Bank (status: 💭 Raw) with 350ms throttle
     └── 7. Dispatch write-tweets task for each ValueBrief
 
@@ -133,7 +138,8 @@ Triggered by draft-ideas (async)
     │        Tool-Curator → Sharbel (analytical, metric-dense, "Bookmark this" CTA)
     │        Case-Study → Zaimiri (operator wisdom, lowercase openers, "bro" allowed)
     ├── 3. Use the ValueBrief source facts, numbers, tools, examples, mechanism, and do-not-invent guardrails
-    ├── 4. Generate text via Grok-4.3 (x-ai/grok-4.3) at temperature 0.7
+    ├── 4. Generate text via TokenRouter x-ai/grok-4.3 at temperature 0.7
+    │      Validate depth (article ≥1200 words, thread ≥8 posts) — retry once if thin
     │      Dynamically switches output:
     │        Short: One tight tweet
     │        Mid-length: One longer value tweet
@@ -172,18 +178,16 @@ The synthesis engine runs as a two-actor pipeline:
    - `Title`, `Platform`, `URL`, `AI Summary`, `Key Takeaways`, and `Niche`.
    - Full transcript/source text from page body blocks when present.
    - X posts without transcripts fall back to stored title/text plus summary/takeaways.
-7. Processes one source at a time with Grok-4.3:
-   - Uses the first active `"Niche"` multi-select value exposed in code as `item.pillars`.
-   - Skips sources that only resolve to frozen Web3/Psychology or `Unknown`.
-   - Filters viral templates to relevant Category tags, but treats them as packaging only.
-   - Generates `ValueBrief` objects containing source thesis, facts, numbers, tools, examples, mechanism, why it matters, selected angle, must-use details, do-not-invent rules, voiceMode, and format.
-   - Format options: `"Short"`, `"Mid-length"`, `"Thread"`, `"Article"`.
-   - Title constraint: 2-5 word concise working titles (not clickbait sentences).
-8. Writes each ValueBrief to the Notion Ideas Bank (status: 💭 Raw) with a `350ms` throttle delay.
-9. Dispatches the `write-tweets` task for each ValueBrief asynchronously.
+7. Runs comprehension pipeline per source (MiniMax M3, no OpenRouter fallback):
+   - **Comprehend** — study transcript; reject shallow comprehension (retry once strict).
+   - **Brainstorm** — 2-5 format-native outputs; value bombs; up to 2 selected.
+   - **Plan** — `detailedOutline`, hook from `src/data/viral-hook-templates.json`, viral `tweetStructure`.
+   - Produces `ExecutionPlan` (not thin single-pass JSON).
+8. Writes human-readable idea pages to Ideas Bank (no JSON dump).
+9. Dispatches `write-tweets` per plan.
 
 **Actor 2: The Writer (`write-tweets`)**
-1. Receives the `ValueBrief` and the Notion Idea page ID.
+1. Receives `ExecutionPlan` and Notion Idea page ID.
 2. Loads few-shot voice samples from `src/data/creator-voice-samples.json` (committed, reviewed production samples). `.tmp/creator-voice-samples.json` is only a regeneration/export artifact.
 3. Calls `buildWriterPrompt()` from `voice-dna.ts` which:
    - Maps `voiceMode` to a creator handle (Builder-Retrospective → Dreyshq, Tool-Curator → Sharbel, Case-Study → Zaimiri).
@@ -191,7 +195,7 @@ The synthesis engine runs as a two-actor pipeline:
    - Injects mode-specific instructions (e.g., Sharbel: "Bookmark this" CTA allowed, Zaimiri: lowercase openers and "bro" allowed).
    - Injects source facts, numbers, tools, examples, mechanism, and anti-invention guardrails.
    - Dynamically switches output format based on `valueBrief.format`: Short, Mid-length, Thread, or Article.
-4. Generates text using **Grok-4.3** (`x-ai/grok-4.3`) at temperature `0.7`.
+4. Generates via **TokenRouter** `x-ai/grok-4.3` at temperature `0.7`. Validates depth; retries once if thin.
 5. Updates the Notion Idea with the draft:
    - First 2000 chars in `"Draft Tweet"` property.
    - Full un-truncated text in a toggle block (`▶️ Full Draft Tweet`).
