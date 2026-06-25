@@ -4,6 +4,7 @@ import {
   normalizeComprehension,
   buildStrategistSourceBlock,
 } from "../src/trigger/idea-scout/comprehend-source";
+import { budgetTranscript } from "../src/lib/transcript-cleaner";
 import { ExecutionPlan } from "../src/lib/voice-dna";
 import { ScoutedContentForDraft } from "../src/lib/notion";
 
@@ -50,6 +51,13 @@ const source: ScoutedContentForDraft = {
 const block = buildStrategistSourceBlock(source);
 assert(block.includes("FULL TRANSCRIPT / SOURCE TEXT (AUTHORITATIVE)"), "Strategist block leads with transcript");
 assert(block.includes("SCOUT ANALYSIS"), "Strategist block includes scout analysis helper");
+
+const longTranscript = "A".repeat(60_000);
+const budgeted = budgetTranscript(longTranscript, "YouTube", 30_000);
+assert(budgeted.stats.headTailTrimmed, "Long transcript is budgeted for strategist");
+assert(budgeted.text.length <= 30_000, "Budgeted transcript respects max char budget");
+assert(budgeted.text.startsWith("AAA"), "Budgeted transcript keeps opening context");
+assert(budgeted.text.trimEnd().endsWith("AAA"), "Budgeted transcript keeps closing context");
 
 const comprehension = normalizeComprehension({
   contentAbout:

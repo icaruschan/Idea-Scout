@@ -1,5 +1,6 @@
 import { task, tasks } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
+import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
 import { ExecutionPlan } from "../../lib/voice-dna";
 import { runComprehensionPipeline } from "./comprehend-source";
 import {
@@ -95,7 +96,9 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
     return { ideasCreated: 0 };
   }
 
-  const prioritizedSources = prioritizeSourcesByPlatform(scoutedContent);
+  const prioritizedAll = prioritizeSourcesByPlatform(scoutedContent);
+  const sourceCap = IDEA_SCOUT_CONFIG.maxSourcesPerRun;
+  const prioritizedSources = prioritizedAll.slice(0, sourceCap);
   const ytIgCount = prioritizedSources.filter(
     (s) => s.platform === "YouTube" || s.platform === "Instagram",
   ).length;
@@ -104,6 +107,11 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
   console.log(
     `📊 Platform weighting: ${ytIgCount} YT/IG + ${xCount} X = ${prioritizedSources.length} total (out of ${scoutedContent.length} available)`,
   );
+  if (prioritizedAll.length > prioritizedSources.length) {
+    console.log(
+      `⏭️ Per-run source cap: processing ${prioritizedSources.length}/${prioritizedAll.length} (maxSourcesPerRun=${sourceCap})`,
+    );
+  }
 
   let ideasCreated = 0;
 
@@ -206,7 +214,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
 // Manual-only: triggered directly or dispatched by scout-content after a scouting run.
 export const draftIdeas = task({
   id: "draft-ideas",
-  maxDuration: 900,
+  maxDuration: 3600,
   retry: {
     maxAttempts: 2,
   },

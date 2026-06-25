@@ -5,6 +5,7 @@ import {
   createScoutedContent,
   checkUrlExists,
 } from "../../lib/notion";
+import { prepareScoutContentBody } from "../../lib/transcript-cleaner";
 
 // ═══════════════════════════════════════════════════════════════
 // PROCESS CONTENT — AI Relevance Filter + Store
@@ -75,15 +76,13 @@ export const processContent = task({
   ): Promise<{ scoutedContentId: string | null; filtered: boolean }> => {
     const { platform, creatorPageId, creatorName, title, text, url, likes, views, comments, publishedDate, transcript } = payload;
 
-    // Combine all available text for analysis
-    const contentBody = [
+    // Clean video transcripts before scout LLM (full raw transcript still stored in Notion)
+    const contentBody = prepareScoutContentBody({
       title,
       text,
-      transcript ? `[Transcript]: ${transcript}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n\n")
-      .substring(0, 100000);
+      transcript,
+      platform,
+    });
 
     if (contentBody.trim().length < 50) {
       console.log(`⏭️ Skipping "${title.substring(0, 60)}" — too short`);

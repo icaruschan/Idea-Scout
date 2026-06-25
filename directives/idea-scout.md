@@ -97,7 +97,7 @@ Trigger.dev Mon/Thu/Sun Cron
     │      ├── C. Relevance check: LLM checks content maps to 8 active pillars (reject if < 0.6 confidence; frozen Web3/Psychology are ignored)
     │      ├── D. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
     │      ├── E. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
-    │      └── F. Notion insert: Create Scouted Content page, establishing creator relation
+    │      └── F. Notion insert: Create Scouted Content page (full transcript in `▶️ Full Transcript` toggle + chunked rich_text property), establishing creator relation
     ├── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
     └── 5. Dispatch draft-ideas with this run's `scoutedContentIds` (skipped when no new content was stored)
 
@@ -119,7 +119,8 @@ Triggered two ways (hybrid):
     │      └── X posts without transcript fall back to stored title/text + summary/takeaways
     ├── 4. Resolve the first active "Niche" tag exposed as item.pillars
     │      Frozen Web3/Psychology tags resolve to Unknown/skip for new drafting
-    ├── 5. Comprehension pipeline per source (MiniMax M3 via TokenRouter):
+    ├── 5. Comprehension pipeline per source (MiniMax M3 via TokenRouter, streaming enabled):
+    │      Transcript budget: deterministic clean (YT/IG) → head+tail only if still over `strategistMaxTranscriptChars` (30_000)
     │      Phase 1 COMPREHEND — what is content about, creator doing, audience, pain, teachable units
     │      Phase 2 BRAINSTORM — article/thread/mid/short products + value bombs
     │      Phase 3 SELECT — up to 2 outputs (format diversity when score ≥ 7)
@@ -178,7 +179,8 @@ The synthesis engine runs as a two-actor pipeline:
    - `Title`, `Platform`, `URL`, `AI Summary`, `Key Takeaways`, and `Niche`.
    - Full transcript/source text from page body blocks when present.
    - X posts without transcripts fall back to stored title/text plus summary/takeaways.
-7. Runs comprehension pipeline per source (MiniMax M3, no OpenRouter fallback):
+7. Runs comprehension pipeline per source (MiniMax M3 via TokenRouter, `strategistUseStreaming: true`, no OpenRouter fallback):
+   - **Transcript budget** (`src/lib/transcript-cleaner.ts`): deterministic clean for YT/IG (SFX, filler, dedupe); ~0% reduction on dense YT transcripts. Head+tail trim (65/35 split) only when cleaned text still exceeds `strategistMaxTranscriptChars` (30_000 — raised from 20k after measurement showed 22k YT sources need full coverage).
    - **Comprehend** — study transcript; reject shallow comprehension (retry once strict).
    - **Brainstorm** — 2-5 format-native outputs; value bombs; up to 2 selected.
    - **Plan** — `detailedOutline`, hook from `src/data/viral-hook-templates.json`, viral `tweetStructure`.
@@ -206,6 +208,9 @@ The synthesis engine runs as a two-actor pipeline:
 
 ## Operational Notes / Known Failure Modes
 
+- **Bare / shallow drafts (root cause: transcript truncation):** If the Strategist only sees a 2k transcript snippet, comprehension and outlines lack source depth. **Fix:** `createScoutedContent` stores the full transcript in an `▶️ Full Transcript` page-body toggle (paragraph blocks appended in batches) and writes the `Transcript` property as chunked rich_text (2k per element, up to 100 chunks — not a single 2k substring). `getScoutedContentByIds` reads the toggle via `extractRawTranscriptFromPageBody()` and passes the full text to the Strategist.
+- **Validate transcript cap decisions:** Run `npm run measure:transcripts` (or `npx tsx scripts/measure-transcript-cleaning.ts [days] [limit]`) against live Scouted Content to see cleaning reduction % and how many sources need head+tail at the current cap.
+- **M3 gateway idle cutoff:** Strategist calls use streaming (`strategistUseStreaming: true` in `idea-scout-config.ts`) so TokenRouter keeps the connection alive during MiniMax's `<think>` phase. Falls back to non-streaming on stream failure.
 - **Ideas stuck in 💭 Raw:** Check Trigger.dev `write-tweets` logs and inspect the ValueBrief in the Idea page body. A successful `draft-ideas` run means Writer tasks were dispatched, not that every final draft has completed.
 - **Voice samples:** Production reads from `src/data/creator-voice-samples.json`. Regeneration scripts write to `.tmp/creator-voice-samples.json`; review and sanitize that output before promoting it into `src/data`.
 - **Frozen pillars:** Web3 and Psychology remain valid historical labels in Notion, but new matching, drafting, and category writes must ignore them or resolve them to `Unknown`.
@@ -233,6 +238,8 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 
 ## 6. Edge Cases & Learnings
 
+- **Notion Transcript Storage Fix:** Prior bug: `Transcript` property was hard-truncated to 2,000 chars and the page-body toggle was not populated — Strategist read only the preview, producing bare drafts. Now: property uses `splitIntoRichText()` chunks; full transcript lives in `▶️ Full Transcript` toggle children. Scout Pass 1 (`process-content`) also runs `prepareScoutContentBody()` — deterministic YT/IG clean before gem extraction (100k cap).
+- **Strategist Transcript Budget:** `budgetTranscript()` in `comprehend-source.ts` — clean first, head+tail only as last resort. Dense YT transcripts (~22k chars) shrink ~0% after cleaning; 30k cap avoids unnecessary trimming. On strategist timeout retry, budget halves (`strategistTimeoutRetryTranscriptFactor: 0.5`).
 - **Apify X Scraper Migration to REST**: Switched X scraping to a direct REST API client (`twitterapi.io`) due to Free Plan account restrictions blocking execution of Apify actors. Uses a sequential creator loop with a 5.5s throttle delay to stay under the 1 QPS limit.
 - **X Articles Endpoint Parameter Fix**: The `/article` endpoint expects `articleId` as the query parameter. Restored and fixed this by changing `tweetId` to `articleId` (`params: { articleId: tweetId }`), enabling successful full-body fetches for long-form X Articles.
 - **Deterministic Notion Relation Mapping**: LLM synthesis output is instructed to return unique Notion Page IDs inside `"inspiredByScoutedIds"`. The code parses these via UUID regex, resulting in a 100% relation linking hit rate and bypassing LLM title paraphrasing glitches.

@@ -254,7 +254,7 @@ interface OutlineSection {
 
 3. **Store new fields** in Scouted Content (new Notion properties or page body section `## Scout Analysis`).
 
-4. **Keep** full transcript in page body toggle (already works).
+4. **Store** full transcript in `▶️ Full Transcript` page-body toggle (batched paragraph blocks) + chunked `Transcript` property rich_text. Hard 2k property truncation was the root cause of bare Strategist drafts.
 
 ---
 
@@ -578,8 +578,13 @@ export const IDEA_SCOUT_CONFIG = {
     Instagram: ["Thread", "Article", "Mid-length"],
     X: ["Mid-length", "Thread", "Short"],
   },
+  strategistMaxTranscriptChars: 30_000,  // clean first; head+tail only if still over (raised from 20k)
+  strategistUseStreaming: true,          // M3 gateway idle cutoff defense
+  scoutMaxContentChars: 100_000,
 };
 ```
+
+**Transcript pipeline:** `transcript-cleaner.ts` — deterministic YT/IG clean (~0% on dense YT), then `budgetTranscript()` head+tail as last resort. Validate cap with `npm run measure:transcripts`.
 
 ---
 
@@ -597,7 +602,9 @@ export const IDEA_SCOUT_CONFIG = {
 | `src/trigger/idea-scout/write-tweets.ts` | **MODIFY** | ExecutionPlan, validation, Grok via TokenRouter |
 | `src/lib/voice-dna.ts` | **MODIFY** | Split DNA, deep format contracts, mode×format |
 | `src/lib/llm.ts` | **MODIFY** | TokenRouter text gen, model constants |
-| `src/lib/notion.ts` | **MODIFY** | Source text ordering, scout analysis fields |
+| `src/lib/notion.ts` | **MODIFY** | Transcript toggle + chunked property storage, source text ordering, scout analysis fields |
+| `src/lib/transcript-cleaner.ts` | **NEW** | Deterministic clean, head+tail budget, scout Pass 1 body prep |
+| `scripts/measure-transcript-cleaning.ts` | **NEW** | Validate cleaning reduction and cap decisions against live Scouted Content |
 | `src/data/article-examples.json` | **NEW** | 3 full articles |
 | `src/data/viral-hook-templates.json` | **EXISTS** | No change |
 | `scripts/build-article-examples.ts` | **NEW** | Parse articles MD → JSON |

@@ -264,6 +264,11 @@ function safeFormatDate(dateStr: any): string | null {
   return null;
 }
 
+/** Split text into Notion rich_text chunks (2000 chars each, up to 100 chunks). */
+export function splitTranscriptForNotion(text: string): Array<{ text: { content: string } }> {
+  return splitIntoRichText(text);
+}
+
 // Helper to split a long string into Notion's rich text array elements (max 2000 chars each)
 function splitIntoRichText(text: string): any[] {
   const str = safeString(text);
@@ -519,7 +524,7 @@ export async function createScoutedContent(
           rich_text: splitIntoRichText(input.keyTakeaways),
         },
         Transcript: {
-          rich_text: splitIntoRichText(safeString(input.transcript).substring(0, 2000)),
+          rich_text: splitIntoRichText(safeString(input.transcript)),
         },
         ...creatorRelation,
         ...(input.pillars && input.pillars.length > 0 ? {
@@ -560,22 +565,35 @@ export async function createScoutedContent(
       );
     }
 
-    if (input.transcript && input.transcript.trim()) {
-      children.push({
-        object: "block" as const,
-        type: "toggle" as const,
-        toggle: {
-          rich_text: [{ text: { content: "▶️ Full Transcript" } }],
-          children: splitIntoParagraphBlocks(input.transcript),
-        },
-      });
-    }
-
     if (children.length > 0) {
       pageParams.children = children;
     }
 
     const response = await notion.pages.create(pageParams);
+
+    const transcript = safeString(input.transcript).trim();
+    if (transcript) {
+      const toggleResponse: any = await notion.blocks.children.append({
+        block_id: response.id,
+        children: [
+          {
+            object: "block" as const,
+            type: "toggle" as const,
+            toggle: {
+              rich_text: [{ text: { content: "▶️ Full Transcript" } }],
+            },
+          },
+        ],
+      });
+      const toggleId = toggleResponse.results?.[0]?.id;
+      if (toggleId) {
+        await appendBlocksInBatches(toggleId, splitIntoParagraphBlocks(transcript));
+      } else {
+        console.warn(
+          `⚠️ Created scouted page ${response.id} but failed to attach Full Transcript toggle`,
+        );
+      }
+    }
 
     return response.id;
   } catch (error) {

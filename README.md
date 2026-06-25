@@ -58,6 +58,7 @@ To prevent your Notion databases from filling up with unrelated spam, the AI run
   * *Frozen Pillars:* Web3 and Psychology remain readable for historical records, but they are ignored for new content processing and idea generation.
   * *Relevance threshold:* Must match an active pillar with a confidence score of $\ge 0.6$ or it is ignored.
   * *Expanded Context Limit:* The pipeline passes up to **100,000 characters** of the content/transcript to the LLM (expanded from 6,000 characters) to ensure full-length YouTube transcripts and X Articles are analyzed completely without early truncation.
+  * *Scout Pass 1 cleaning:* YouTube/Instagram transcripts are deterministically cleaned (`prepareScoutContentBody`) — strip SFX, filler lines, consecutive dedupe — before gem extraction. Dense YT transcripts shrink ~0%.
 * **Disambiguation Check:** Drops false-positives that match keywords by coincidence.
   * *Example:* A sports news post mentions "Kimi Antonelli" (an F1 racer) or "Amen Thompson" (an NBA player). The AI detects this is sports entertainment news rather than actionable tech or creator content, and automatically discards it.
 
@@ -66,9 +67,10 @@ To prevent your Notion databases from filling up with unrelated spam, the AI run
 ### Step 4: Write to "Scouted Content" Database
 For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** and 3-5 bulleted **Key Takeaways**. 
 
-* **Bypassing Notion's 2,000 Character Limit:** Notion text properties hard-limit strings to 2,000 characters. To prevent transcript loss:
-  1. The system truncates the transcript preview string to 2,000 characters to fit inside the database property column safely.
-  2. It then appends the **entire, uncut transcript** (which the AI already fully processed) inside a collapsible **Toggle Block** (`▶️ Full Transcript`) directly into the page body. This preserves the 100% full original transcript in the Notion interface.
+* **Notion Transcript Storage (fixes bare drafts):** A prior bug hard-truncated the `Transcript` property to 2,000 characters and skipped the page-body toggle — the Strategist only saw a snippet, producing shallow outlines. **Current behavior:**
+  1. **`Transcript` property:** Chunked rich_text elements (2,000 chars each, up to 100 chunks via `splitIntoRichText()`) — not a single 2k substring.
+  2. **Page body:** The **full, uncut transcript** is appended inside a collapsible toggle (`▶️ Full Transcript`) as batched paragraph blocks.
+  3. **Read path:** `getScoutedContentByIds` extracts the toggle text via `extractRawTranscriptFromPageBody()` and passes it to the Strategist as authoritative source text.
 
 #### Example Notion Scouted Entry:
 * **Title:** "The Future of Vibe Coding with Claude Code"
@@ -97,13 +99,17 @@ The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/T
    - `Title`, `Platform`, `URL`, `AI Summary`, `Key Takeaways`, and `Niche`.
    - Full transcript/source text from the Notion page body toggle when present.
    - X posts fall back to the full stored title/text plus summary/takeaways when no transcript exists.
-5. Processes each source independently through the **Multi-Phase Comprehension Pipeline**:
+5. Applies **transcript budget** (`src/lib/transcript-cleaner.ts`) before each strategist call:
+   - Deterministic clean for YouTube/Instagram (strip SFX brackets, filler-only lines, consecutive dedupe) — ~0% reduction on dense YT transcripts.
+   - **Head+tail trim** (65/35 split with omission marker) only when cleaned text still exceeds `strategistMaxTranscriptChars` (**30,000** — raised from 20k after measurement showed 22k YT sources need full coverage).
+   - MiniMax M3 calls use **streaming** (`strategistUseStreaming: true`) to prevent TokenRouter gateway idle cutoff during the `<think>` phase.
+6. Processes each source independently through the **Multi-Phase Comprehension Pipeline**:
    - **Phase 1: Comprehend** — studies the transcript to build structured prose comprehension (intent, overlapping audience, costs of inaction, teachable units).
    - **Phase 2: Brainstorm** — evaluates teachable units to brainstorm distinct outputs across formats (Article, Thread, Mid-length, Short) and formats primary value bombs.
    - **Phase 3: Select** — selects 1-2 formats to execute (enforcing format diversity if quality is high).
    - **Phase 4: Plan** — matches hooks using `hook-matcher.ts` (tokenized keyword matching from the 100 Hook Templates), plans a detailed outline (section by section), and structures the viral tweet body layout.
-6. Produces a detailed `ExecutionPlan` containing all planning outline details, hook templates, source evidence, and audience mapping.
-7. Writes the plan details to the Ideas Bank (status: 💭 Raw) in clean, readable markdown headers, and dispatches the Writer asynchronously.
+7. Produces a detailed `ExecutionPlan` containing all planning outline details, hook templates, source evidence, and audience mapping.
+8. Writes the plan details to the Ideas Bank (status: 💭 Raw) in clean, readable markdown headers, and dispatches the Writer asynchronously.
 
 #### Actor 2: The Writer (`write-tweets`)
 1. Receives the `ExecutionPlan` (which extends the legacy `ValueBrief` schema) and the Notion Idea page ID.
@@ -164,6 +170,7 @@ The generated drafts are written directly to the **Ideas Bank** database.
 ---
 
 ### Operational Notes / Known Failure Modes
+* **Bare drafts / thin outlines**: Usually means the Strategist saw a truncated transcript. Confirm the Scouted Content page has `▶️ Full Transcript` in the body and that `draft-ideas` logs show full `rawSourceText` depth. Run `npm run measure:transcripts` to validate cleaning reduction and head+tail needs against live Scouted Content.
 * **Raw Ideas Need Investigation**: A page stuck in 💭 Raw usually means the Writer task has not finished or failed after dispatch. Check Trigger.dev task logs for `write-tweets` and inspect the outline or plan details in the Idea page body.
 * **Voice Sample Source of Truth**: Production Writer prompts use `src/data/creator-voice-samples.json`. `.tmp/creator-voice-samples.json` is only a regeneration/export artifact and is not deployed.
 * **Frozen Pillars**: Web3/Psychology records remain in Notion for history, but new matching, drafting, and category writes should resolve those themes to `Unknown` or skip them.
@@ -230,7 +237,7 @@ These are the exact database IDs used in the codebase.
 | `Scouted Date` | Date | Date when our system scouted it |
 | `AI Summary` | Rich text | 2-3 sentence content overview |
 | `Key Takeaways` | Rich text | 3-5 bulleted learnings |
-| `Transcript` | Rich text | Truncated copy of the transcript (max 2,000 characters) |
+| `Transcript` | Rich text | Chunked rich_text preview (2k per element); full transcript in page-body `▶️ Full Transcript` toggle |
 | `YouTube Creators` | Relation | Relation link back to YT Creators database |
 | `Instagram Creators` | Relation | Relation link back to IG Creators database |
 | `👤 Twitter Creators` | Relation | Relation link back to X Creators database |
@@ -251,8 +258,9 @@ src/
 │   ├── content-intelligence.ts      — Types and schemas for the multi-stage strategist pipeline.
 │   ├── draft-validator.ts           — Depth validation gate for writer drafts (word counts and section counts).
 │   ├── hook-matcher.ts              — Tokenizes and matches templates from the 100 Viral Hooks library.
-│   ├── idea-scout-config.ts         — Central configuration for thresholds, target limits, and platforms.
-│   ├── notion.ts                    — Handles all database reads/writes, page creations, and idea updates.
+│   ├── idea-scout-config.ts         — Central configuration (strategistMaxTranscriptChars: 30k, strategistUseStreaming, timeouts).
+│   ├── transcript-cleaner.ts      — Deterministic YT/IG clean, head+tail budget for Strategist, scout Pass 1 body prep.
+│   ├── notion.ts                    — Handles all database reads/writes, transcript toggle storage, and idea updates.
 │   ├── twitter.ts                   — Controls TwitterAPI.io requests and views filters.
 │   ├── llm.ts                       — TokenRouter client for MiniMax M3 and Grok 4.3; also houses legacy OpenRouter.
 │   ├── voice-dna.ts                 — Voice DNA prompts, ExecutionPlan type, and buildWriterPrompt().
@@ -331,3 +339,4 @@ TRIGGER_ENV=dev
    npx trigger.dev@latest deploy
    ```
 3. **Verify runs:** Run a test execution from the Trigger.dev dashboard to confirm everything is linked correctly.
+4. **Validate transcript cap:** `npm run measure:transcripts` — measures real Scouted Content cleaning reduction and head+tail needs at the 30k strategist cap.

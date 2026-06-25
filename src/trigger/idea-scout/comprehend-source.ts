@@ -1,6 +1,7 @@
 import { generateJSONStrategist } from "../../lib/llm";
 import { getRawSourceDepth, ScoutedContentForDraft } from "../../lib/notion";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
+import { budgetTranscript } from "../../lib/transcript-cleaner";
 import {
   formatHookCandidates,
   matchHookTemplates,
@@ -60,9 +61,24 @@ export function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-export function buildStrategistSourceBlock(source: ScoutedContentForDraft): string {
+export function buildStrategistSourceBlock(
+  source: ScoutedContentForDraft,
+  maxTranscriptChars: number = IDEA_SCOUT_CONFIG.strategistMaxTranscriptChars,
+): string {
   const depth = getRawSourceDepth(source);
   const scout = source.scoutAnalysis;
+  const rawTranscript = source.rawSourceText || source.transcriptPreview || source.title;
+  const { text: strategistTranscript, stats } = budgetTranscript(
+    rawTranscript,
+    source.platform,
+    maxTranscriptChars,
+  );
+
+  if (stats.cleaned || stats.headTailTrimmed) {
+    console.log(
+      `✂️ Strategist transcript: ${stats.originalChars} → clean ${stats.cleanedChars} → final ${stats.finalChars} chars (${stats.reductionPct}% reduction, headTail=${stats.headTailTrimmed}) "${source.title.substring(0, 60)}"`,
+    );
+  }
 
   return [
     `SOURCE METADATA`,
@@ -70,9 +86,14 @@ export function buildStrategistSourceBlock(source: ScoutedContentForDraft): stri
     `Platform: ${source.platform}`,
     `URL: ${source.url || "No URL"}`,
     `RAW SOURCE DEPTH: ${depth} characters`,
+    stats.headTailTrimmed
+      ? `STRATEGIST TRANSCRIPT: cleaned + head/tail from ${stats.originalChars} chars`
+      : stats.cleaned
+        ? `STRATEGIST TRANSCRIPT: cleaned from ${stats.originalChars} → ${stats.finalChars} chars`
+        : "",
     ``,
     `FULL TRANSCRIPT / SOURCE TEXT (AUTHORITATIVE):`,
-    source.rawSourceText || source.transcriptPreview || source.title,
+    strategistTranscript,
     ``,
     scout
       ? [
@@ -184,13 +205,14 @@ export function normalizeComprehension(raw: Record<string, unknown>): SourceComp
   };
 }
 
-export async function comprehendSource(
+function buildComprehendPrompt(
   source: ScoutedContentForDraft,
-  strict = false,
-): Promise<SourceComprehension | null> {
-  const prompt = `${strict ? "STRICT MODE: Be highly specific. Ban generic creatorDoing phrases.\n\n" : ""}Study this source and return comprehension JSON.
+  strict: boolean,
+  maxTranscriptChars: number,
+): string {
+  return `${strict ? "STRICT MODE: Be highly specific. Ban generic creatorDoing phrases.\n\n" : ""}Study this source and return comprehension JSON.
 
-${buildStrategistSourceBlock(source)}
+${buildStrategistSourceBlock(source, maxTranscriptChars)}
 
 RETURN JSON:
 {
@@ -228,11 +250,26 @@ RETURN JSON:
   "specificProof": ["numbers, results if stated"],
   "unsupportedClaims": ["what source does NOT prove"]
 }`;
+}
+
+export async function comprehendSource(
+  source: ScoutedContentForDraft,
+  strict = false,
+): Promise<SourceComprehension | null> {
+  const maxChars = IDEA_SCOUT_CONFIG.strategistMaxTranscriptChars;
+  const retryMaxChars = Math.max(
+    4_000,
+    Math.floor(maxChars * IDEA_SCOUT_CONFIG.strategistTimeoutRetryTranscriptFactor),
+  );
+  const prompt = buildComprehendPrompt(source, strict, maxChars);
+  const shrinkRetryPrompt = buildComprehendPrompt(source, strict, retryMaxChars);
 
   const raw = await generateJSONStrategist(
     prompt,
     COMPREHEND_SYSTEM,
     IDEA_SCOUT_CONFIG.strategistTemperature.comprehend,
+    IDEA_SCOUT_CONFIG.strategistRetries,
+    shrinkRetryPrompt,
   );
   const comprehension = normalizeComprehension(raw);
   const validation = validateComprehension(comprehension, getRawSourceDepth(source));

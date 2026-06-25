@@ -29,6 +29,20 @@ export const IDEA_SCOUT_CONFIG = {
     brainstorm: 0.5,
     plan: 0.45,
   },
+  /** MiniMax HTTP timeout per strategist call (comprehend / brainstorm / plan). */
+  strategistTimeoutMs: 300_000,
+  strategistRetries: 1,
+  /** Scout Pass 1 content body cap (after deterministic cleaning). */
+  scoutMaxContentChars: 100_000,
+  /** Strategist transcript budget: clean first, head+tail only if still over. */
+  strategistMaxTranscriptChars: 30_000,
+  /** Stream M3 responses to keep TokenRouter gateway connections alive during <think> phase. */
+  strategistUseStreaming: true,
+  /** On timeout retry, halve transcript budget (Option C). */
+  strategistTimeoutRetryTranscriptFactor: 0.5,
+  /** Cap sources processed per draft-ideas run (serial pipeline is slow). */
+  maxSourcesPerRun: 10,
+  writerTimeoutMs: 600_000,
   writerTemperature: 0.7,
   writerMaxTokens: {
     article: 16384,

@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import { CONTENT_PILLARS, PILLAR_DESCRIPTIONS } from "./constants";
+import { IDEA_SCOUT_CONFIG } from "./idea-scout-config";
 import { VOICE_DNA_PROMPT } from "./voice-dna";
 dotenv.config({ override: true });
 
@@ -27,16 +28,24 @@ export const MODELS = {
 } as const;
 
 const MINIMAX_MODEL = MODELS.STRATEGIST;
-let _tokenRouterClient: OpenAI | null = null;
-function getTokenRouterClient() {
-  if (!_tokenRouterClient) {
-    _tokenRouterClient = new OpenAI({
+const _tokenRouterClients = new Map<number, OpenAI>();
+
+function getTokenRouterClient(timeoutMs = 120_000): OpenAI {
+  let client = _tokenRouterClients.get(timeoutMs);
+  if (!client) {
+    client = new OpenAI({
       apiKey: process.env.TOKENROUTER_API_KEY || "",
       baseURL: "https://api.tokenrouter.com/v1",
-      timeout: 120000,
+      timeout: timeoutMs,
     });
+    _tokenRouterClients.set(timeoutMs, client);
   }
-  return _tokenRouterClient;
+  return client;
+}
+
+function isTimeoutError(err: unknown): boolean {
+  const message = (err as Error)?.message || String(err);
+  return /timed?\s*out|timeout|ETIMEDOUT|ECONNABORTED/i.test(message);
 }
 
 const defaultModel = process.env.OPENROUTER_MODEL || "qwen/qwen3.6-plus";
@@ -79,7 +88,7 @@ export async function generateTextTokenRouter(
   model: string = MODELS.WRITER,
   maxTokens?: number,
 ): Promise<TokenRouterTextResult> {
-  const response = await getTokenRouterClient().chat.completions.create({
+  const response = await getTokenRouterClient(IDEA_SCOUT_CONFIG.writerTimeoutMs).chat.completions.create({
     model,
     messages: [
       { role: "system", content: systemPrompt },
@@ -224,26 +233,7 @@ export async function generateJSONFree(
   }
 }
 
-/**
- * Strategist path — MiniMax M3 via TokenRouter only. No OpenRouter fallback.
- * Idea Scout skips the source on failure.
- */
-export async function generateJSONStrategist(
-  prompt: string,
-  systemPrompt: string,
-  temperature: number = 0.4,
-): Promise<Record<string, unknown>> {
-  const response = await getTokenRouterClient().chat.completions.create({
-    model: MINIMAX_MODEL,
-    stream: false as any,
-    temperature,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: prompt },
-    ],
-  });
-
-  const raw = response.choices[0]?.message?.content || "";
+function parseStrategistJson(raw: string): Record<string, unknown> {
   const content = raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   const cleaned = content.replace(/```json/g, "").replace(/```/g, "").trim();
   const match = cleaned.match(/\{[\s\S]*\}/);
@@ -254,6 +244,100 @@ export async function generateJSONStrategist(
   } catch {
     console.warn("⚠️ Strategist JSON.parse failed, attempting repair...");
     return JSON.parse(repairJson(jsonStr)) as Record<string, unknown>;
+  }
+}
+
+async function streamStrategistText(
+  client: OpenAI,
+  systemPrompt: string,
+  prompt: string,
+  temperature: number,
+): Promise<string> {
+  const stream = await client.chat.completions.create({
+    model: MINIMAX_MODEL,
+    stream: true,
+    temperature,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: prompt },
+    ],
+  });
+
+  let raw = "";
+  let lastLogMs = Date.now();
+  for await (const chunk of stream) {
+    const delta = chunk.choices[0]?.delta?.content;
+    if (delta) raw += delta;
+    const now = Date.now();
+    if (now - lastLogMs >= 30_000) {
+      console.log(`📡 Strategist streaming… ${raw.length} chars received so far`);
+      lastLogMs = now;
+    }
+  }
+  return raw;
+}
+
+async function callStrategistModel(
+  client: OpenAI,
+  systemPrompt: string,
+  prompt: string,
+  temperature: number,
+): Promise<string> {
+  if (IDEA_SCOUT_CONFIG.strategistUseStreaming) {
+    try {
+      return await streamStrategistText(client, systemPrompt, prompt, temperature);
+    } catch (streamErr) {
+      console.warn(
+        `⚠️ Strategist streaming failed, falling back to non-stream: ${(streamErr as Error).message}`,
+      );
+    }
+  }
+
+  const response = await client.chat.completions.create({
+    model: MINIMAX_MODEL,
+    temperature,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: prompt },
+    ],
+  });
+  return response.choices[0]?.message?.content || "";
+}
+
+/**
+ * Strategist path — MiniMax M3 via TokenRouter only. No OpenRouter fallback.
+ * Idea Scout skips the source on failure.
+ */
+export async function generateJSONStrategist(
+  prompt: string,
+  systemPrompt: string,
+  temperature: number = 0.4,
+  retries: number = IDEA_SCOUT_CONFIG.strategistRetries,
+  retryPrompt?: string,
+): Promise<Record<string, unknown>> {
+  const timeoutMs = IDEA_SCOUT_CONFIG.strategistTimeoutMs;
+  const client = getTokenRouterClient(timeoutMs);
+
+  try {
+    const raw = await callStrategistModel(client, systemPrompt, prompt, temperature);
+    return parseStrategistJson(raw);
+  } catch (err) {
+    if (retries > 0 && isTimeoutError(err)) {
+      const nextPrompt = retryPrompt ?? prompt;
+      console.warn(
+        retryPrompt
+          ? `⚠️ Strategist timed out (${timeoutMs}ms), retrying with reduced input (${retries} left)...`
+          : `⚠️ Strategist timed out (${timeoutMs}ms), retrying (${retries} left)...`,
+      );
+      return generateJSONStrategist(
+        nextPrompt,
+        systemPrompt,
+        temperature,
+        retries - 1,
+        undefined,
+      );
+    }
+    throw err;
   }
 }
 
