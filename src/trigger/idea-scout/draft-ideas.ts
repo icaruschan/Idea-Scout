@@ -1,4 +1,4 @@
-import { task, tasks } from "@trigger.dev/sdk/v3";
+import { task, tasks, schedules } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
 import { ExecutionPlan } from "../../lib/voice-dna";
@@ -211,9 +211,12 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
   return { ideasCreated };
 }
 
-// Manual-only: triggered directly or dispatched by scout-content after a scouting run.
-export const draftIdeas = task({
+// Hybrid scheduling:
+// - scout-content dispatches draft-ideas immediately with scoutedContentIds (Mon/Thu/Sun)
+// - Wed/Fri cron catches manual/orphaned unlinked scouted content (no scout run those days)
+export const draftIdeas = schedules.task({
   id: "draft-ideas",
+  cron: "30 4 * * 3,5", // Wed/Fri 4:30 AM UTC catch-all backfill
   maxDuration: 3600,
   retry: {
     maxAttempts: 2,
