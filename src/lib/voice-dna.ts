@@ -235,6 +235,8 @@ export interface ExecutionPlan extends ValueBrief {
   minWordTarget?: number;
   minSectionCount?: number;
   minPostCount?: number;
+  talkingPoints?: string[];
+  stepByStepProcess?: string[];
 }
 
 export interface ArticleExample {
@@ -284,11 +286,12 @@ function getFormatInstructions(format: ContentFormat, plan?: ExecutionPlan): str
 
   if (format === "Thread") {
     const minPosts = plan?.minPostCount || targets.thread.minPosts;
+    const hasSteps = (plan?.stepByStepProcess?.length || 0) > 0;
     return `Draft a valuable thread (${minPosts}-${targets.thread.idealPosts} posts minimum).
 - Use [1/n], [2/n], etc. markers on EVERY post.
 - Post 1 = hook (adapt the hook template provided).
 - Posts 2..n-1 = one teachable unit each with source proof (mechanism, example, or warning).
-- Final post = summary + what the reader should do next.
+${hasSteps ? "- Map STEP BY STEP PROCESS to posts where possible — one step per post when the source supports it.\n" : ""}- Final post = summary + what the reader should do next.
 - Each post must be at least 2 sentences with concrete source-backed value.
 - Best when the source has 5-8 teachable steps, lessons, mistakes, or examples.
 - No "thread incoming" or filler setup posts.
@@ -298,12 +301,13 @@ function getFormatInstructions(format: ContentFormat, plan?: ExecutionPlan): str
 
   const minWords = plan?.minWordTarget || targets.article.min;
   const minSections = plan?.minSectionCount || targets.article.minSections;
+  const hasSteps = (plan?.stepByStepProcess?.length || 0) > 0;
   return `Draft the final LONG-FORM ARTICLE (${minWords}-${targets.article.ideal} words minimum).
 - Write a full native X Article / guide — NOT a thread with headers.
 - IGNORE staccato tweet formatting. Write FULL paragraphs (3-6 sentences each).
 - Structure: strong opening hook → problem framing → ${minSections}+ titled sections (## / ###).
 - Each section MUST include: mechanism + concrete example + takeaway from the source.
-- Turn the source into a useful breakdown with workflows, tools, steps, and warnings.
+${hasSteps ? "- Include a dedicated workflow section that follows STEP BY STEP PROCESS in order.\n" : ""}- Turn the source into a useful breakdown with workflows, tools, steps, and warnings.
 - Best when the source has a complete workflow, deep argument, multiple sections, or several examples.
 - Follow the DETAILED OUTLINE section-by-section.
 - Close with an actionable summary the reader can execute.
@@ -536,7 +540,7 @@ ${formatList(valueBrief.specificExamples)}
 Must-Use Details:
 ${formatList(valueBrief.mustUseDetails)}
 
-Do Not Invent:
+${plan.talkingPoints?.length ? `TALKING POINTS (cover ALL — these are the publishable bullets):\n${formatList(plan.talkingPoints)}\n\n` : ""}${plan.stepByStepProcess?.length ? `STEP BY STEP PROCESS (follow this order for threads/articles):\n${formatList(plan.stepByStepProcess)}\n\n` : ""}Do Not Invent:
 ${formatList(valueBrief.doNotInvent)}
 
 Suggested Structure:

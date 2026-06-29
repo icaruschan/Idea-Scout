@@ -124,10 +124,10 @@ Triggered two ways (hybrid):
     │      Phase 1 COMPREHEND — what is content about, creator doing, audience, pain, teachable units
     │      Phase 2 BRAINSTORM — article/thread/mid/short products + value bombs
     │      Phase 3 SELECT — up to 2 outputs (format diversity when score ≥ 7)
-    │      Phase 4 PLAN — detailedOutline, hook template, viral tweetStructure
+    │      Phase 4 PLAN — detailedOutline, talkingPoints (3–7 bullets), stepByStepProcess (ordered how-to), hook template, viral tweetStructure
     │      Output: ExecutionPlan for writer
-    ├── 6. Sequentially write ValueBriefs to Ideas Bank (status: 💭 Raw) with 350ms throttle
-    └── 7. Dispatch write-tweets task for each ValueBrief
+    ├── 6. Sequentially write ExecutionPlans to Ideas Bank (status: 💭 Raw) with 350ms throttle
+    └── 7. Dispatch write-tweets task for each ExecutionPlan
 
 Triggered by draft-ideas (async)
 │
@@ -138,7 +138,7 @@ Triggered by draft-ideas (async)
     │        Builder-Retrospective → Dreyshq (first-person, scar tissue, value)
     │        Tool-Curator → Sharbel (analytical, metric-dense, "Bookmark this" CTA)
     │        Case-Study → Zaimiri (operator wisdom, lowercase openers, "bro" allowed)
-    ├── 3. Use the ValueBrief source facts, numbers, tools, examples, mechanism, and do-not-invent guardrails
+    ├── 3. Use ExecutionPlan source facts, talking points, step-by-step process, numbers, tools, examples, mechanism, and do-not-invent guardrails
     ├── 4. Generate text via TokenRouter x-ai/grok-4.3 at temperature 0.7
     │      Validate depth (article ≥1200 words, thread ≥8 posts) — retry once if thin
     │      Dynamically switches output:
@@ -183,9 +183,9 @@ The synthesis engine runs as a two-actor pipeline:
    - **Transcript budget** (`src/lib/transcript-cleaner.ts`): deterministic clean for YT/IG (SFX, filler, dedupe); ~0% reduction on dense YT transcripts. Head+tail trim (65/35 split) only when cleaned text still exceeds `strategistMaxTranscriptChars` (30_000 — raised from 20k after measurement showed 22k YT sources need full coverage).
    - **Comprehend** — study transcript; reject shallow comprehension (retry once strict).
    - **Brainstorm** — 2-5 format-native outputs; value bombs; up to 2 selected.
-   - **Plan** — `detailedOutline`, hook from `src/data/viral-hook-templates.json`, viral `tweetStructure`.
+   - **Plan** — `detailedOutline`, `talkingPoints` (publishable bullets from transcript gems), `stepByStepProcess` (from `specificSteps` when how-to), hook from `src/data/viral-hook-templates.json`, viral `tweetStructure`. Deterministic fallbacks in `deriveTalkingPoints()` / `deriveStepByStepProcess()` if the model omits them.
    - Produces `ExecutionPlan` (not thin single-pass JSON).
-8. Writes human-readable idea pages to Ideas Bank (no JSON dump).
+8. Writes human-readable idea pages to Ideas Bank (headers: What This Source Is About, Outline, Talking Points, Step by Step Process, Hook, Key Source Details — no JSON dump).
 9. Dispatches `write-tweets` per plan.
 
 **Actor 2: The Writer (`write-tweets`)**
@@ -195,7 +195,7 @@ The synthesis engine runs as a two-actor pipeline:
    - Maps `voiceMode` to a creator handle (Builder-Retrospective → Dreyshq, Tool-Curator → Sharbel, Case-Study → Zaimiri).
    - Selects the top 5 matching samples by engagement.
    - Injects mode-specific instructions (e.g., Sharbel: "Bookmark this" CTA allowed, Zaimiri: lowercase openers and "bro" allowed).
-   - Injects source facts, numbers, tools, examples, mechanism, and anti-invention guardrails.
+   - Injects talking points, step-by-step process (threads/articles), source facts, numbers, tools, examples, mechanism, and anti-invention guardrails.
    - Dynamically switches output format based on `valueBrief.format`: Short, Mid-length, Thread, or Article.
 4. Generates via **TokenRouter** `x-ai/grok-4.3` at temperature `0.7`. Validates depth; retries once if thin.
 5. Updates the Notion Idea with the draft:

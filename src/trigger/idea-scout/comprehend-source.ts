@@ -486,6 +486,8 @@ RETURN JSON matching ExecutionPlan fields including:
 - ideaTitle (2-5 words)
 - voiceMode: Builder-Retrospective | Tool-Curator | Case-Study
 - detailedOutline: array of { heading, purpose, sourceUnits, mustInclude, targetWords }
+- talkingPoints: 3-7 publishable bullets the writer MUST cover (from transcript gems, facts, teachable units — not generic advice)
+- stepByStepProcess: ordered steps from the source when a how-to/workflow exists (empty array if none); use "1. ..." format
 - hookTemplate, hookFilledExample, hookRationale
 - viralTemplateId, viralTweetStructure, viralWhyItWorks, stealablePattern
 - sourceFacts, mustUseDetails (from transcript gems), doNotInvent
@@ -499,6 +501,80 @@ RETURN JSON matching ExecutionPlan fields including:
   );
 
   return buildExecutionPlan(raw, comprehension, chosen, source, pillar, viralTemplate);
+}
+
+export function deriveTalkingPoints(
+  raw: unknown,
+  comprehension: SourceComprehension,
+  chosen: BrainstormedOutput,
+  mustUse: string[],
+  sourceFacts: string[],
+): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  const candidates = [
+    ...ensureArray(raw),
+    ...mustUse,
+    ...sourceFacts,
+    ...chosen.transcriptGemsUsed,
+    ...comprehension.transcriptOnlyGems,
+    ...comprehension.teachableUnits.map((unit) => unit.unit),
+    ...comprehension.specificProof,
+    ...comprehension.specificTools,
+  ];
+
+  for (const candidate of candidates) {
+    const trimmed = String(candidate || "").trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(trimmed);
+    if (result.length >= 7) break;
+  }
+
+  return result.slice(0, 7);
+}
+
+export function deriveStepByStepProcess(
+  raw: unknown,
+  comprehension: SourceComprehension,
+  format: ContentFormat,
+): string[] {
+  const fromModel = ensureArray(raw);
+  if (fromModel.length > 0) {
+    return fromModel.slice(0, 12).map((step, index) => formatNumberedStep(step, index));
+  }
+
+  if (comprehension.specificSteps.length > 0) {
+    return comprehension.specificSteps
+      .slice(0, 12)
+      .map((step, index) => formatNumberedStep(step, index));
+  }
+
+  const isWorkflowSource =
+    comprehension.contentType === "workflow-walkthrough" ||
+    comprehension.valueType === "workflow" ||
+    comprehension.valueType === "how-to-guide";
+
+  if (
+    (format === "Article" || format === "Thread") &&
+    isWorkflowSource &&
+    comprehension.teachableUnits.length > 0
+  ) {
+    return comprehension.teachableUnits
+      .slice(0, 8)
+      .map((unit, index) => formatNumberedStep(unit.unit, index));
+  }
+
+  return [];
+}
+
+function formatNumberedStep(step: string, index: number): string {
+  const trimmed = step.trim();
+  if (/^\d+[\.)]\s/.test(trimmed)) return trimmed;
+  return `${index + 1}. ${trimmed}`;
 }
 
 function buildExecutionPlan(
@@ -587,6 +663,14 @@ function buildExecutionPlan(
             : 80,
     minSectionCount: format === "Article" ? targets.article.minSections : undefined,
     minPostCount: format === "Thread" ? targets.thread.minPosts : undefined,
+    talkingPoints: deriveTalkingPoints(
+      raw.talkingPoints,
+      comprehension,
+      chosen,
+      mustUse,
+      sourceFacts,
+    ),
+    stepByStepProcess: deriveStepByStepProcess(raw.stepByStepProcess, comprehension, format),
   };
 }
 

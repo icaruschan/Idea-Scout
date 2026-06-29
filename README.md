@@ -107,12 +107,12 @@ The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/T
    - **Phase 1: Comprehend** — studies the transcript to build structured prose comprehension (intent, overlapping audience, costs of inaction, teachable units).
    - **Phase 2: Brainstorm** — evaluates teachable units to brainstorm distinct outputs across formats (Article, Thread, Mid-length, Short) and formats primary value bombs.
    - **Phase 3: Select** — selects 1-2 formats to execute (enforcing format diversity if quality is high).
-   - **Phase 4: Plan** — matches hooks using `hook-matcher.ts` (tokenized keyword matching from the 100 Hook Templates), plans a detailed outline (section by section), and structures the viral tweet body layout.
-7. Produces a detailed `ExecutionPlan` containing all planning outline details, hook templates, source evidence, and audience mapping.
+   - **Phase 4: Plan** — matches hooks using `hook-matcher.ts` (tokenized keyword matching from the 100 Hook Templates), plans a detailed outline (section by section), structures the viral tweet body layout, and extracts **Talking Points** (3–7 publishable bullets) plus **Step by Step Process** (ordered how-to steps when the source supports it).
+7. Produces a detailed `ExecutionPlan` containing outline details, hook templates, talking points, step-by-step process, source evidence, and audience mapping.
 8. Writes the plan details to the Ideas Bank (status: 💭 Raw) in clean, readable markdown headers, and dispatches the Writer asynchronously.
 
 #### Actor 2: The Writer (`write-tweets`)
-1. Receives the `ExecutionPlan` (which extends the legacy `ValueBrief` schema) and the Notion Idea page ID.
+1. Receives the `ExecutionPlan` (which extends the legacy `ValueBrief` schema) and the Notion Idea page ID, including **Talking Points** and **Step by Step Process** when present.
 2. Loads committed creator voice samples from `src/data/creator-voice-samples.json` and selects the top 5 matching examples based on voice mode:
    - **Builder-Retrospective** → Dreyshq samples (first-person, scar tissue)
    - **Tool-Curator** → Sharbel samples (analytical, metric-dense, arrow lists)
@@ -142,6 +142,8 @@ The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/T
     4. Execution: How Claude handles the build process.
     5. Takeaway: The shift to agentic vibe coding.
   * **Hook Filled Example:** "I built a full web app in 3 minutes using Claude Code. Here's how..."
+  * **Talking Points:** terminal install, single-prompt init, agentic build loop, no boilerplate needed
+  * **Step by Step Process:** 1. Install Claude Code → 2. Run init prompt → 3. Let agent build → 4. Deploy static output
   * **Do Not Invent:** no fake build time, fake revenue, or unsupported claims
 * **Writer Output (via Grok-4.3):**
   ```text
@@ -159,7 +161,7 @@ The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/T
 ### Step 6: Write to "Ideas Bank" Database
 The generated drafts are written directly to the **Ideas Bank** database.
 * **Two-Phase Write**: The Value Strategist creates the Idea page (status: 💭 Raw) with the source-grounded ExecutionPlan metadata. The Writer Actor then updates the same page with the finished draft (status: 📝 Drafted).
-* **Source-Grounded Notes**: The Idea page body is written in clean, human-readable markdown headers (e.g., What This Source Is About, Outline, Hook, Key Source Details, etc.) to give a clean user interface without raw JSON dumps or escape characters.
+* **Source-Grounded Notes**: The Idea page body is written in clean, human-readable markdown headers (e.g., What This Source Is About, Outline, Talking Points, Step by Step Process, Hook, Key Source Details, etc.) to give a clean user interface without raw JSON dumps or escape characters.
 * **Ready-to-Post Drafts**: Each idea includes a full, ready-to-post tweet or article draft styled according to your custom **Voice DNA Profile** with three distinct voice modes mapped to real creator examples.
   * *Plain-Language Rule:* Drafts should read like a smart builder explaining it to a friend: simple grammar, short sentences, niche-native terms when useful, and no fake-smart abstractions like "operational layer" or "signal extraction workflow".
   * *Bypassing Notion's 2,000 Character Limit:* The first 2,000 characters of the draft are stored in the `"Draft Tweet"` database page property for a quick preview, while the **entire, un-truncated draft** is placed inside a collapsible toggle block (`▶️ Full Draft Tweet`) inside the page body.

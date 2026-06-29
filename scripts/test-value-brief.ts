@@ -3,9 +3,11 @@ import {
   validateComprehension,
   normalizeComprehension,
   buildStrategistSourceBlock,
+  deriveStepByStepProcess,
+  deriveTalkingPoints,
 } from "../src/trigger/idea-scout/comprehend-source";
 import { budgetTranscript } from "../src/lib/transcript-cleaner";
-import { ExecutionPlan } from "../src/lib/voice-dna";
+import { buildWriterPrompt, ExecutionPlan } from "../src/lib/voice-dna";
 import { ScoutedContentForDraft } from "../src/lib/notion";
 
 let failed = 0;
@@ -150,14 +152,59 @@ const samplePlan: ExecutionPlan = {
   stealablePattern: "Pain → Mechanism → Workflow",
   minWordTarget: 1500,
   minSectionCount: 4,
+  talkingPoints: [
+    "Filter bad leads before enrichment",
+    "$40 Apollo waste on unqualified leads",
+    "n8n → Slack handoff for qualified leads",
+  ],
+  stepByStepProcess: ["1. Filter", "2. Enrich", "3. Notify Slack"],
 };
+
+const talkingPoints = deriveTalkingPoints(
+  [],
+  comprehension,
+  {
+    workingTitle: "Lead Triage",
+    format: "Article",
+    angle: "Qualify first",
+    isPrimaryValueBomb: true,
+    targetAudience: "founders",
+    painAddressed: "waste",
+    valueProposition: "save money",
+    readerOutcome: "build workflow",
+    hookDirection: "Never enrich unqualified leads",
+    sourceUnitsUsed: ["filter node"],
+    transcriptGemsUsed: ["$40 Apollo waste"],
+    estimatedDepth: "2000 words",
+    priority: "💡 Good",
+    rationale: "workflow",
+    formatFitScore: 9,
+  },
+  samplePlan.mustUseDetails,
+  samplePlan.sourceFacts,
+);
+assert(talkingPoints.length >= 3, "Talking points derive from gems and must-use details");
+assert(
+  talkingPoints.some((point) => point.includes("$40")),
+  "Talking points include transcript gem",
+);
+
+const steps = deriveStepByStepProcess([], comprehension, "Article");
+assert(steps.length === 3, "Step-by-step derives from comprehension.specificSteps");
+assert(steps[0].startsWith("1."), "Steps are numbered");
 
 const rawData = buildIdeaPageRawData(samplePlan);
 assert(rawData.includes("## What This Source Is About"), "Idea page uses readable headers");
 assert(rawData.includes("## Hook"), "Idea page includes hook section");
+assert(rawData.includes("## Talking Points"), "Idea page includes talking points");
+assert(rawData.includes("## Step by Step Process"), "Idea page includes step-by-step process");
 assert(!rawData.includes("Full ValueBrief JSON"), "Idea page has no JSON dump");
 assert(!rawData.includes("doNotInvent"), "Idea page hides writer-internal fields");
 assert(rawData.includes("$40 Apollo waste"), "Idea page shows key source gems");
+
+const { userPrompt } = buildWriterPrompt(samplePlan, samplePlan.voiceMode, []);
+assert(userPrompt.includes("TALKING POINTS"), "Writer prompt includes talking points");
+assert(userPrompt.includes("STEP BY STEP PROCESS"), "Writer prompt includes step-by-step process");
 
 console.log("\n======================================");
 if (failed > 0) {

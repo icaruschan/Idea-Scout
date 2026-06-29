@@ -417,6 +417,14 @@ export function buildIdeaPageRawData(plan: ExecutionPlan): string {
     `## Outline`,
     outlineText,
     ``,
+    plan.talkingPoints?.length
+      ? `## Talking Points\n${plan.talkingPoints.map((point) => `- ${point}`).join("\n")}`
+      : "",
+    ``,
+    plan.stepByStepProcess?.length
+      ? `## Step by Step Process\n${plan.stepByStepProcess.map((step) => `- ${step}`).join("\n")}`
+      : "",
+    ``,
     `## Hook`,
     plan.hookFilledExample || plan.contentPromise,
     plan.hookTemplate ? `Template: ${plan.hookTemplate}` : "",

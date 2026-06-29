@@ -166,4 +166,8 @@ export interface ExecutionPlanPayload {
   minWordTarget: number;
   minSectionCount?: number;
   minPostCount?: number;
+  /** Publishable bullets the writer must hit (3–7 source-backed points). */
+  talkingPoints: string[];
+  /** Ordered how-to steps from the source (threads/articles; empty when N/A). */
+  stepByStepProcess: string[];
 }
