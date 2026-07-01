@@ -269,8 +269,8 @@ export const scoutContent = schedules.task({
 
       try {
         const { urls: existingUrls, titles: existingTitles } = await getScoutedItemsForCreator(creator.pageId, "Instagram");
-        // Limit to top 2 reels to drastically reduce Apify transcript actor costs (down from 10)
-        const reels = await scrapeInstagramReels(creator.handle, 2, existingUrls);
+        // Top 5 reels per creator for ~14-day coverage while keeping transcript costs reasonable
+        const reels = await scrapeInstagramReels(creator.handle, 5, existingUrls);
         console.log(
           `IG @${creator.handle}: ${reels.length} reels scraped`,
         );

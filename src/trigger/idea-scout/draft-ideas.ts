@@ -69,7 +69,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
     await Promise.all([
       scoutedContentIds.length > 0
         ? getScoutedContentByIds(scoutedContentIds)
-        : getRecentScoutedContent(7),
+        : getRecentScoutedContent(14),
       getTopViralPosts(30),
       getRecentIdeaTitles(30),
       getPillarDistribution(14),
