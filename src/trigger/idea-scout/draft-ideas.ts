@@ -1,6 +1,7 @@
 import { task, tasks, schedules } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
+import { resolvePrimaryPillar } from "../../lib/pillar-selection";
 import { ExecutionPlan } from "../../lib/voice-dna";
 import { runComprehensionPipeline } from "./comprehend-source";
 import {
@@ -125,7 +126,20 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
         continue;
       }
 
-      const pillar = getPrimaryPillar(source);
+      const activeTags = (source.pillars || []).filter((p) =>
+        CONTENT_PILLARS.includes(p),
+      );
+      const pillar = resolvePrimaryPillar(source, pillarCounts);
+
+      if (activeTags.length > 1) {
+        const tagCounts = activeTags
+          .map((p) => `${p}=${pillarCounts[p] || 0}`)
+          .join(", ");
+        console.log(
+          `🏷️ Pillar routing: [${activeTags.join(", ")}] (${tagCounts}) → ${pillar}`,
+        );
+      }
+
       if (!CONTENT_PILLARS.includes(pillar)) {
         console.log(
           `⏭️ Skipping source "${source.title.substring(0, 80)}" because it did not map to an active pillar.`,
@@ -181,6 +195,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
         );
 
         ideasCreated++;
+        pillarCounts[plan.pillar] = (pillarCounts[plan.pillar] || 0) + 1;
         console.log(
           `💡 Created ${plan.format} idea "${plan.ideaTitle}" from "${source.title.substring(0, 60)}"`,
         );
@@ -231,98 +246,6 @@ export const draftIdeas = schedules.task({
     return runDraftIdeas(draftPayload);
   },
 });
-
-function getPrimaryPillar(item: ScoutedContentForDraft): string {
-  if (item.pillars && item.pillars.length > 0) {
-    const activePillar = item.pillars.find((p: string) =>
-      CONTENT_PILLARS.includes(p),
-    );
-    if (activePillar) return activePillar;
-  }
-
-  const textToSearch = `${item.title} ${item.aiSummary} ${item.keyTakeaways}`.toLowerCase();
-  if (
-    textToSearch.includes("web3") ||
-    textToSearch.includes("crypto") ||
-    textToSearch.includes("solana") ||
-    textToSearch.includes("ethereum") ||
-    textToSearch.includes("nft")
-  ) {
-    return "Unknown";
-  }
-
-  if (
-    textToSearch.includes("cursor") ||
-    textToSearch.includes("claude code") ||
-    textToSearch.includes("lovable") ||
-    textToSearch.includes("v0") ||
-    textToSearch.includes("bolt.new") ||
-    textToSearch.includes("vibe coding") ||
-    textToSearch.includes("coder") ||
-    textToSearch.includes("developer")
-  ) {
-    return "Vibe Coding";
-  }
-  if (
-    textToSearch.includes("n8n") ||
-    textToSearch.includes("make.com") ||
-    textToSearch.includes("zapier") ||
-    textToSearch.includes("automation") ||
-    textToSearch.includes("workflows") ||
-    textToSearch.includes("agentic")
-  ) {
-    return "Automation";
-  }
-  if (
-    textToSearch.includes("newsletter") ||
-    textToSearch.includes("beehiiv") ||
-    textToSearch.includes("audience") ||
-    textToSearch.includes("creator economy") ||
-    textToSearch.includes("monetise") ||
-    textToSearch.includes("monetization") ||
-    textToSearch.includes("sponsorship")
-  ) {
-    return "Creator Economy";
-  }
-  if (
-    textToSearch.includes("kling") ||
-    textToSearch.includes("runway") ||
-    textToSearch.includes("sora") ||
-    textToSearch.includes("elevenlabs") ||
-    textToSearch.includes("avatar") ||
-    textToSearch.includes("ai creative") ||
-    textToSearch.includes("generate video")
-  ) {
-    return "AI Creative";
-  }
-  if (
-    textToSearch.includes("hook") ||
-    textToSearch.includes("copywriting") ||
-    textToSearch.includes("storytelling") ||
-    textToSearch.includes("persuasion")
-  ) {
-    return "Copywriting and Storytelling";
-  }
-  if (
-    textToSearch.includes("public") ||
-    textToSearch.includes("milestone") ||
-    textToSearch.includes("mrr") ||
-    textToSearch.includes("building in public")
-  ) {
-    return "Building in Public";
-  }
-  if (
-    textToSearch.includes("chatgpt") ||
-    textToSearch.includes("claude") ||
-    textToSearch.includes("prompt") ||
-    textToSearch.includes("grok") ||
-    textToSearch.includes("perplexity")
-  ) {
-    return "AI Prompting & Tools";
-  }
-
-  return "Unknown";
-}
 
 const PILLAR_TO_VIRAL_CATEGORIES: Record<string, string[]> = {
   "Vibe Coding": ["Vibe Coding", "Tech/AI"],

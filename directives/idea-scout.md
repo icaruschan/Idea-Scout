@@ -117,7 +117,8 @@ Triggered two ways (hybrid):
     │      ├── Title, Platform, URL, AI Summary, Key Takeaways, and Niche
     │      ├── Full transcript/source text from the Notion page body toggle when present
     │      └── X posts without transcript fall back to stored title/text + summary/takeaways
-    ├── 4. Resolve the first active "Niche" tag exposed as item.pillars
+    ├── 4. Resolve pillar from item.pillars (Niche tags):
+    │      Single tag → use it. Multiple tags → pick the pillar with the fewest recent Ideas Bank ideas (14-day distribution); ties prefer the later-listed tag.
     │      Frozen Web3/Psychology tags resolve to Unknown/skip for new drafting
     ├── 5. Comprehension pipeline per source (MiniMax M3 via TokenRouter, streaming enabled):
     │      Transcript budget: deterministic clean (YT/IG) → head+tail only if still over `strategistMaxTranscriptChars` (30_000)
