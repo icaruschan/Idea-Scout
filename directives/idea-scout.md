@@ -21,7 +21,8 @@ TOKENROUTER_API_KEY=
 OPENROUTER_API_KEY=
 OPENROUTER_MODEL=qwen/qwen3.6-plus
 
-# Twitter API (TwitterAPI.io wrapper client)
+# Twitter API (TwitterAPI.io — either key works)
+TWITTER_API_KEY=
 BACKUP_TWITTER_API_KEY=
 
 # Twitter Programmatic Filter Configuration
@@ -87,50 +88,51 @@ Trigger.dev Mon/Thu/Sun Cron
     ├── 2. Scrape content streams (with 5s cooldowns between phases):
     │      ├── YT: Scrapes newest 5 videos (Apify Actor) — sequential per creator
     │      ├── ⏸️ 5s cooldown
-    │      ├── IG: Pulls newest 30 reels, selects 5 newest + 5 top-viewed,
-    │      │       transcribes in chunks of 3 concurrent actors (apple_yang) with 2s delays
+    │      ├── IG: Fetch ~30 reel metadata, keep resultsLimit 5 (~3 newest + ~2 top-viewed);
+    │      │       transcribe in chunks of 3 concurrent actors (apple_yang) with 2s delays
     │      ├── ⏸️ 5s cooldown
-    │      └── X: Queries recent tweets with a 5.5s throttle sequential loop using the direct REST API (twitterapi.io), filters by views (>= TWITTER_MIN_VIEWS), and fetches full-text X Articles using the getArticle endpoint (passing articleId: tweet.id) if tweet.article is present or URL contains /article/
+    │      └── X: Queries recent tweets with a 5.5s throttle sequential loop using the direct REST API (twitterapi.io), filters by views (>= TWITTER_MIN_VIEWS, default 3000), and fetches full-text X Articles using the getArticle endpoint (passing articleId: tweet.id) if tweet.article is present or URL contains /article/
     ├── 3. Execute process-content in batches of 15 (Trigger.dev Batch Chunking) with a 2s delay between batches to prevent parent orchestrator hangs
     │      ├── A. Duplicate check: Verify URL/title does not clash with existing scouted content for that creator
-    │      ├── B. Feed to LLM: Prepares up to 100,000 characters of content/transcript (expanded from 6,000 to prevent context truncation)
-    │      ├── C. Relevance check: LLM checks content maps to 8 active pillars (reject if < 0.6 confidence; frozen Web3/Psychology are ignored)
+    │      ├── B. Feed to LLM: Prepares up to 100,000 characters of content/transcript (after prepareScoutContentBody clean)
+    │      ├── C. Relevance check: MiniMax-M3 (TokenRouter) maps content to 8 active pillars (reject if < 0.6 confidence; frozen Web3/Psychology ignored)
     │      ├── D. Disambiguation check: LLM filters out false positives (e.g., Mercedes driver Kimi Antonelli, NBA athlete Amen Thompson)
-    │      ├── E. Summarization: LLM extracts summary and actionable key takeaways (bullets with →)
+    │      ├── E. Summarization: Guide-oriented summary + actionable key takeaways (bullets with →)
     │      └── F. Notion insert: Create Scouted Content page (full transcript in `▶️ Full Transcript` toggle + chunked rich_text property), establishing creator relation
     ├── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
     └── 5. Dispatch draft-ideas with this run's `scoutedContentIds` (skipped when no new content was stored)
 
 Triggered two ways (hybrid):
 │   • Immediately by scout-content with this run's scoutedContentIds (Mon/Thu/Sun)
-│   • Catch-all cron Wed/Fri 4:30 AM UTC for unlinked scouted content (manual/orphaned)
+│   • Catch-all cron Wed/Fri 4:30 AM UTC for unlinked scouted content (past 14 days; manual/orphaned)
 │   • Manual dashboard / trigger-draft.ts also supported
 │
-└── draft-ideas [VALUE STRATEGIST] (maxDuration: 900s)
+└── draft-ideas [VALUE STRATEGIST] (maxDuration: 3600s)
     ├── 1. Clean up rejected ideas (archive to sever relations and free scouted content)
     ├── 2. Gather context from all sources:
-    │      ├── A. Unused Scouted Content (from past 7 days, filtering out those already linked to Ideas)
+    │      ├── A. Unused Scouted Content (targeted IDs OR past 14 days unlinked)
     │      ├── B. Top 30 Viral Posts (4★+)
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
-    │      └── D. Category distribution balance (prioritize underserved pillars)
-    ├── 3. For each Scouted Content page, fetch the full source context:
+    │      └── D. Category distribution balance (14-day; prioritize underserved pillars)
+    ├── 3. Prioritize sources: all YT/IG by raw depth, then X capped ~30% of YT/IG count; maxSourcesPerRun=10; skip if raw depth < 300 chars
+    ├── 4. For each Scouted Content page, use full source context:
     │      ├── Title, Platform, URL, AI Summary, Key Takeaways, and Niche
     │      ├── Full transcript/source text from the Notion page body toggle when present
     │      └── X posts without transcript fall back to stored title/text + summary/takeaways
-    ├── 4. Resolve pillar from item.pillars (Niche tags):
-    │      Single tag → use it. Multiple tags → pick the pillar with the fewest recent Ideas Bank ideas (14-day distribution); ties prefer the later-listed tag.
+    ├── 5. Resolve pillar via resolvePrimaryPillar (pillar-selection.ts):
+    │      Single tag → use it. Multiple tags → fewest recent Ideas Bank ideas (14-day); ties prefer later-listed tag.
     │      Frozen Web3/Psychology tags resolve to Unknown/skip for new drafting
-    ├── 5. Comprehension pipeline per source (MiniMax M3 via TokenRouter, streaming enabled):
-    │      Transcript budget: deterministic clean (YT/IG) → head+tail only if still over `strategistMaxTranscriptChars` (30_000)
+    ├── 6. Comprehension pipeline per source (MiniMax M3 via TokenRouter, streaming enabled):
+    │      Transcript budget: deterministic clean (YT/IG) → head+tail only if still over strategistMaxTranscriptChars (30_000)
     │      Phase 1 COMPREHEND — what is content about, creator doing, audience, pain, teachable units
     │      Phase 2 BRAINSTORM — article/thread/mid/short products + value bombs
     │      Phase 3 SELECT — up to 2 outputs (format diversity when score ≥ 7)
     │      Phase 4 PLAN — detailedOutline, talkingPoints (3–7 bullets), stepByStepProcess (ordered how-to), hook template, viral tweetStructure
     │      Output: ExecutionPlan for writer
-    ├── 6. Sequentially write ExecutionPlans to Ideas Bank (status: 💭 Raw) with 350ms throttle
-    │      Shared `Variation Set` label per source batch; idea titles suffixed with format (e.g. `— Thread`)
-    │      Page preamble + sibling Notion links when multiple formats are drafted from one source
-    └── 7. Dispatch write-tweets task for each ExecutionPlan
+    ├── 7. Sequentially write ExecutionPlans to Ideas Bank (status: 💭 Raw) with 350ms throttle
+    │      Shared Variation Set label per source batch; idea titles suffixed with format (e.g. `— Thread`)
+    │      Page: variation preamble → Hook/Output visible → strategist brief collapsed; sibling footers when multi-format
+    └── 8. Dispatch write-tweets task for each ExecutionPlan
 
 Triggered by draft-ideas (async)
 │
@@ -143,7 +145,7 @@ Triggered by draft-ideas (async)
     │        Case-Study → Zaimiri (operator wisdom, lowercase openers, "bro" allowed)
     ├── 3. Use ExecutionPlan source facts, talking points, step-by-step process, numbers, tools, examples, mechanism, and do-not-invent guardrails
     ├── 4. Generate text via TokenRouter x-ai/grok-4.3 at temperature 0.7
-    │      Validate depth (article ≥1200 words, thread ≥8 posts) — retry once if thin
+    │      Validate depth (article ≥1200 words + ≥4 ##; thread ≥8 posts) — retry once if thin
     │      Dynamically switches output:
     │        Short: One tight tweet
     │        Mid-length: One longer value tweet
@@ -151,7 +153,7 @@ Triggered by draft-ideas (async)
     │        Article: Full long-form markdown with ##/### headers
     └── 5. Update Notion Idea:
            - Draft Tweet property (first 2000 chars)
-           - Full text in toggle block (▶️ Full Draft Tweet)
+           - Full text in toggle block (▶️ Draft — {format})
            - Auto-set status to 📝 Drafted
 
 Trigger.dev Manual Run
@@ -165,45 +167,40 @@ Trigger.dev Manual Run
     ├── 6. Slice top 150 tweets sorted by score descending
     ├── 7. Sequentially analyze tweets:
     │      ├── Fetch full text of X Articles if detected via getArticle REST API
-    │      ├── Prompt OpenRouter (xiaomi/mimo-v2.5-pro by default) with the Senior Content Strategist framework
+    │      ├── Strategist analysis via MiniMax-M3 (TokenRouter)
     │      └── Write the structured analysis to the Viral Post Library database with a 500ms delay to stay within Notion's write rate limits
 ```
 
 ### Synthesis & Drafting Tasks (`draft-ideas` + `write-tweets`)
 The synthesis engine runs as a two-actor pipeline:
 
-**Actor 1: The Value Strategist (`draft-ideas`)**
+**Actor 1: The Value Strategist (`draft-ideas`, maxDuration 3600s)**
 1. Cleans up any Ideas Bank entries marked as "Rejected" (archiving them) to sever relations and free up the associated scouted content for reuse.
-2. Queries the past 7 days of Scouted Content, filtering out entries that are already linked to generated ideas in the `"Linked Ideas"` relation (Source Deduplication).
+2. Loads scouted items: targeted IDs from scout dispatch, **or** past **14 days** of unlinked Scouted Content (`Linked Ideas` empty).
 3. Queries the top 30 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
-4. Queries the past 30 days of generated Idea titles to ensure soft deduplication.
-5. Queries the past 14 days of Ideas Bank category distribution to focus on underserved pillars.
-6. Fetches full source context for each Scouted Content page:
-   - `Title`, `Platform`, `URL`, `AI Summary`, `Key Takeaways`, and `Niche`.
-   - Full transcript/source text from page body blocks when present.
-   - X posts without transcripts fall back to stored title/text plus summary/takeaways.
-7. Runs comprehension pipeline per source (MiniMax M3 via TokenRouter, `strategistUseStreaming: true`, no OpenRouter fallback):
-   - **Transcript budget** (`src/lib/transcript-cleaner.ts`): deterministic clean for YT/IG (SFX, filler, dedupe); ~0% reduction on dense YT transcripts. Head+tail trim (65/35 split) only when cleaned text still exceeds `strategistMaxTranscriptChars` (30_000 — raised from 20k after measurement showed 22k YT sources need full coverage).
-   - **Comprehend** — study transcript; reject shallow comprehension (retry once strict).
-   - **Brainstorm** — 2-5 format-native outputs; value bombs; up to 2 selected.
-   - **Plan** — `detailedOutline`, `talkingPoints` (publishable bullets from transcript gems), `stepByStepProcess` (from `specificSteps` when how-to), hook from `src/data/viral-hook-templates.json`, viral `tweetStructure`. Deterministic fallbacks in `deriveTalkingPoints()` / `deriveStepByStepProcess()` if the model omits them.
+4. Queries the past 30 days of generated Idea titles (soft dedup) and past 14 days of Ideas Bank category distribution.
+5. Prioritizes sources (YT/IG first by depth; X capped ~30%); applies `maxSourcesPerRun` (10); skips sources with raw depth under 300 chars.
+6. Resolves pillar with `resolvePrimaryPillar` (underserved multi-tag routing).
+7. Fetches full source context per page (title/platform/URL/summary/takeaways/Niche + Full Transcript toggle; X fallback to stored text).
+8. Runs comprehension pipeline per source (MiniMax M3 via TokenRouter, `strategistUseStreaming: true`):
+   - **Transcript budget** (`src/lib/transcript-cleaner.ts`): deterministic clean for YT/IG; head+tail (65/35) only when over `strategistMaxTranscriptChars` (30_000).
+   - **Comprehend** → **Brainstorm** → **Select** (up to 2 formats when score ≥ 7) → **Plan** (`detailedOutline`, `talkingPoints`, `stepByStepProcess`, hooks, viral structure). Deterministic fallbacks if model omits talking points/steps.
    - Produces `ExecutionPlan` (not thin single-pass JSON).
-8. Writes structured Ideas Bank pages: Hook + Output visible at top; strategist brief (outline, talking points, steps, gems) in collapsed toggle; writer draft in `▶️ Draft — {format}` toggle with native Notion headings/lists.
-9. Dispatches `write-tweets` per plan.
+9. Writes structured Ideas Bank pages with shared **Variation Set**, format-suffixed titles, Hook + Output visible, strategist brief collapsed; multi-format sibling footers.
+10. Dispatches `write-tweets` per plan (async).
 
 **Actor 2: The Writer (`write-tweets`)**
 1. Receives `ExecutionPlan` and Notion Idea page ID.
 2. Loads few-shot voice samples from `src/data/creator-voice-samples.json` (committed, reviewed production samples). `.tmp/creator-voice-samples.json` is only a regeneration/export artifact.
 3. Calls `buildWriterPrompt()` from `voice-dna.ts` which:
    - Maps `voiceMode` to a creator handle (Builder-Retrospective → Dreyshq, Tool-Curator → Sharbel, Case-Study → Zaimiri).
-   - Selects the top 5 matching samples by engagement.
-   - Injects mode-specific instructions (e.g., Sharbel: "Bookmark this" CTA allowed, Zaimiri: lowercase openers and "bro" allowed).
-   - Injects talking points, step-by-step process (threads/articles), source facts, numbers, tools, examples, mechanism, and anti-invention guardrails.
-   - Dynamically switches output format based on `valueBrief.format`: Short, Mid-length, Thread, or Article.
+   - Selects the top 5 matching samples by engagement scoring.
+   - Injects mode-specific instructions, talking points, step-by-step process, source facts, and anti-invention guardrails.
+   - Dynamically switches output format: Short, Mid-length, Thread, or Article.
 4. Generates via **TokenRouter** `x-ai/grok-4.3` at temperature `0.7`. Validates depth; retries once if thin.
 5. Updates the Notion Idea with the draft:
    - First 2000 chars in `"Draft Tweet"` property.
-   - Full un-truncated text in a toggle block (`▶️ Full Draft Tweet`).
+   - Full un-truncated text in a toggle block (`▶️ Draft — {format}`).
    - Auto-sets status to `"📝 Drafted"`.
 
 
@@ -229,10 +226,10 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 | Layer | Control | Why |
 | :--- | :--- | :--- |
 | **Apify IG Transcripts** | Max 3 concurrent actors + 2s cooldown between chunks | Prevents 8192MB free-tier memory exhaustion (was causing 402 errors) |
-| **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` and `maxDuration: 300s` | Prevents 300+ parallel tasks flooding Notion (3 req/s limit) and OpenRouter, with 5 min safety buffer |
+| **process-content tasks** | Trigger.dev `queue.concurrencyLimit: 5` and `maxDuration: 300s` | Prevents 300+ parallel tasks flooding Notion (3 req/s) and TokenRouter, with 5 min safety buffer |
 | **Trigger.dev Batch Chunking** | Chunk raw content items into groups of 15 with 2s cooldown | Prevents parent orchestrator from hanging indefinitely in "waiting" state |
-| **OpenAI/OpenRouter Client** | 120s client-side request timeout | Prevents tasks from hanging indefinitely on slow API requests, increased from 60s to handle large source-study workloads |
-| **LLM Synthesis Parallelization** | Concurrency limit of 3 | Processes 3 active niche groups concurrently to prevent network/connection saturation while speeding up the pipeline |
+| **TokenRouter strategist** | Streaming + `strategistTimeoutMs: 300000`; timeout retry halves transcript budget | Keeps M3 gateway alive during `<think>`; recovers from long comprehensions |
+| **Draft pipeline** | Serial per-source comprehension; `maxSourcesPerRun: 10` | Avoids saturating MiniMax/Notion; prioritizes deep YT/IG |
 | **Notion batch reads** | `getScoutedContentByIds` chunks into batches of 5 + 350ms delay | Stays under Notion's 3 req/s rate limit |
 | **Notion writes throttle** | 350ms delay between consecutive `createIdea` requests | Strictly prevents Notion 429 rate limit errors when writing newly drafted ideas |
 | **Inter-platform cooldowns** | 5s pause between YT→IG and IG→Twitter phases | Lets Apify actors release memory before next phase |
@@ -250,8 +247,9 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 - **Self-Healing JSON Parse**: Added a regex-based `repairJson(str)` helper that heals minor LLM JSON formatting omissions (such as missing commas on newlines).
 - **Scraper Failures Skip `Last Checked` Update:** If a scraper throws an error (Apify 402, network timeout, etc.), that creator is caught by the per-creator `try/catch` and excluded from `processedCreatorIds`. This ensures failed creators are retried on the next run rather than silently skipped.
 - **Notion Relation Failures:** Relation linking during `createIdea` can sometimes error with `validation_error` or `object_not_found`. The client catches this error and automatically retries the insert without the `Inspired By` relations to keep task executions green.
-- **Twitter API Rate Limits & Indexing:** We pull all recent tweets and programmatically filter them using `MIN_VIEWS` (default 1000) rather than using search parameter filters which suffer from search index delay. We do not apply bookmark filtering as high-signal viral tweets often have 0 bookmarks.
+- **Twitter API Rate Limits & Indexing:** We pull recent tweets and programmatically filter with `TWITTER_MIN_VIEWS` (default **3000**) rather than search-parameter filters (index delay). Scout path does not require bookmarks; viral research path still uses bookmarks >= 10.
 - **Apify Token Rotation:** If the main `APIFY_TOKEN` fails or runs out of credits, the system automatically rotates through a failover array of backup tokens (`BACKUP_APIFY_TOKEN` through `BACKUP_APIFY_TOKEN_4`).
-- **Scraper Constraints:** YouTube limits channel queries to `maxItems: 5`. Instagram reels pulls up to `resultsLimit: 30` per creator, selecting the 5 newest and 5 top-performing (most viewed) reels, transcribing in controlled batches of 3.
-- **Title Formatting Rules:** The LLM is prohibited from generating template titles (e.g. *"The [Adjective] [Noun] Framework"* or *"The X Arbitrage"*). Every title must contain a specific name, metric, or monetary value (e.g., *"$0 Technical Co-Founder"*).
-- **OpenRouter API Key:** Must be set in both `.env` (local) AND Trigger.dev production environment variables. Missing this key causes silent content filtering failures (LLM returns 401, caught by try/catch, content marked as "filtered").
+- **Scraper Constraints:** YouTube `maxItems: 5` per channel. Instagram fetches ~30 metadata then keeps **5** reels (~3 newest + ~2 top-viewed); transcripts in batches of 3 concurrent actors.
+- **Title Formatting Rules:** Prefer concrete titles (name, metric, tool). Multi-format ideas get a format suffix (`— Thread`, `— Article`) via `formatIdeaTitleWithFormat`.
+- **TOKENROUTER_API_KEY:** Required for Idea Scout filter, strategist, and writer. Set in `.env` and Trigger.dev production. Missing key causes silent LLM failures (caught; content filtered or drafts empty).
+- **Variation Sets / multi-format:** Up to 2 formats per rich source share one `Variation Set` property and sibling page links.

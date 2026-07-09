@@ -1,6 +1,6 @@
-# Ultimate Creator Brain — Unified Idea Scout Pipeline
+# Ultimate Creator Brain — Unified Idea Scout Pipeline (v4)
 
-An automated agentic content scouting and idea remixing engine. This system monitors target creators across YouTube, Instagram, and X (Twitter), filters out noise using a single-step LLM filter, and remixes relevant concepts with high-performing templates to generate fresh tweet drafts directly inside Notion.
+An automated agentic content scouting and multi-format idea engine. It monitors target creators across YouTube, Instagram, and X (Twitter), filters noise with a guide-oriented LLM pass, then runs a **comprehension-first** two-actor pipeline (**Comprehend → Brainstorm → Plan → Write → Validate**) to produce source-grounded Short, Mid-length, Thread, and Article drafts in Notion — grouped by **Variation Set** when one source yields multiple formats.
 
 ---
 
@@ -39,11 +39,11 @@ The system queries your Notion Workspace to fetch active target accounts to moni
 The scrapers gather recent content. To save API credits, several smart optimization strategies are applied:
 
 * **X (Twitter):** Fetches recent tweets from each creator with a 5.5s throttle between requests.
-  * *Views Filter:* Immediately drops tweets that have **fewer than 1,000 views** to avoid waste.
+  * *Views Filter:* Immediately drops tweets below **`TWITTER_MIN_VIEWS`** (default **3,000**) to avoid waste.
   * *X Article Support:* Detects long-form X Articles (via the `isArticle` flag or URLs containing `/article/`) and queries the TwitterAPI.io `/article` endpoint to retrieve the full article body, bypassing the standard tweet character limits.
-* **YouTube:** Triggers Apify's `streamers/youtube-scraper` to pull the latest video metadata, subtitles, and transcripts.
-* **Instagram:** Triggers Apify's `apify/instagram-reel-scraper` on the newest 30 reels.
-  * *Virality Strategy:* Selects the **5 newest reels** (freshness) plus the **5 highest-viewed reels** (virality) from the rest, then transcribes them in **chunks of 3 concurrent actors** (with 2s cooldown between chunks) using `apple_yang/instagram-transcripts-scraper`.
+* **YouTube:** Triggers Apify's `streamers/youtube-scraper` to pull the latest video metadata, subtitles, and transcripts (newest **5** per channel).
+* **Instagram:** Triggers Apify's `apify/instagram-reel-scraper` with a larger metadata batch (~30), then keeps **`resultsLimit: 5`** per creator (~**3 newest + ~2 top-viewed** for credit control).
+  * *Transcription:* Processes reels in **chunks of 3 concurrent actors** (with 2s cooldown between chunks) using `apple_yang/instagram-transcripts-scraper`.
 * **Inter-Platform Cooldowns:** 5-second pauses between YouTube→Instagram and Instagram→Twitter phases allow Apify actors to release memory before the next phase starts.
 * **Apify Token Rotation:** If the primary Apify API token hits rate limits or runs out of credits, the code automatically rotates through backup credentials (`BACKUP_APIFY_TOKEN`, `BACKUP_APIFY_TOKEN_2`, etc.) and retries.
 * **Pre-Filtering Deduplication:** Before calling expensive transcript scraper actors, the system cross-references URLs against the Notion database to ensure we do not scrape a post we have already processed.
@@ -89,27 +89,24 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 ---
 
 ### Step 5: The Source-First Two-Actor Idea Engine
-The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/Thu/Sun), it immediately dispatches **draft-ideas** with that run's scouted page IDs. **draft-ideas** also runs on a Wed/Fri catch-all cron to draft any unlinked scouted content added manually or outside scout runs. The **Value Strategist** studies one source at a time using MiniMax M3 via TokenRouter to generate a detailed Execution Plan, and the **Writer Actor** turns it into the final tweet, thread, long tweet, or article using Grok 4.3 via TokenRouter.
+The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/Thu/Sun), it immediately dispatches **draft-ideas** with that run's scouted page IDs. **draft-ideas** also runs on a Wed/Fri catch-all cron to draft any **unlinked** scouted content from the past **14 days** (manual/orphaned). The **Value Strategist** studies sources serially using MiniMax M3 via TokenRouter; the **Writer** turns each `ExecutionPlan` into Short / Mid-length / Thread / Article using Grok 4.3 via TokenRouter.
 
-#### Actor 1: The Value Strategist (`draft-ideas`)
-1. **Automated Cleanup**: Archives any existing Idea Bank entries marked as "Rejected", severing their relation to scouted content and freeing it for reuse.
-2. Queries **Scouted Content** from the past 7 days, filtering out entries already linked to generated ideas.
-3. Reads the **Viral Post Library** for patterns rated ⭐⭐⭐⭐ or higher.
-4. Reads the full source context for each page:
-   - `Title`, `Platform`, `URL`, `AI Summary`, `Key Takeaways`, and `Niche`.
-   - Full transcript/source text from the Notion page body toggle when present.
-   - X posts fall back to the full stored title/text plus summary/takeaways when no transcript exists.
-5. Applies **transcript budget** (`src/lib/transcript-cleaner.ts`) before each strategist call:
-   - Deterministic clean for YouTube/Instagram (strip SFX brackets, filler-only lines, consecutive dedupe) — ~0% reduction on dense YT transcripts.
-   - **Head+tail trim** (65/35 split with omission marker) only when cleaned text still exceeds `strategistMaxTranscriptChars` (**30,000** — raised from 20k after measurement showed 22k YT sources need full coverage).
-   - MiniMax M3 calls use **streaming** (`strategistUseStreaming: true`) to prevent TokenRouter gateway idle cutoff during the `<think>` phase.
-6. Processes each source independently through the **Multi-Phase Comprehension Pipeline**:
-   - **Phase 1: Comprehend** — studies the transcript to build structured prose comprehension (intent, overlapping audience, costs of inaction, teachable units).
-   - **Phase 2: Brainstorm** — evaluates teachable units to brainstorm distinct outputs across formats (Article, Thread, Mid-length, Short) and formats primary value bombs.
-   - **Phase 3: Select** — selects 1-2 formats to execute (enforcing format diversity if quality is high).
-   - **Phase 4: Plan** — matches hooks using `hook-matcher.ts` (tokenized keyword matching from the 100 Hook Templates), plans a detailed outline (section by section), structures the viral tweet body layout, and extracts **Talking Points** (3–7 publishable bullets) plus **Step by Step Process** (ordered how-to steps when the source supports it).
-7. Produces a detailed `ExecutionPlan` containing outline details, hook templates, talking points, step-by-step process, source evidence, and audience mapping.
-8. Writes the plan details to the Ideas Bank (status: 💭 Raw) in clean, readable markdown headers, and dispatches the Writer asynchronously.
+#### Actor 1: The Value Strategist (`draft-ideas`, maxDuration **3600s**)
+1. **Automated Cleanup**: Archives Idea Bank entries marked `"Rejected"`, severing relations so scouted sources can be reused.
+2. Loads context:
+   - Targeted IDs from scout dispatch, **or** unlinked Scouted Content from the past **14 days**.
+   - Top **30** Viral Post Library patterns rated ⭐⭐⭐⭐+.
+   - Past **30 days** of Idea titles (soft dedup) and **14-day** pillar distribution (underserved balance).
+3. **Prioritizes sources**: all YouTube/Instagram by raw source depth first, then caps X to ~30% of the YT/IG count; applies `maxSourcesPerRun` (**10**).
+4. Skips sources thinner than **300** chars of raw depth.
+5. **Resolves pillar** (`pillar-selection.ts`): single Niche tag → use it; multiple active tags → pick the underserved pillar (fewest recent Ideas); frozen Web3/Psychology → skip/Unknown.
+6. Applies **transcript budget** (`transcript-cleaner.ts`):
+   - Deterministic YT/IG clean; **head+tail** only if still over `strategistMaxTranscriptChars` (**30,000**).
+   - MiniMax streaming (`strategistUseStreaming: true`) to avoid TokenRouter idle cutoff during `<think>`.
+7. **Multi-phase comprehension** per source:
+   - Comprehend → Brainstorm → Select (up to **2** formats when fit score ≥ 7) → Plan (`detailedOutline`, `talkingPoints`, `stepByStepProcess`, hook template, viral structure).
+8. **Variation Sets**: shared `Variation Set` label per source batch; titles get format suffixes (`— Thread`); multi-format siblings get preamble + footer links.
+9. Writes Ideas Bank pages (status: 💭 Raw) with structured blocks (Hook/Output visible; strategist brief collapsed), then dispatches Writer async.
 
 #### Actor 2: The Writer (`write-tweets`)
 1. Receives the `ExecutionPlan` (which extends the legacy `ValueBrief` schema) and the Notion Idea page ID, including **Talking Points** and **Step by Step Process** when present.
@@ -121,11 +118,11 @@ The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/T
 4. If drafting an **Article**, loads 3 full, untruncated articles from `src/data/article-examples.json` as few-shot reference inputs.
 5. Uses the outline, hook template, source facts, numbers, tools, examples, mechanism, and do-not-invent guardrails.
 6. Generates the draft using **Grok-4.3** (`x-ai/grok-4.3` via TokenRouter) at temperature 0.7.
-7. Validates draft depth:
-   - **Article**: Validates target is >= 1200 words (target: 1500–3000 words) with >= 4 named `##` sections.
-   - **Thread**: Validates target is >= 8 posts (target: 8–15 posts) with progressive reasoning.
-   - Retries generation once with an expansion hint if validation fails.
-8. Updates the Notion Idea with the final draft and sets the status to 📝 Drafted.
+7. Validates draft depth (`draft-validator.ts`):
+   - **Article**: >= 1200 words (target 1500–3000) with >= 4 named `##` sections.
+   - **Thread**: >= 8 posts (target 8–15) with progressive reasoning.
+   - Retries once with an expansion hint if validation fails.
+8. Updates the Notion Idea: `Draft Tweet` property (first 2k chars), full body in **`▶️ Draft — {format}`** toggle, status → **📝 Drafted**.
 
 #### Example of a Remix:
 * **Scouted Input:** A transcript about using Claude Code to build static websites.
@@ -160,22 +157,25 @@ The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/T
 
 ### Step 6: Write to "Ideas Bank" Database
 The generated drafts are written directly to the **Ideas Bank** database.
-* **Two-Phase Write**: The Value Strategist creates the Idea page (status: 💭 Raw) with the source-grounded ExecutionPlan metadata. The Writer Actor then updates the same page with the finished draft (status: 📝 Drafted).
-* **Source-Grounded Notes**: The Idea page body is written in clean, human-readable markdown headers (e.g., What This Source Is About, Outline, Talking Points, Step by Step Process, Hook, Key Source Details, etc.) to give a clean user interface without raw JSON dumps or escape characters.
-* **Ready-to-Post Drafts**: Each idea includes a full, ready-to-post tweet or article draft styled according to your custom **Voice DNA Profile** with three distinct voice modes mapped to real creator examples.
-  * *Plain-Language Rule:* Drafts should read like a smart builder explaining it to a friend: simple grammar, short sentences, niche-native terms when useful, and no fake-smart abstractions like "operational layer" or "signal extraction workflow".
-  * *Bypassing Notion's 2,000 Character Limit:* The first 2,000 characters of the draft are stored in the `"Draft Tweet"` database page property for a quick preview, while the **entire, un-truncated draft** is placed inside a collapsible toggle block (`▶️ Full Draft Tweet`) inside the page body.
-* **Deterministic Source Tracking**: Each draft links back to its single scouted catalyst page by using the source page ID directly from Notion.
-* **Robust Pillar Mapping**: Generated pillars are passed through a validation check (`matchPillar()` in `src/lib/pillar-utils.ts`). It performs exact match, fuzzy substring checks, and custom heuristics to match the AI output with one of the 8 active pillars, preventing write validation errors or silent fallback to "Unknown".
-* **Error Prevention**: If the relation schema has changed or is missing, the script catches the error and saves the idea anyway, preventing data loss.
+* **Two-Phase Write**: Strategist creates the page (status: 💭 Raw) with ExecutionPlan metadata and structured blocks. Writer updates the same page with the finished draft (status: 📝 Drafted).
+* **Page layout**: optional Variation Set preamble → **Hook + Output** (visible) → collapsed strategist brief (comprehension, outline, talking points, steps, gems) → **`▶️ Draft — {format}`** after write.
+* **Variation Sets**: Multi-format outputs from one scouted source share a `Variation Set` property and cross-link in the page body.
+* **Ready-to-Post Drafts**: Voice DNA modes map to real creators (Builder-Retrospective → Dreyshq, Tool-Curator → Sharbel, Case-Study → Zaimiri).
+  * *Plain-Language Rule:* Smart-builder voice — short sentences, niche-native terms when useful, no fake-smart abstractions.
+  * *2,000 char limit bypass:* first 2k in `"Draft Tweet"` property; full text in the format-named draft toggle.
+* **Deterministic Source Tracking**: `Inspired By (Scouted)` uses the source page ID from Notion.
+* **Pillar Mapping**: `resolvePrimaryPillar` + `matchPillar` / `filterCategoryList` keep categories on the 8 active pillars.
+* **Error Prevention**: Relation validation failures retry without relations so ideas are never lost.
 
 ---
 
 ### Operational Notes / Known Failure Modes
 * **Bare drafts / thin outlines**: Usually means the Strategist saw a truncated transcript. Confirm the Scouted Content page has `▶️ Full Transcript` in the body and that `draft-ideas` logs show full `rawSourceText` depth. Run `npm run measure:transcripts` to validate cleaning reduction and head+tail needs against live Scouted Content.
-* **Raw Ideas Need Investigation**: A page stuck in 💭 Raw usually means the Writer task has not finished or failed after dispatch. Check Trigger.dev task logs for `write-tweets` and inspect the outline or plan details in the Idea page body.
+* **Raw Ideas Need Investigation**: A page stuck in 💭 Raw usually means the Writer task has not finished or failed after dispatch. Check Trigger.dev task logs for `write-tweets` and inspect the strategist brief toggle in the Idea page body.
+* **Variation Sets**: Multi-format ideas share a `Variation Set` property; if siblings look disconnected, check that `appendVariationSiblingFooters` ran after multi-format creates.
 * **Voice Sample Source of Truth**: Production Writer prompts use `src/data/creator-voice-samples.json`. `.tmp/creator-voice-samples.json` is only a regeneration/export artifact and is not deployed.
 * **Frozen Pillars**: Web3/Psychology records remain in Notion for history, but new matching, drafting, and category writes should resolve those themes to `Unknown` or skip them.
+* **Source cap**: Only `maxSourcesPerRun` (10) sources are drafted per run after platform weighting — deep YT/IG first.
 
 ---
 
@@ -213,18 +213,20 @@ These are the exact database IDs used in the codebase.
 #### Ideas Bank DB Schema
 | Property Name | Property Type | Value Description |
 | :--- | :--- | :--- |
-| `Idea` | Title | Compelling title summarizing the post concept |
+| `Idea` | Title | Working title; often format-suffixed (e.g. `Claude Code Stack — Thread`) |
 | `Source` | Select | Hardcoded to `"Idea Scout"` |
 | `Category` | Multi-select | Maps to the matched content pillar(s) |
-| `Hook Angle` | Rich text | Breakdown of the hook psychology |
+| `Hook Angle` | Rich text | Breakdown of the hook psychology / filled hook |
 | `Why it works` | Rich text | Human psychology driver behind the concept |
-| `Status` | Select | Defaults to `"💭 Raw"` |
+| `Status` | Select | Defaults to `"💭 Raw"`; Writer sets `"📝 Drafted"`; user may set `"Rejected"` |
 | `Priority` | Select | AI priority selection (`🔥 Hot`, `💡 Good`, `📝 Maybe`) |
-| `Format Idea` | Select | Suggests structure (`Short`, `Thread`, `Video`) |
+| `Format Idea` | Select | `Short`, `Mid-length`, `Thread`, `Article`, `Video` |
+| `Variation Set` | Rich text | Shared label grouping multi-format ideas from one scouted source |
 | `Steal-able Pattern`| Rich text | Copied from the Viral Post Library pattern template |
 | `Tweet Structure` | Rich text | Copied from the Viral Post Library structure template |
-| `Draft Tweet` | Rich text | Ready-to-post draft tweet matching Voice DNA (first 2,000 characters) |
+| `Draft Tweet` | Rich text | Draft preview (first 2,000 characters); full text in `▶️ Draft — {format}` toggle |
 | `Inspired By (Scouted)` | Relation | Link back to the Scouted Content database entry |
+| `Inspired By (Library)` | Relation | Optional viral library template |
 
 #### Scouted Content DB Schema
 | Property Name | Property Type | Value Description |
@@ -256,29 +258,34 @@ src/
 │   └── viral-hook-templates.json    — 100 parsed hook templates.
 │
 ├── lib/
-│   ├── apify.ts                     — Controls YouTube & Instagram scrapers, handles token rotation.
-│   ├── content-intelligence.ts      — Types and schemas for the multi-stage strategist pipeline.
-│   ├── draft-validator.ts           — Depth validation gate for writer drafts (word counts and section counts).
-│   ├── hook-matcher.ts              — Tokenizes and matches templates from the 100 Viral Hooks library.
-│   ├── idea-scout-config.ts         — Central configuration (strategistMaxTranscriptChars: 30k, strategistUseStreaming, timeouts).
-│   ├── transcript-cleaner.ts      — Deterministic YT/IG clean, head+tail budget for Strategist, scout Pass 1 body prep.
-│   ├── notion.ts                    — Handles all database reads/writes, transcript toggle storage, and idea updates.
-│   ├── twitter.ts                   — Controls TwitterAPI.io requests and views filters.
-│   ├── llm.ts                       — TokenRouter client for MiniMax M3 and Grok 4.3; also houses legacy OpenRouter.
-│   ├── voice-dna.ts                 — Voice DNA prompts, ExecutionPlan type, and buildWriterPrompt().
-│   ├── pillar-utils.ts              — Content pillar alias mapping, fuzzy matching, and category filtering.
-│   └── constants.ts                 — Stores Notion database IDs, source IDs, and content pillars list.
+│   ├── apify.ts                     — YouTube & Instagram scrapers + Apify token rotation.
+│   ├── content-intelligence.ts      — Schemas for multi-stage strategist pipeline.
+│   ├── draft-validator.ts           — Writer depth gates (words, sections, posts).
+│   ├── hook-matcher.ts              — Matches templates from the 100 Viral Hooks library.
+│   ├── idea-page-blocks.ts          — Ideas Bank page layout (Hook/Output + strategist brief).
+│   ├── idea-scout-config.ts         — Caps/budgets (30k transcript, maxSourcesPerRun: 10, streaming).
+│   ├── idea-variations.ts           — Variation Set labels, format title suffixes, preambles.
+│   ├── transcript-cleaner.ts        — YT/IG clean + head+tail budget; scout Pass 1 body prep.
+│   ├── notion-markdown-blocks.ts    — Markdown → native Notion blocks.
+│   ├── notion.ts                    — DB reads/writes, transcripts, ideas, variation footers.
+│   ├── twitter.ts                   — TwitterAPI.io client + views filter.
+│   ├── llm.ts                       — TokenRouter (M3/Grok) + legacy OpenRouter helpers.
+│   ├── voice-dna.ts                 — ExecutionPlan, voice modes, buildWriterPrompt().
+│   ├── pillar-selection.ts          — Underserved multi-tag pillar routing.
+│   ├── pillar-utils.ts              — Alias map, fuzzy match, filterCategoryList.
+│   ├── scout-analysis.ts            — Scout Pass 1 analysis helpers.
+│   └── constants.ts                 — Notion IDs, pillars, Twitter thresholds.
 │
 └── trigger/
     ├── idea-scout/
-    │   ├── scout-content.ts         — Orchestrator. Fetches creators and starts scrapers.
-    │   ├── process-content.ts       — Filters content relevance and writes to Scouted Content.
-    │   ├── comprehend-source.ts     — VALUE STRATEGIST: Multi-phase strategist comprehension planner.
-    │   ├── draft-ideas.ts           — VALUE STRATEGIST: Queries prioritized content, executes planner, and dispatches the writer.
-    │   └── write-tweets.ts          — WRITER ACTOR: Drafts source-grounded long-form and short-form drafts via Grok-4.3.
+    │   ├── scout-content.ts         — Mon/Thu/Sun orchestrator + scrapers + draft dispatch.
+    │   ├── process-content.ts       — Relevance filter + summary → Scouted Content.
+    │   ├── comprehend-source.ts     — Multi-phase strategist (Comprehend → Plan).
+    │   ├── draft-ideas.ts           — Prioritize sources, Variation Sets, dispatch Writer.
+    │   └── write-tweets.ts          — Grok writer + validation → 📝 Drafted.
     │
     └── viral-library/
-        └── research-tweets.ts       — Ported from n8n. Scrapes & analyzes top tweets to populate the Viral Post Library.
+        └── research-tweets.ts       — Manual Viral Post Library research (from n8n port).
 ```
 
 ---
@@ -288,10 +295,10 @@ The system uses the following task registrations in Trigger.dev:
 
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency | Model |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `scout-content` | `schedules.task` | Mon/Thu/Sun 3:30 AM UTC (`30 3 * * 1,4,0`) | 14400 seconds (4 hours) | 1 | — |
+| `scout-content` | `schedules.task` | Mon/Thu/Sun 3:30 AM UTC (`30 3 * * 0,1,4`) | 14400 seconds (4 hours) | 1 | — |
 | `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) | `MiniMax-M3` (TokenRouter) |
-| `draft-ideas` | `schedules.task` | Triggered by `scout-content` (immediate) + Wed/Fri 4:30 AM UTC catch-all (`30 4 * * 3,5`) | 900 seconds | 1 | `MiniMax-M3` (TokenRouter) |
-| `write-tweets` | `task` | Triggered by `draft-ideas` | 600 seconds (10 minutes) | — | `x-ai/grok-4.3` (TokenRouter) |
+| `draft-ideas` | `schedules.task` | Triggered by `scout-content` (immediate) + Wed/Fri 4:30 AM UTC catch-all (`30 4 * * 3,5`) | **3600 seconds (1 hour)** | 1 | `MiniMax-M3` (TokenRouter, streaming) |
+| `write-tweets` | `task` | Triggered by `draft-ideas` | 600 seconds (10 minutes) | — | `x-ai/grok-4.3` (TokenRouter, temp 0.7) |
 | `research-tweets` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 | `MiniMax-M3` (TokenRouter) |
 
 ---
@@ -310,8 +317,9 @@ TOKENROUTER_API_KEY=tr-your-key-here
 OPENROUTER_API_KEY=sk-or-your-key
 OPENROUTER_MODEL=qwen/qwen3.6-plus
 
-# X (Twitter) Scraper wrapper
+# X (Twitter) Scraper wrapper (either key works)
 TWITTER_API_KEY=your-twitterapi-io-key
+BACKUP_TWITTER_API_KEY=backup-twitterapi-io-key
 TWITTER_MIN_VIEWS=3000
 
 # Apify Scraper Keys (Rotates automatically to share credit loads)
@@ -334,7 +342,7 @@ TRIGGER_ENV=dev
    - `NOTION_API_KEY`
    - `TOKENROUTER_API_KEY` ⚠️ **Critical** — missing this causes strategist and writer failures.
    - `APIFY_TOKEN` + `BACKUP_APIFY_TOKEN` through `BACKUP_APIFY_TOKEN_4`
-   - `BACKUP_TWITTER_API_KEY`
+   - `TWITTER_API_KEY` and/or `BACKUP_TWITTER_API_KEY`
    - `TWITTER_MIN_VIEWS` (default: `3000`)
 2. **Run Deploy Command:** Run this in your terminal to sync your workers to production:
    ```bash
