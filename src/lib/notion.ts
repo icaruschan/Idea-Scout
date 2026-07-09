@@ -1,6 +1,7 @@
 import { Client } from "@notionhq/client";
 import dotenv from "dotenv";
 import { NOTION_DATABASE_IDS, NOTION_DATA_SOURCE_IDS } from "./constants";
+import { buildVariationSiblingFooter } from "./idea-variations";
 import { filterCategoryList } from "./pillar-utils";
 import {
   parseScoutAnalysisFromPageBody,
@@ -24,6 +25,8 @@ export interface CreatorEntry {
 export interface CreateIdeaOptions {
   priority?: "🔥 Hot" | "💡 Good" | "📝 Maybe";
   formatIdea?: "Short" | "Mid-length" | "Thread" | "Article" | "Video";
+  /** Shared group label for format variations from the same scouted source. */
+  variationSet?: string;
   inspiredByLibraryId?: string;
   inspiredByScoutedIds?: string[];
   stealablePattern?: string;
@@ -913,6 +916,13 @@ export async function createIdea(
     if (options.formatIdea) {
       properties["Format Idea"] = { select: { name: options.formatIdea } };
     }
+    if (options.variationSet) {
+      properties["Variation Set"] = {
+        rich_text: [
+          { text: { content: options.variationSet.substring(0, 2000) } },
+        ],
+      };
+    }
     if (options.stealablePattern) {
       properties["Steal-able Pattern"] = {
         rich_text: [
@@ -1045,6 +1055,27 @@ export async function createIdea(
   } catch (error) {
     console.error("Error creating Idea in Notion:", error);
     throw error;
+  }
+}
+
+/** Append cross-links between format variations that share a Variation Set. */
+export async function appendVariationSiblingFooters(
+  variationSet: string,
+  variations: Array<{ pageId: string; format: string; displayTitle: string }>,
+): Promise<void> {
+  if (variations.length < 2) return;
+
+  for (const current of variations) {
+    const footer = buildVariationSiblingFooter(
+      variationSet,
+      current.pageId,
+      variations,
+    );
+    if (!footer) continue;
+    await appendBlocksInBatches(
+      current.pageId,
+      splitIntoParagraphBlocks(footer),
+    );
   }
 }
 

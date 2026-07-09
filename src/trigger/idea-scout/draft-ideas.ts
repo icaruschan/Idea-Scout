@@ -1,6 +1,11 @@
 import { task, tasks, schedules } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
+import {
+  buildVariationDraftEntries,
+  buildVariationPreamble,
+  buildVariationSetLabel,
+} from "../../lib/idea-variations";
 import { resolvePrimaryPillar } from "../../lib/pillar-selection";
 import { ExecutionPlan } from "../../lib/voice-dna";
 import { runComprehensionPipeline } from "./comprehend-source";
@@ -11,6 +16,7 @@ import {
   getRecentIdeaTitles,
   getPillarDistribution,
   createIdea,
+  appendVariationSiblingFooters,
   cleanRejectedIdeas,
   getRawSourceDepth,
   CreateIdeaOptions,
@@ -164,21 +170,56 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
         continue;
       }
 
-      for (const plan of executionPlans) {
-        if (
-          existingTitles.some(
-            (t) =>
-              t.toLowerCase() === plan.ideaTitle.toLowerCase() ||
-              t.toLowerCase() === plan.selectedAngle.toLowerCase(),
-          )
-        ) {
+      const plansToCreate = executionPlans.filter((plan) => {
+        const isDuplicate = existingTitles.some(
+          (t) =>
+            t.toLowerCase() === plan.ideaTitle.toLowerCase() ||
+            t.toLowerCase() === plan.selectedAngle.toLowerCase(),
+        );
+        if (isDuplicate) {
           console.log(`⏭️ Skipping duplicate angle: ${plan.ideaTitle}`);
-          continue;
         }
+        return !isDuplicate;
+      });
 
-        const rawData = buildIdeaPageRawData(plan);
+      if (plansToCreate.length === 0) continue;
+
+      const variationSet = buildVariationSetLabel(source.title);
+      const draftEntries = buildVariationDraftEntries(plansToCreate);
+      const createdVariations: Array<{
+        pageId: string;
+        format: string;
+        displayTitle: string;
+      }> = [];
+
+      console.log(
+        `📦 Variation set "${variationSet}" → ${draftEntries.length} format(s)`,
+      );
+
+      for (let i = 0; i < draftEntries.length; i++) {
+        const { plan, displayTitle } = draftEntries[i];
+        const siblings = draftEntries
+          .filter((_, j) => j !== i)
+          .map((entry) => ({
+            format: entry.plan.format,
+            displayTitle: entry.displayTitle,
+          }));
+
+        const rawData = [
+          buildVariationPreamble({
+            variationSet,
+            format: plan.format,
+            index: i + 1,
+            total: draftEntries.length,
+            sourceTitle: source.title,
+            sourceUrl: source.url,
+            siblings,
+          }),
+          buildIdeaPageRawData(plan),
+        ].join("\n");
+
         const notionIdeaId = await createIdea(
-          plan.ideaTitle,
+          displayTitle,
           "Idea Scout",
           plan.pillar,
           plan.hookFilledExample || plan.selectedAngle,
@@ -186,6 +227,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
           {
             priority: plan.priority || "💡 Good",
             formatIdea: plan.format,
+            variationSet,
             stealablePattern: plan.stealablePattern,
             tweetStructure: plan.viralTweetStructure || plan.suggestedStructure,
             inspiredByScoutedIds: [plan.sourcePageId],
@@ -194,14 +236,21 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
           },
         );
 
+        createdVariations.push({
+          pageId: notionIdeaId,
+          format: plan.format,
+          displayTitle,
+        });
+
         ideasCreated++;
         pillarCounts[plan.pillar] = (pillarCounts[plan.pillar] || 0) + 1;
         console.log(
-          `💡 Created ${plan.format} idea "${plan.ideaTitle}" from "${source.title.substring(0, 60)}"`,
+          `💡 Created ${plan.format} idea "${displayTitle}" from "${source.title.substring(0, 60)}"`,
         );
 
         existingTitles.push(plan.ideaTitle);
         existingTitles.push(plan.selectedAngle);
+        existingTitles.push(displayTitle);
 
         await tasks.trigger("write-tweets", {
           notionIdeaId,
@@ -213,6 +262,13 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
         );
 
         await wait(350);
+      }
+
+      if (createdVariations.length > 1) {
+        await appendVariationSiblingFooters(variationSet, createdVariations);
+        console.log(
+          `🔗 Linked ${createdVariations.length} sibling variations in "${variationSet}"`,
+        );
       }
     } catch (err: any) {
       console.error(

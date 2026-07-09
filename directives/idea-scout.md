@@ -128,6 +128,8 @@ Triggered two ways (hybrid):
     │      Phase 4 PLAN — detailedOutline, talkingPoints (3–7 bullets), stepByStepProcess (ordered how-to), hook template, viral tweetStructure
     │      Output: ExecutionPlan for writer
     ├── 6. Sequentially write ExecutionPlans to Ideas Bank (status: 💭 Raw) with 350ms throttle
+    │      Shared `Variation Set` label per source batch; idea titles suffixed with format (e.g. `— Thread`)
+    │      Page preamble + sibling Notion links when multiple formats are drafted from one source
     └── 7. Dispatch write-tweets task for each ExecutionPlan
 
 Triggered by draft-ideas (async)
@@ -216,6 +218,7 @@ The synthesis engine runs as a two-actor pipeline:
 - **Voice samples:** Production reads from `src/data/creator-voice-samples.json`. Regeneration scripts write to `.tmp/creator-voice-samples.json`; review and sanitize that output before promoting it into `src/data`.
 - **Frozen pillars:** Web3 and Psychology remain valid historical labels in Notion, but new matching, drafting, and category writes must ignore them or resolve them to `Unknown`.
 - **Async Writer behavior:** `draft-ideas` does not wait for Writer completion. This is intentional; quality comes from the full source handoff, while final draft completion is handled by the child Writer task.
+- **Production run polling:** Manual trigger scripts (`trigger-scout.ts`, `trigger-draft.ts`) set `TRIGGER_SECRET_KEY` from `TRIGGER_PRODUCTION_KEY`. Local status polling must use the same key path; `scripts/check-status.ts` falls back to `TRIGGER_PRODUCTION_KEY` before `TRIGGER_DEVELOPMENT_KEY` to avoid false 404s when polling production run IDs.
 
 ---
 
