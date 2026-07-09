@@ -2,6 +2,10 @@ import { Client } from "@notionhq/client";
 import dotenv from "dotenv";
 import { NOTION_DATABASE_IDS, NOTION_DATA_SOURCE_IDS } from "./constants";
 import { buildVariationSiblingFooter } from "./idea-variations";
+import {
+  markdownToNotionBlocks,
+  NotionBlock,
+} from "./notion-markdown-blocks";
 import { filterCategoryList } from "./pillar-utils";
 import {
   parseScoutAnalysisFromPageBody,
@@ -35,6 +39,10 @@ export interface CreateIdeaOptions {
   draftTweet?: string;
   /** When false, draft is saved but Status stays 💭 Raw (depth-gate failures). Default true. */
   promoteToDrafted?: boolean;
+  /** Pre-built Notion blocks for the visible top of the idea page. */
+  pageTopBlocks?: NotionBlock[];
+  /** Markdown for the collapsed strategist / thought-process toggle. */
+  strategistBriefMarkdown?: string;
 }
 
 export interface ScoutedContentForDraft {
@@ -314,6 +322,35 @@ async function appendBlocksInBatches(pageId: string, blocks: any[]) {
     if (i + batchSize < blocks.length) {
       await new Promise((r) => setTimeout(r, 350));
     }
+  }
+}
+
+/** Create a collapsed toggle and append formatted markdown blocks inside it. */
+export async function appendCollapsedToggle(
+  pageId: string,
+  title: string,
+  markdown: string,
+): Promise<void> {
+  const label = title.substring(0, 2000);
+  const toggleResponse: any = await notion.blocks.children.append({
+    block_id: pageId,
+    children: [
+      {
+        object: "block" as const,
+        type: "toggle" as const,
+        toggle: {
+          rich_text: [{ text: { content: label } }],
+        },
+      },
+    ],
+  });
+
+  const toggleId = toggleResponse.results?.[0]?.id;
+  if (!toggleId) return;
+
+  const innerBlocks = markdownToNotionBlocks(markdown);
+  if (innerBlocks.length > 0) {
+    await appendBlocksInBatches(toggleId, innerBlocks);
   }
 }
 
@@ -970,37 +1007,35 @@ export async function createIdea(
     const pageBody = {
       parent: { database_id: NOTION_DATABASE_IDS.IDEAS_BANK },
       properties,
-      children: [
-        {
-          object: "block" as const,
-          type: "heading_2" as const,
-          heading_2: {
-            rich_text: [{ text: { content: "🔍 Source Content" } }],
-          },
-        },
-      ],
     };
 
-    const pageBodyBlocks = [
-      ...splitIntoParagraphBlocks(rawData),
-      // Draft Tweet section (if provided)
-      ...(options.draftTweet ? [
-        {
-          object: "block" as const,
-          type: "toggle" as const,
-          toggle: {
-            rich_text: [{ text: { content: "▶️ Full Draft Tweet" } }],
-            children: splitIntoParagraphBlocks(options.draftTweet),
-          },
-        },
-      ] : []),
-    ];
+    const topBlocks =
+      options.pageTopBlocks ??
+      (rawData.trim() ? markdownToNotionBlocks(rawData) : []);
 
     try {
       const response = await notion.pages.create(pageBody);
-      if (pageBodyBlocks.length > 0) {
-        await appendBlocksInBatches(response.id, pageBodyBlocks);
+
+      if (topBlocks.length > 0) {
+        await appendBlocksInBatches(response.id, topBlocks);
       }
+
+      if (options.strategistBriefMarkdown?.trim()) {
+        await appendCollapsedToggle(
+          response.id,
+          "📋 Thought process & strategist brief",
+          options.strategistBriefMarkdown,
+        );
+      }
+
+      if (options.draftTweet?.trim()) {
+        await appendCollapsedToggle(
+          response.id,
+          `▶️ Draft — ${options.formatIdea || "Draft"}`,
+          options.draftTweet,
+        );
+      }
+
       return response.id;
     } catch (error: any) {
       const message = String(error?.message || "");
@@ -1022,8 +1057,15 @@ export async function createIdea(
             }
             applyWhyItWorksProperty(retryBody.properties, options.whyItWorks, propertyKey);
             const response = await notion.pages.create(retryBody);
-            if (pageBodyBlocks.length > 0) {
-              await appendBlocksInBatches(response.id, pageBodyBlocks);
+            if (topBlocks.length > 0) {
+              await appendBlocksInBatches(response.id, topBlocks);
+            }
+            if (options.strategistBriefMarkdown?.trim()) {
+              await appendCollapsedToggle(
+                response.id,
+                "📋 Thought process & strategist brief",
+                options.strategistBriefMarkdown,
+              );
             }
             console.log(`Why it works written using property key "${propertyKey}"`);
             return response.id;
@@ -1045,8 +1087,15 @@ export async function createIdea(
         delete pageBody.properties["Inspired By (Library)"];
         delete pageBody.properties["Inspired By (Scouted)"];
         const response = await notion.pages.create(pageBody);
-        if (pageBodyBlocks.length > 0) {
-          await appendBlocksInBatches(response.id, pageBodyBlocks);
+        if (topBlocks.length > 0) {
+          await appendBlocksInBatches(response.id, topBlocks);
+        }
+        if (options.strategistBriefMarkdown?.trim()) {
+          await appendCollapsedToggle(
+            response.id,
+            "📋 Thought process & strategist brief",
+            options.strategistBriefMarkdown,
+          );
         }
         return response.id;
       }
@@ -1072,10 +1121,7 @@ export async function appendVariationSiblingFooters(
       variations,
     );
     if (!footer) continue;
-    await appendBlocksInBatches(
-      current.pageId,
-      splitIntoParagraphBlocks(footer),
-    );
+    await appendBlocksInBatches(current.pageId, markdownToNotionBlocks(footer));
   }
 }
 
@@ -1464,22 +1510,11 @@ export async function updateIdea(pageId: string, updates: Partial<CreateIdeaOpti
     }
 
     if (updates.draftTweet) {
-      const toggleResponse: any = await notion.blocks.children.append({
-        block_id: pageId,
-        children: [
-          {
-            object: "block" as const,
-            type: "toggle" as const,
-            toggle: {
-              rich_text: [{ text: { content: "▶️ Full Draft Tweet" } }],
-            },
-          },
-        ]
-      });
-      const toggleId = toggleResponse.results?.[0]?.id;
-      if (toggleId) {
-        await appendBlocksInBatches(toggleId, splitIntoParagraphBlocks(updates.draftTweet));
-      }
+      await appendCollapsedToggle(
+        pageId,
+        `▶️ Draft — ${updates.formatIdea || "Draft"}`,
+        updates.draftTweet,
+      );
     }
   } catch (error) {
     console.error(`Error updating Idea ${pageId}:`, error);
@@ -1500,7 +1535,7 @@ export async function appendIdeaOperationalNote(pageId: string, title: string, b
           rich_text: [{ text: { content: title.substring(0, 2000) } }],
         },
       },
-      ...splitIntoParagraphBlocks(body),
+      ...markdownToNotionBlocks(body),
     ]);
   } catch (error) {
     console.error(`Error appending operational note to Idea ${pageId}:`, error);

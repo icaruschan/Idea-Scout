@@ -2,6 +2,11 @@ import { task, tasks, schedules } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
 import {
+  buildIdeaPageTopBlocks,
+  buildStrategistBriefMarkdown,
+  buildVisibleIdeaPageMarkdown,
+} from "../../lib/idea-page-blocks";
+import {
   buildVariationDraftEntries,
   buildVariationPreamble,
   buildVariationSetLabel,
@@ -205,29 +210,28 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
             displayTitle: entry.displayTitle,
           }));
 
-        const rawData = [
-          buildVariationPreamble({
-            variationSet,
-            format: plan.format,
-            index: i + 1,
-            total: draftEntries.length,
-            sourceTitle: source.title,
-            sourceUrl: source.url,
-            siblings,
-          }),
-          buildIdeaPageRawData(plan),
-        ].join("\n");
+        const variationMarkdown = buildVariationPreamble({
+          variationSet,
+          format: plan.format,
+          index: i + 1,
+          total: draftEntries.length,
+          sourceTitle: source.title,
+          sourceUrl: source.url,
+          siblings,
+        });
 
         const notionIdeaId = await createIdea(
           displayTitle,
           "Idea Scout",
           plan.pillar,
           plan.hookFilledExample || plan.selectedAngle,
-          rawData,
+          "",
           {
             priority: plan.priority || "💡 Good",
             formatIdea: plan.format,
             variationSet,
+            pageTopBlocks: buildIdeaPageTopBlocks(plan, variationMarkdown),
+            strategistBriefMarkdown: buildStrategistBriefMarkdown(plan),
             stealablePattern: plan.stealablePattern,
             tweetStructure: plan.viralTweetStructure || plan.suggestedStructure,
             inspiredByScoutedIds: [plan.sourcePageId],
@@ -371,60 +375,9 @@ Why it works:
 ${whyItWorksVal}`;
 }
 
+/** @deprecated Use buildVisibleIdeaPageMarkdown + buildStrategistBriefMarkdown */
 export function buildIdeaPageRawData(plan: ExecutionPlan): string {
-  const outlineText =
-    plan.detailedOutline?.map((s, i) => `${i + 1}. ${s.heading} — ${s.purpose}`).join("\n") ||
-    plan.suggestedStructure;
-
-  const gems = plan.mustUseDetails?.slice(0, 8) || [];
-
-  return [
-    `## What This Source Is About`,
-    plan.comprehensionSummary || plan.sourceThesis,
-    ``,
-    `## Who It's For`,
-    `${plan.targetAudience} — ${plan.audiencePain}`,
-    ``,
-    `## Creator Is Doing`,
-    plan.creatorDoing || "See source transcript.",
-    ``,
-    plan.primaryValueBomb
-      ? `## Value Bomb\n${plan.primaryValueBomb.insight} → ${plan.primaryValueBomb.bestFormat}`
-      : "",
-    ``,
-    `## Chosen Output`,
-    `${plan.format} — ${plan.ideaTitle}`,
-    `Angle: ${plan.selectedAngle}`,
-    ``,
-    `## Outline`,
-    outlineText,
-    ``,
-    plan.talkingPoints?.length
-      ? `## Talking Points\n${plan.talkingPoints.map((point) => `- ${point}`).join("\n")}`
-      : "",
-    ``,
-    plan.stepByStepProcess?.length
-      ? `## Step by Step Process\n${plan.stepByStepProcess.map((step) => `- ${step}`).join("\n")}`
-      : "",
-    ``,
-    `## Hook`,
-    plan.hookFilledExample || plan.contentPromise,
-    plan.hookTemplate ? `Template: ${plan.hookTemplate}` : "",
-    ``,
-    `## Packaging`,
-    `Pattern: ${plan.stealablePattern || "Source-grounded guide"}`,
-    plan.viralTweetStructure ? `Structure: ${plan.viralTweetStructure}` : "",
-    ``,
-    `## Key Source Details`,
-    ...gems.map((g) => `- ${g}`),
-    ``,
-    `## Source Link`,
-    plan.sourceUrl ? plan.sourceUrl : plan.sourceTitle,
-    ``,
-    `Voice: ${plan.voiceMode} | Pillar: ${plan.pillar}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  return `${buildStrategistBriefMarkdown(plan)}\n\n${buildVisibleIdeaPageMarkdown(plan)}`;
 }
 
 function formatLines(items: string[]): string {

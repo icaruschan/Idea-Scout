@@ -188,7 +188,7 @@ The synthesis engine runs as a two-actor pipeline:
    - **Brainstorm** — 2-5 format-native outputs; value bombs; up to 2 selected.
    - **Plan** — `detailedOutline`, `talkingPoints` (publishable bullets from transcript gems), `stepByStepProcess` (from `specificSteps` when how-to), hook from `src/data/viral-hook-templates.json`, viral `tweetStructure`. Deterministic fallbacks in `deriveTalkingPoints()` / `deriveStepByStepProcess()` if the model omits them.
    - Produces `ExecutionPlan` (not thin single-pass JSON).
-8. Writes human-readable idea pages to Ideas Bank (headers: What This Source Is About, Outline, Talking Points, Step by Step Process, Hook, Key Source Details — no JSON dump).
+8. Writes structured Ideas Bank pages: Hook + Output visible at top; strategist brief (outline, talking points, steps, gems) in collapsed toggle; writer draft in `▶️ Draft — {format}` toggle with native Notion headings/lists.
 9. Dispatches `write-tweets` per plan.
 
 **Actor 2: The Writer (`write-tweets`)**

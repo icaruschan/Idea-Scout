@@ -1,6 +1,7 @@
 import { generateJSONStrategist } from "../../lib/llm";
 import { getRawSourceDepth, ScoutedContentForDraft } from "../../lib/notion";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
+import { normalizeHookTemplate } from "../../lib/idea-page-blocks";
 import { budgetTranscript } from "../../lib/transcript-cleaner";
 import {
   formatHookCandidates,
@@ -647,7 +648,7 @@ function buildExecutionPlan(
     contentArchetype: comprehension.contentType,
     primaryValueBomb: chosen.primaryValueBomb,
     detailedOutline: outline,
-    hookTemplate: String(raw.hookTemplate || "").trim(),
+    hookTemplate: normalizeHookTemplate(raw.hookTemplate),
     hookFilledExample: String(raw.hookFilledExample || chosen.hookDirection || "").trim(),
     hookRationale: String(raw.hookRationale || "").trim(),
     viralTemplateId: String(raw.viralTemplateId || viralTemplate?.id || "").trim() || undefined,

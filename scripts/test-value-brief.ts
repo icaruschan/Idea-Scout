@@ -1,4 +1,8 @@
-import { buildIdeaPageRawData } from "../src/trigger/idea-scout/draft-ideas";
+import {
+  buildStrategistBriefMarkdown,
+  buildVisibleIdeaPageMarkdown,
+} from "../src/lib/idea-page-blocks";
+import { markdownToNotionBlocks } from "../src/lib/notion-markdown-blocks";
 import {
   validateComprehension,
   normalizeComprehension,
@@ -193,14 +197,20 @@ const steps = deriveStepByStepProcess([], comprehension, "Article");
 assert(steps.length === 3, "Step-by-step derives from comprehension.specificSteps");
 assert(steps[0].startsWith("1."), "Steps are numbered");
 
-const rawData = buildIdeaPageRawData(samplePlan);
-assert(rawData.includes("## What This Source Is About"), "Idea page uses readable headers");
-assert(rawData.includes("## Hook"), "Idea page includes hook section");
-assert(rawData.includes("## Talking Points"), "Idea page includes talking points");
-assert(rawData.includes("## Step by Step Process"), "Idea page includes step-by-step process");
-assert(!rawData.includes("Full ValueBrief JSON"), "Idea page has no JSON dump");
-assert(!rawData.includes("doNotInvent"), "Idea page hides writer-internal fields");
-assert(rawData.includes("$40 Apollo waste"), "Idea page shows key source gems");
+const visible = buildVisibleIdeaPageMarkdown(samplePlan);
+const brief = buildStrategistBriefMarkdown(samplePlan);
+assert(visible.includes("## Hook"), "Visible idea page includes hook section");
+assert(visible.includes("## Draft"), "Visible idea page includes draft placeholder");
+assert(brief.includes("## Talking Points"), "Strategist brief includes talking points");
+assert(brief.includes("## Step by Step Process"), "Strategist brief includes step-by-step process");
+assert(!brief.includes("doNotInvent"), "Strategist brief hides writer-internal fields");
+assert(brief.includes("$40 Apollo waste"), "Strategist brief shows key source gems");
+
+const notionBlocks = markdownToNotionBlocks(brief);
+assert(
+  notionBlocks.some((b) => b.type === "heading_2"),
+  "Strategist brief converts to native Notion heading blocks",
+);
 
 const { userPrompt } = buildWriterPrompt(samplePlan, samplePlan.voiceMode, []);
 assert(userPrompt.includes("TALKING POINTS"), "Writer prompt includes talking points");

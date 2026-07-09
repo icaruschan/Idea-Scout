@@ -120,6 +120,7 @@ export const writeTweets = task({
       console.log(`Updating Notion Idea ${notionIdeaId} with drafted text...`);
       await updateIdea(notionIdeaId, {
         draftTweet: cleanDraft,
+        formatIdea: valueBrief.format,
         promoteToDrafted: validation.passed,
       });
 
