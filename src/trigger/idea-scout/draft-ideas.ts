@@ -1,4 +1,4 @@
-import { task, tasks, schedules } from "@trigger.dev/sdk/v3";
+import { task, tasks } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
 import {
@@ -286,12 +286,10 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
   return { ideasCreated };
 }
 
-// Hybrid scheduling:
-// - scout-content dispatches draft-ideas immediately with scoutedContentIds (Mon/Thu/Sun)
-// - Wed/Fri cron catches manual/orphaned unlinked scouted content (no scout run those days)
-export const draftIdeas = schedules.task({
+// Manual-only entry point, also dispatched by a manually started scout-content run.
+// Run it directly to process manual/orphaned unlinked scouted content.
+export const draftIdeas = task({
   id: "draft-ideas",
-  cron: "30 4 * * 3,5", // Wed/Fri 4:30 AM UTC catch-all backfill
   maxDuration: 3600,
   retry: {
     maxAttempts: 2,

@@ -81,9 +81,9 @@ The filter checks content relevance against these specific domains. If a piece o
 ## 4. Pipeline Architecture & Execution Flow
 
 ```
-Trigger.dev Mon/Thu/Sun Cron
+Trigger.dev Manual Run
 │
-└── scout-content (Runs 3:30 AM UTC Mon/Thu/Sun | maxDuration: 14400s)
+└── scout-content (On-demand only | maxDuration: 14400s)
     ├── 1. Gather active creators (YT: 10, IG: 10, X: 24) sorted by Last Checked (oldest first)
     ├── 2. Scrape content streams (with 5s cooldowns between phases):
     │      ├── YT: Scrapes newest 5 videos (Apify Actor) — sequential per creator
@@ -102,10 +102,9 @@ Trigger.dev Mon/Thu/Sun Cron
     ├── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
     └── 5. Dispatch draft-ideas with this run's `scoutedContentIds` (skipped when no new content was stored)
 
-Triggered two ways (hybrid):
-│   • Immediately by scout-content with this run's scoutedContentIds (Mon/Thu/Sun)
-│   • Catch-all cron Wed/Fri 4:30 AM UTC for unlinked scouted content (past 14 days; manual/orphaned)
-│   • Manual dashboard / trigger-draft.ts also supported
+Triggered two ways (both manual-origin):
+│   • Immediately by a manually started scout-content run with that run's scoutedContentIds
+│   • Direct manual dashboard / trigger-draft.ts run for unlinked scouted content (past 14 days; manual/orphaned)
 │
 └── draft-ideas [VALUE STRATEGIST] (maxDuration: 3600s)
     ├── 1. Clean up rejected ideas (archive to sever relations and free scouted content)

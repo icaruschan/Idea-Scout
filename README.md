@@ -6,7 +6,7 @@ An automated agentic content scouting and multi-format idea engine. It monitors 
 
 ## The Tech Stack
 
-* **Background Orchestrator:** [Trigger.dev v3](https://trigger.dev/) (Runs background cron schedules and concurrent worker tasks).
+* **Background Orchestrator:** [Trigger.dev v3](https://trigger.dev/) (Runs manual workflows and concurrent worker tasks).
 * **Data Sources:** Notion API v5 (Custom-forked client with customized database reading endpoints).
 * **Scraping Tools:** 
   * [Apify API](https://apify.com/) (Extracts YouTube video transcripts and Instagram Reels data).
@@ -89,7 +89,7 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 ---
 
 ### Step 5: The Source-First Two-Actor Idea Engine
-The idea engine uses a **hybrid trigger**: after `scout-content` finishes (Mon/Thu/Sun), it immediately dispatches **draft-ideas** with that run's scouted page IDs. **draft-ideas** also runs on a Wed/Fri catch-all cron to draft any **unlinked** scouted content from the past **14 days** (manual/orphaned). The **Value Strategist** studies sources serially using MiniMax M3 via TokenRouter; the **Writer** turns each `ExecutionPlan` into Short / Mid-length / Thread / Article using Grok 4.3 via TokenRouter.
+The idea engine is **manual-only**: when `scout-content` is started from the Trigger.dev dashboard or API, it immediately dispatches **draft-ideas** with that run's scouted page IDs. **draft-ideas** can also be started directly to draft any **unlinked** scouted content from the past **14 days** (manual/orphaned). The **Value Strategist** studies sources serially using MiniMax M3 via TokenRouter; the **Writer** turns each `ExecutionPlan` into Short / Mid-length / Thread / Article using Grok 4.3 via TokenRouter.
 
 #### Actor 1: The Value Strategist (`draft-ideas`, maxDuration **3600s**)
 1. **Automated Cleanup**: Archives Idea Bank entries marked `"Rejected"`, severing relations so scouted sources can be reused.
@@ -295,9 +295,9 @@ The system uses the following task registrations in Trigger.dev:
 
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency | Model |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `scout-content` | `schedules.task` | Mon/Thu/Sun 3:30 AM UTC (`30 3 * * 0,1,4`) | 14400 seconds (4 hours) | 1 | — |
+| `scout-content` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 | — |
 | `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) | `MiniMax-M3` (TokenRouter) |
-| `draft-ideas` | `schedules.task` | Triggered by `scout-content` (immediate) + Wed/Fri 4:30 AM UTC catch-all (`30 4 * * 3,5`) | **3600 seconds (1 hour)** | 1 | `MiniMax-M3` (TokenRouter, streaming) |
+| `draft-ideas` | `task` | Triggered by a manual `scout-content` run or started directly on-demand | **3600 seconds (1 hour)** | 1 | `MiniMax-M3` (TokenRouter, streaming) |
 | `write-tweets` | `task` | Triggered by `draft-ideas` | 600 seconds (10 minutes) | — | `x-ai/grok-4.3` (TokenRouter, temp 0.7) |
 | `research-tweets` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 | `MiniMax-M3` (TokenRouter) |
 
