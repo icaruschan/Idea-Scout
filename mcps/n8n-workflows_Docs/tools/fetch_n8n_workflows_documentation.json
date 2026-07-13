@@ -1,7 +1,0 @@
-{
-  "name": "fetch_n8n_workflows_documentation",
-  "description": "Fetch entire documentation file from GitHub repository: Zie619/n8n-workflows. Useful for general questions. Always call this tool first if asked about Zie619/n8n-workflows.",
-  "inputSchema": {
-    "type": "object"
-  }
-}
