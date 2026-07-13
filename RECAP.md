@@ -1,6 +1,6 @@
 # Agentic Workflows — Chronological Project Log & Reference Manual
 
-> **Last Updated:** July 13, 2026  
+> **Last Updated:** July 13, 2026 (LOG 34 cleanup)  
 > **Project:** Ultimate Creator Brain — Unified Idea Scout Pipeline (v4.1 Roadmap / Decision OS)  
 > **Platform:** Trigger.dev v3 (TypeScript), Notion API v5, TokenRouter (MiniMax-M3 strategist/evaluator + `x-ai/grok-4.3` writer), Apify, TwitterAPI.io
 
@@ -442,6 +442,109 @@ timeline
 * **Scripts:** `migrate:roadmap`, `verify:roadmap`, `enrich:hooks`, evaluation/curation/hook tests in `npm test`.
 * **Learning:** Notion select option names cannot contain commas — use `/` separators.
 * **Docs:** README / RECAP Section 2 / directive / execution README / Notion map realigned to v4.1 roadmap (this entry’s doc pass).
+
+---
+
+### LOG ENTRY 34: Repo Cleanup — Deletion Log
+*Date: July 13, 2026*  
+*Commit:* `bb64079` on `codex/pause-scheduled-workflows`  
+*Goal:* Aggressive cleanup of junk, one-off scripts, and local MCP noise. Production pipeline, `npm test` suite, roadmap/ops scripts, and user-requested research dumps were **kept**.
+
+#### Intentionally kept (not deleted)
+- `Hooks Content.md`
+- `X-Creators-2026-All-Native-Articles-Full.md`
+- `🔍 Twitter Content Research (n8n worflow).json`
+- `My Twitter Data/` (personal archive; gitignored)
+- All scripts wired into `npm test`, plus roadmap/voice/ops scripts (`migrate-idea-scout-roadmap`, `verify-idea-scout-roadmap`, `measure-transcript-cleaning`, `build:voice` chain, `check-status`, etc.)
+- Full production tree under `src/trigger/` and production `src/lib/*.ts` modules
+
+#### Restore note
+Any deleted path can be restored from git history:
+```bash
+git show bb64079^:path/to/file   # or: git checkout a189d72 -- path/to/file
+```
+Parent of cleanup commit (full tree before delete): `a189d72`.
+
+---
+
+#### A. Root junk / logs / superseded plan
+| Path | Reason |
+| --- | --- |
+| `composer.md` | Superseded planning doc |
+| `query-ideas.ts` | One-off harness |
+| `run_cmq4nk628eu860nooggb37vis.log` | Ephemeral Trigger run log |
+
+*Also removed from disk if present (already gitignored / not always tracked):* `run_cmqstjago3tiq0inb31bsz4lr.txt`, `nomad.jpg`, `implementation_plan.md`, `implementation_plan (UPDATED).md`, `wireframe_diagram.md`, `trigger-ref.md`, `Apify actors/` notes.
+
+#### B. One-off / exploratory scripts (`scripts/`)
+| Path | Reason |
+| --- | --- |
+| `scripts/add-youtube-creators.ts` | One-shot Notion seeding |
+| `scripts/audit-ideas.ts` | Ad-hoc audit |
+| `scripts/audit-transcript-storage.ts` | One-shot transcript audit |
+| `scripts/build-article-examples.ts` | One-shot data build |
+| `scripts/check-db.ts` | Ad-hoc DB inspect |
+| `scripts/check-ideas.ts` | Ad-hoc Ideas Bank check |
+| `scripts/check-scouted.ts` | Ad-hoc scouted check |
+| `scripts/check-scouted-all.ts` | Ad-hoc scouted check |
+| `scripts/check-scouted-urls.ts` | Ad-hoc URL check |
+| `scripts/count-empty-niches.ts` | Migration-era niche audit |
+| `scripts/curate-dreyshq-samples.ts` | One-shot voice curation |
+| `scripts/merge-dreyshq-samples.ts` | One-shot voice merge |
+| `scripts/inspect-all-keys.ts` | Env/key inspect |
+| `scripts/list-db-urls.ts` | Ad-hoc URL list |
+| `scripts/resolve.ts` | Ad-hoc resolve helper |
+| `scripts/tag-existing-content.ts` | Migration-era niche tagging |
+| `scripts/trigger-test.ts` | Ad-hoc Trigger smoke |
+| `scripts/test-advanced-search.ts` | Exploratory Twitter search |
+| `scripts/test-apify-twitter.ts` | Exploratory Apify Twitter |
+| `scripts/test-blended-voice.ts` | Early voice experiment |
+| `scripts/test-curator-examples.ts` | Exploratory curator samples |
+| `scripts/test-draft-locally.ts` | Local draft dry-run (use Trigger runners instead) |
+| `scripts/test-inspect-notion.ts` | Ad-hoc Notion inspect |
+| `scripts/test-json-repair.ts` | Exploratory JSON repair |
+| `scripts/test-minimax.ts` | Model smoke test |
+| `scripts/test-notion-filter.ts` | Ad-hoc filter probe |
+| `scripts/test-openai-models.ts` | Model smoke test |
+| `scripts/test-openrouter-model.ts` | Model smoke test |
+| `scripts/test-pipeline-integration.ts` | Heavy integration experiment |
+| `scripts/test-relation-writing.ts` | One-shot relation write test |
+| `scripts/test-rest-twitter.ts` | Exploratory REST Twitter |
+| `scripts/test-tokenrouter-grok.ts` | Model smoke test |
+| `scripts/test-viral-research-locally.ts` | Local viral-research dry-run |
+
+#### C. Unused local actor notes
+| Path | Reason |
+| --- | --- |
+| `src/lib/More actors/IG Scraper` | Unused scrap notes (not imported) |
+| `src/lib/More actors/Ig scraper 2` | Unused scrap notes |
+| `src/lib/More actors/ig scraper 3` | Unused scrap notes |
+| `src/lib/More actors/ig scraper 4` | Unused scrap notes |
+| `src/lib/More actors/ig scraper 5` | Unused scrap notes |
+| `src/lib/More actors/YT Actor 4` | Unused scrap notes |
+
+#### D. MCP tool schema dumps removed from git tracking
+Entire `mcps/` tree **untracked** and listed in `.gitignore` (local IDE/MCP caches; not application runtime). Servers that were removed from the repo index:
+
+- `mcps/chrome-devtools/tools/*` (29 tool JSON files)
+- `mcps/context7/tools/*` (2)
+- `mcps/n8n-mcp/tools/*` (24)
+- `mcps/n8n-workflows/tools/*` (4)
+- `mcps/n8n-workflows_Docs/tools/*` (4)
+- `mcps/notebooklm-mcp/tools/*` (40)
+- `mcps/pencil/tools/*` (9)
+- `mcps/sequential-thinking/tools/*` (1)
+- `mcps/trigger/tools/*` (37)
+
+#### E. `.gitignore` additions (same commit)
+- `mcps/`
+- `*.log`
+- `run_*.txt`
+- `run_*.log`
+
+#### F. Verification after cleanup
+- `npm test` passed (tsc + full CI script suite).
+- Production modules and roadmap tasks unchanged by this commit.
 
 ---
 
