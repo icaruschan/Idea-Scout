@@ -14,6 +14,7 @@ import {
 import { resolvePrimaryPillar } from "../../lib/pillar-selection";
 import { ExecutionPlan } from "../../lib/voice-dna";
 import { runComprehensionPipeline } from "./comprehend-source";
+import { getActiveTasteProfile } from "../../lib/idea-roadmap-notion";
 import {
   getRecentScoutedContent,
   getScoutedContentByIds,
@@ -22,7 +23,6 @@ import {
   getPillarDistribution,
   createIdea,
   appendVariationSiblingFooters,
-  cleanRejectedIdeas,
   getRawSourceDepth,
   CreateIdeaOptions,
   ScoutedContentForDraft,
@@ -72,12 +72,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
       : `💡 Draft Ideas starting — catch-all mode, querying recent unlinked scouted content (past 7 days)`,
   );
 
-  const cleanedCount = await cleanRejectedIdeas();
-  if (cleanedCount > 0) {
-    console.log(`🗑️ Cleaned up ${cleanedCount} rejected ideas to free up source content.`);
-  }
-
-  const [scoutedContent, viralPosts, existingTitles, pillarCounts] =
+  const [scoutedContent, viralPosts, existingTitles, pillarCounts, tasteProfile] =
     await Promise.all([
       scoutedContentIds.length > 0
         ? getScoutedContentByIds(scoutedContentIds)
@@ -85,6 +80,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
       getTopViralPosts(30),
       getRecentIdeaTitles(30),
       getPillarDistribution(14),
+      getActiveTasteProfile().catch(() => ""),
     ]);
 
   const totalIdeas = (Object.values(pillarCounts) as number[]).reduce(
@@ -168,6 +164,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
         pillar,
         viralPosts: templates,
         viralSummary,
+        tasteProfile,
       });
 
       if (executionPlans.length === 0) {

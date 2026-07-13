@@ -1,9 +1,10 @@
-import { task } from "@trigger.dev/sdk/v3";
+import { task, tasks } from "@trigger.dev/sdk/v3";
 import { generateTextTokenRouter, MODELS } from "../../lib/llm";
 import { ExecutionPlan, ContentFormat, buildWriterPrompt } from "../../lib/voice-dna";
 import { appendIdeaOperationalNote, updateIdea } from "../../lib/notion";
 import { validateDraft } from "../../lib/draft-validator";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
+import { getActiveTasteProfile, setEvaluationState } from "../../lib/idea-roadmap-notion";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -61,11 +62,15 @@ export const writeTweets = task({
     );
 
     try {
-      const samples = loadVoiceSamples();
+      const [samples, tasteProfile] = await Promise.all([
+        Promise.resolve(loadVoiceSamples()),
+        getActiveTasteProfile().catch(() => ""),
+      ]);
       const { systemPrompt, userPrompt } = buildWriterPrompt(
         valueBrief,
         valueBrief.voiceMode,
         samples,
+        tasteProfile,
       );
 
       const maxTokens = writerMaxTokens(valueBrief.format, false);
@@ -125,6 +130,7 @@ export const writeTweets = task({
       });
 
       if (!validation.passed) {
+        await setEvaluationState(notionIdeaId, "Skipped");
         console.warn(`⚠️ Depth gate failed — staying 💭 Raw: ${validation.issues.join("; ")}`);
         await appendIdeaOperationalNote(
           notionIdeaId,
@@ -139,7 +145,14 @@ export const writeTweets = task({
         return { success: false, notionIdeaId, validationPassed: false };
       }
 
-      console.log("✅ Writer Actor finished successfully.");
+      await setEvaluationState(notionIdeaId, "Pending");
+      await tasks.trigger("evaluate-draft", {
+        notionIdeaId,
+        valueBrief,
+        draft: cleanDraft,
+      });
+
+      console.log("✅ Writer Actor finished successfully; evaluation queued.");
       return { success: true, notionIdeaId, validationPassed: true };
     } catch (error: any) {
       console.error("❌ Writer Actor failed:", error.message || error);

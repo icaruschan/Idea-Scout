@@ -230,6 +230,8 @@ export interface ExecutionPlan extends ValueBrief {
   hookTemplate?: string;
   hookFilledExample?: string;
   hookRationale?: string;
+  hookVariants?: import("./hook-matcher").HookVariant[];
+  selectedHookVariant?: import("./hook-matcher").HookRiskLevel;
   viralTweetStructure?: string;
   viralWhyItWorks?: string;
   minWordTarget?: number;
@@ -370,6 +372,7 @@ export function buildWriterPrompt(
   valueBrief: ValueBrief | ExecutionPlan,
   voiceMode: VoiceMode,
   fewShotSamples: any[],
+  tasteProfile = "",
 ) {
   const plan = valueBrief as ExecutionPlan;
   const format = valueBrief.format;
@@ -487,7 +490,7 @@ HOOK RULES
 
   const userPrompt = `Here is the SOURCE-GROUNDED EXECUTION PLAN for the content you need to write:
 
-${plan.comprehensionSummary ? `COMPREHENSION — What this source is about:\n${plan.comprehensionSummary}\n\n` : ""}${plan.creatorDoing ? `CREATOR IS DOING:\n${plan.creatorDoing}\n\n` : ""}Idea Title: ${valueBrief.ideaTitle}
+${tasteProfile ? `PERSONAL TASTE PROFILE (use as preference guidance; source truth still wins):\n${tasteProfile}\n\n` : ""}${plan.comprehensionSummary ? `COMPREHENSION — What this source is about:\n${plan.comprehensionSummary}\n\n` : ""}${plan.creatorDoing ? `CREATOR IS DOING:\n${plan.creatorDoing}\n\n` : ""}Idea Title: ${valueBrief.ideaTitle}
 Pillar: ${valueBrief.pillar}
 Format Required: ${valueBrief.format}
 Platform: ${valueBrief.platform}
@@ -546,7 +549,7 @@ ${formatList(valueBrief.doNotInvent)}
 Suggested Structure:
 ${valueBrief.suggestedStructure}
 
-${plan.detailedOutline?.length ? `DETAILED OUTLINE (follow this):\n${formatOutline(plan.detailedOutline)}\n\n` : ""}${plan.hookFilledExample ? `HOOK (lines 1-2 MUST adapt this):\nTemplate: ${plan.hookTemplate || "n/a"}\nFilled: ${plan.hookFilledExample}\nWhy: ${plan.hookRationale || "scroll-stop opener"}\n\n` : ""}${plan.viralTweetStructure ? `VIRAL BODY STRUCTURE (packaging flow):\n${plan.viralTweetStructure}\n\n` : ""}Viral Pattern to use only as packaging:
+${plan.detailedOutline?.length ? `DETAILED OUTLINE (follow this):\n${formatOutline(plan.detailedOutline)}\n\n` : ""}${plan.hookVariants?.length ? `HOOK OPTIONS:\n${plan.hookVariants.map((hook) => `${hook.label}: ${hook.text} (${hook.psychology.join(", ")})`).join("\n")}\nSelected: ${plan.selectedHookVariant || "Sharp"}\n\n` : ""}${plan.hookFilledExample ? `HOOK (lines 1-2 MUST adapt this):\nTemplate: ${plan.hookTemplate || "n/a"}\nFilled: ${plan.hookFilledExample}\nWhy: ${plan.hookRationale || "scroll-stop opener"}\n\n` : ""}${plan.viralTweetStructure ? `VIRAL BODY STRUCTURE (packaging flow):\n${plan.viralTweetStructure}\n\n` : ""}Viral Pattern to use only as packaging:
 ${valueBrief.stealablePattern || "None. Prioritize source truth."}
 
 ---

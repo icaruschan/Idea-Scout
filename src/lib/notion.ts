@@ -1305,33 +1305,12 @@ export async function logTrend(
 }
 
 /**
- * Archive any ideas in the Ideas Bank that have been marked as "Rejected".
- * This severs the relation to scouted content, freeing it up for future runs.
+ * @deprecated Rejected ideas are retained as negative taste-learning evidence.
+ * Kept as a no-op so older callers cannot accidentally delete learning history.
  */
 export async function cleanRejectedIdeas(): Promise<number> {
-  try {
-    const response = await notion.dataSources.query({
-      data_source_id: NOTION_DATA_SOURCE_IDS.IDEAS_BANK,
-      filter: {
-        property: "Status",
-        select: { equals: "Rejected" },
-      },
-    });
-
-    let count = 0;
-    for (const page of response.results) {
-      await notion.pages.update({
-        page_id: page.id,
-        archived: true,
-      });
-      count++;
-    }
-
-    return count;
-  } catch (error) {
-    console.error("Error cleaning rejected ideas:", error);
-    return 0;
-  }
+  console.warn("cleanRejectedIdeas() is deprecated; rejected ideas are preserved for Taste Profile learning.");
+  return 0;
 }
 
 // ═══════════════════════════════════════════════════════════════

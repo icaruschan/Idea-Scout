@@ -3,8 +3,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-if (!process.env.TRIGGER_SECRET_KEY && process.env.TRIGGER_DEVELOPMENT_KEY) {
-  process.env.TRIGGER_SECRET_KEY = process.env.TRIGGER_DEVELOPMENT_KEY;
+if (!process.env.TRIGGER_SECRET_KEY) {
+  process.env.TRIGGER_SECRET_KEY =
+    process.env.TRIGGER_PRODUCTION_KEY || process.env.TRIGGER_DEVELOPMENT_KEY;
 }
 
 const runId = process.argv[2];
