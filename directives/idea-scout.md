@@ -2,7 +2,7 @@
 
 ## Goal
 
-Maintain and execute the autonomous creator research and idea drafting pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter), evaluates relevance against 8 active content pillars, and saves guide-oriented scout analysis in Notion. A **comprehension-first** two-actor engine then: **Comprehend → Brainstorm → Plan → Write → Validate** — using MiniMax M3 (strategist) and `x-ai/grok-4.3` via TokenRouter (writer), 100 hook templates (openers), and Viral Post Library patterns (body structure). Additionally, a manually triggered Viral Post Research task (`research-tweets`) gathers the highest performing tweets from X focus creators, runs a content strategist LLM analysis, and populates the Viral Post Library with proven structures and patterns.
+Maintain and execute the autonomous creator research and content-decision pipeline. It monitors target creators across YouTube, Instagram, and X (Twitter), evaluates relevance against 8 active content pillars, and saves guide-oriented scout analysis in Notion. A **comprehension-first** engine then runs **Comprehend → Brainstorm → Plan → Write → Validate → Evaluate → Curate → Select → Track → Learn**. MiniMax M3 handles strategy/evaluation, `x-ai/grok-4.3` handles writing, 100 enriched hook templates provide Safe/Sharp/Bold opener options, and the Viral Post Library provides body-structure references. The system recommends; the user remains responsible for selecting and publishing content.
 
 ---
 
@@ -57,6 +57,7 @@ TRIGGER_ENV=dev|prod
 | **Instagram Creators** | `3674a5db-f371-809a-88a9-d122c712139b` | `3674a5db-f371-80d2-bece-000b0dd38da2` |
 | **Content Pipeline** | `8cc7a479-7eea-4092-a11b-81381d4524b0` | `4bfdc801-348f-4203-8966-9720d3e11088` |
 | **My Content Tracker** | `69f828a6-5d4d-4ae1-bd62-b415abefe757` | `75600b9e-4eba-4594-92ac-ce01fa85b0a8` |
+| **Taste Profiles** | `fb5e5bd1-9ff3-4a4c-a369-3f7f8322bc8a` | `39652859-413b-42aa-8d75-0ac42e24a7fc` |
 
 ---
 
@@ -107,12 +108,13 @@ Triggered two ways (both manual-origin):
 │   • Direct manual dashboard / trigger-draft.ts run for unlinked scouted content (past 14 days; manual/orphaned)
 │
 └── draft-ideas [VALUE STRATEGIST] (maxDuration: 3600s)
-    ├── 1. Clean up rejected ideas (archive to sever relations and free scouted content)
+    ├── 1. Preserve rejected ideas as taste-learning evidence (never auto-archive)
     ├── 2. Gather context from all sources:
     │      ├── A. Unused Scouted Content (targeted IDs OR past 14 days unlinked)
     │      ├── B. Top 30 Viral Posts (4★+)
     │      ├── C. Past 30 days of generated Idea titles (soft dedup)
-    │      └── D. Category distribution balance (14-day; prioritize underserved pillars)
+    │      ├── D. Category distribution balance (14-day; prioritize underserved pillars)
+    │      └── E. Active Taste Profile when at least 10 human ratings exist
     ├── 3. Prioritize sources: all YT/IG by raw depth, then X capped ~30% of YT/IG count; maxSourcesPerRun=10; skip if raw depth < 300 chars
     ├── 4. For each Scouted Content page, use full source context:
     │      ├── Title, Platform, URL, AI Summary, Key Takeaways, and Niche
@@ -126,7 +128,7 @@ Triggered two ways (both manual-origin):
     │      Phase 1 COMPREHEND — what is content about, creator doing, audience, pain, teachable units
     │      Phase 2 BRAINSTORM — article/thread/mid/short products + value bombs
     │      Phase 3 SELECT — up to 2 outputs (format diversity when score ≥ 7)
-    │      Phase 4 PLAN — detailedOutline, talkingPoints (3–7 bullets), stepByStepProcess (ordered how-to), hook template, viral tweetStructure
+    │      Phase 4 PLAN — detailedOutline, talkingPoints (3–7 bullets), stepByStepProcess, Safe/Sharp/Bold hook variants, viral tweetStructure
     │      Output: ExecutionPlan for writer
     ├── 7. Sequentially write ExecutionPlans to Ideas Bank (status: 💭 Raw) with 350ms throttle
     │      Shared Variation Set label per source batch; idea titles suffixed with format (e.g. `— Thread`)
@@ -150,10 +152,31 @@ Triggered by draft-ideas (async)
     │        Mid-length: One longer value tweet
     │        Thread: Staccato formatting, [1/n] markers
     │        Article: Full long-form markdown with ##/### headers
-    └── 5. Update Notion Idea:
+    ├── 5. Update Notion Idea:
            - Draft Tweet property (first 2000 chars)
            - Full text in toggle block (▶️ Draft — {format})
            - Auto-set status to 📝 Drafted
+    └── 6. Queue evaluate-draft after structural validation passes
+
+Triggered by write-tweets or backfill-idea-evaluations
+│
+└── evaluate-draft [EDITORIAL QUALITY GATE]
+    ├── Read the full draft, source context, strategist plan, and recent ideas
+    ├── Score Source Strength, Audience Fit, Novelty, Usefulness, Voice Fit, Hook Strength, Timeliness, and Effort Fit
+    ├── Calculate fixed-weight Confidence Score; assign shelf life and expiry
+    ├── Detect unsupported claims, source mismatch, generic slop, weak hooks, voice mismatch, duplicate angles, and incomplete payoff
+    └── Save evidence + route to 📝 Drafted or 👀 Needs Review
+
+Scheduled decision and feedback loop (production)
+│
+├── curate-daily-ideas — 07:00 Africa/Lagos
+│   └── Recommend up to 3 eligible, unexpired, variation-diverse ideas as Best Overall, Quick Win, and Bold Bet
+├── promote-selected-ideas — every 15 minutes
+│   └── Only Status = ✅ Selected moves idempotently into Content Pipeline; Idea becomes ➡️ In Pipeline
+├── sync-posted-content-to-tracker — hourly at minute 5
+│   └── Only 🚀 Posted + Move to Tracker + Posted URL moves idempotently into My Content Tracker
+└── refresh-taste-profile — Sunday 08:00 Africa/Lagos
+    └── Requires at least 10 human-rated ideas; performance can inform guidance after 10 complete posts and score-weight changes remain gated until 20
 
 Trigger.dev Manual Run
 │
@@ -174,7 +197,7 @@ Trigger.dev Manual Run
 The synthesis engine runs as a two-actor pipeline:
 
 **Actor 1: The Value Strategist (`draft-ideas`, maxDuration 3600s)**
-1. Cleans up any Ideas Bank entries marked as "Rejected" (archiving them) to sever relations and free up the associated scouted content for reuse.
+1. Preserves Ideas Bank entries marked `Rejected` so their ratings, rejection reasons, and taste notes can teach the weekly Taste Profile.
 2. Loads scouted items: targeted IDs from scout dispatch, **or** past **14 days** of unlinked Scouted Content (`Linked Ideas` empty).
 3. Queries the top 30 highly-rated (`⭐⭐⭐⭐`/`⭐⭐⭐⭐⭐`) Viral Post Library patterns.
 4. Queries the past 30 days of generated Idea titles (soft dedup) and past 14 days of Ideas Bank category distribution.
@@ -186,7 +209,7 @@ The synthesis engine runs as a two-actor pipeline:
    - **Comprehend** → **Brainstorm** → **Select** (up to 2 formats when score ≥ 7) → **Plan** (`detailedOutline`, `talkingPoints`, `stepByStepProcess`, hooks, viral structure). Deterministic fallbacks if model omits talking points/steps.
    - Produces `ExecutionPlan` (not thin single-pass JSON).
 9. Writes structured Ideas Bank pages with shared **Variation Set**, format-suffixed titles, Hook + Output visible, strategist brief collapsed; multi-format sibling footers.
-10. Dispatches `write-tweets` per plan (async).
+10. Dispatches `write-tweets` per plan (async); successful drafts automatically queue `evaluate-draft`.
 
 **Actor 2: The Writer (`write-tweets`)**
 1. Receives `ExecutionPlan` and Notion Idea page ID.
@@ -200,8 +223,47 @@ The synthesis engine runs as a two-actor pipeline:
 5. Updates the Notion Idea with the draft:
    - First 2000 chars in `"Draft Tweet"` property.
    - Full un-truncated text in a toggle block (`▶️ Draft — {format}`).
-   - Auto-sets status to `"📝 Drafted"`.
+   - Auto-sets status to `"📝 Drafted"` and queues the editorial evaluator.
 
+### Ideas Bank operating views
+
+- **Today’s Top 3:** current-date recommendations, ranked by the curator. It may show fewer than 3 rather than pad the list with weak work.
+- **Scored Drafts:** structurally valid, evaluator-approved drafts sorted by Confidence Score.
+- **Needs Review:** drafts with a critical flag or confidence below 6.5.
+- **Selected Ideas:** the human-controlled handoff queue; changing Status to `✅ Selected` authorizes Content Pipeline creation.
+- **Raw Writer Failures:** writer depth-gate failures (`💭 Raw` + Evaluation State `Skipped`).
+- **Rejected Learnings:** preserved negative feedback for Taste Profile learning.
+
+### Status legend
+
+| Status | Who | Meaning |
+| --- | --- | --- |
+| `💭 Raw` | Strategist / writer fail | Plan only or depth-gate failed |
+| `📝 Drafted` | Writer + clean evaluator | Structurally valid, ready to score/use |
+| `👀 Needs Review` | Evaluator | Flags or Confidence below 6.5 |
+| `✅ Selected` | **Human only** | Authorize pipeline promotion |
+| `➡️ In Pipeline` | promote task | Pipeline item exists |
+| `Rejected` | Human | Kept for taste learning (never auto-archived) |
+
+### Thresholds (code constants)
+
+| Constant | Value | Where |
+| --- | --- | --- |
+| Daily eligibility | confidence ≥ **7.5** | `idea-evaluation.ts` / `idea-curation.ts` |
+| Needs Review | flags **or** confidence below **6.5** | `saveIdeaEvaluation` |
+| Taste profile minimum | **10** human ratings | `refresh-taste-profile.ts` |
+| Performance guidance | descriptive at **10** complete posts; weight changes gated until **20** | taste prompt |
+| Backfill batch | **10** max | `backfill-idea-evaluations` |
+
+### Roadmap ops commands
+
+```bash
+npm run migrate:roadmap
+npm run migrate:roadmap:dry
+npm run verify:roadmap
+npm run enrich:hooks
+# backfill: trigger backfill-idea-evaluations or scripts/run-roadmap-backfill.ts
+```
 
 ---
 
@@ -214,6 +276,9 @@ The synthesis engine runs as a two-actor pipeline:
 - **Voice samples:** Production reads from `src/data/creator-voice-samples.json`. Regeneration scripts write to `.tmp/creator-voice-samples.json`; review and sanitize that output before promoting it into `src/data`.
 - **Frozen pillars:** Web3 and Psychology remain valid historical labels in Notion, but new matching, drafting, and category writes must ignore them or resolve them to `Unknown`.
 - **Async Writer behavior:** `draft-ideas` does not wait for Writer completion. This is intentional; quality comes from the full source handoff, while final draft completion is handled by the child Writer task.
+- **Evaluator behavior:** The writer queues `evaluate-draft` only after structural validation passes. Existing drafts are backfilled in batches of 10 using `backfill-idea-evaluations`; pending records are excluded to prevent duplicate work.
+- **Selection remains manual:** The automation never changes an idea to `✅ Selected` and never publishes content. It only reacts after the user chooses `✅ Selected` or marks a Pipeline item `🚀 Posted` with `Move to Tracker` checked and a Posted URL.
+- **Notion select option constraint:** Notion API select/multi-select option names cannot contain commas. Use `/` or another separator in migration labels.
 - **Production run polling:** Manual trigger scripts (`trigger-scout.ts`, `trigger-draft.ts`) set `TRIGGER_SECRET_KEY` from `TRIGGER_PRODUCTION_KEY`. Local status polling must use the same key path; `scripts/check-status.ts` falls back to `TRIGGER_PRODUCTION_KEY` before `TRIGGER_DEVELOPMENT_KEY` to avoid false 404s when polling production run IDs.
 
 ---
@@ -233,6 +298,7 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 | **Notion writes throttle** | 350ms delay between consecutive `createIdea` requests | Strictly prevents Notion 429 rate limit errors when writing newly drafted ideas |
 | **Inter-platform cooldowns** | 5s pause between YT→IG and IG→Twitter phases | Lets Apify actors release memory before next phase |
 | **Twitter API throttle** | 5.5s delay between requests + exponential backoff on 429/5xx | Respects 1 QPS free-tier limit |
+| **Evaluation backfill** | Batches of 10 with `batchTriggerAndWait` + per-idea idempotency keys | Prevents duplicate scoring and keeps failures observable |
 
 ---
 
@@ -252,3 +318,5 @@ The pipeline controls concurrency at multiple levels to prevent API exhaustion:
 - **Title Formatting Rules:** Prefer concrete titles (name, metric, tool). Multi-format ideas get a format suffix (`— Thread`, `— Article`) via `formatIdeaTitleWithFormat`.
 - **TOKENROUTER_API_KEY:** Required for Idea Scout filter, strategist, and writer. Set in `.env` and Trigger.dev production. Missing key causes silent LLM failures (caught; content filtered or drafts empty).
 - **Variation Sets / multi-format:** Up to 2 formats per rich source share one `Variation Set` property and sibling page links.
+- **Rejected ideas are retained:** Do not reintroduce auto-archive of Status = `Rejected`; they feed Taste Profile learning.
+- **Never auto-select / never auto-publish:** Only humans set `✅ Selected` or mark Pipeline items posted.

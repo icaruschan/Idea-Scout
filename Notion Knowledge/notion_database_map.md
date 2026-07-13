@@ -1,6 +1,6 @@
 # 🗺️ Notion Database Map — Live MCP Snapshot
 
-> Last updated: **July 9, 2026** — aligned with Idea Scout v4 code (`src/lib/notion.ts`, draft/write tasks).
+> Last updated: **July 13, 2026** — aligned with Idea Scout v4.1 roadmap (evaluate / curate / promote / taste).
 
 ---
 
@@ -19,6 +19,7 @@
 | 📡 Scouted Content    | `3674a5db-f371-80ad-8ec6-f3e99bdd4191` | `3674a5db-f371-802c-b23e-000b7d73be04`       |
 | 🎥 YouTube Creators   | `3674a5db-f371-80f9-8822-c0459d34168e` | `3674a5db-f371-80d3-bac9-000befffdd42`       |
 | 📸 Instagram Creators | `3674a5db-f371-809a-88a9-d122c712139b` | `3674a5db-f371-80d2-bece-000b0dd38da2`       |
+| 🧠 Taste Profiles     | `fb5e5bd1-9ff3-4a4c-a369-3f7f8322bc8a` | `39652859-413b-42aa-8d75-0ac42e24a7fc`       |
 
 ---
 
@@ -150,35 +151,46 @@ graph LR
 
 **ID:** `38f85f8c-eccf-4679-a2d3-6c0e6d386e7d`  
 **Data Source ID:** `553eb2c3-82cb-4fb7-abff-6652cb694e4a`  
-**Role:** Synthesis hub — comprehension-first ExecutionPlans → drafted content
+**Role:** Synthesis + editorial decision hub — ExecutionPlans → drafts → scores → recommendations
 
 | Property                   | Type                              | Description |
 | -------------------------- | --------------------------------- | ----------- |
 | `Idea`                     | title                             | Working title; often format-suffixed (`— Thread`, `— Article`) |
-| `Source`                   | select                            | Automation writes `Idea Scout` (other options may exist for manual/legacy) |
-| `Status`                   | select                            | Pipeline: `💭 Raw` → Writer sets `📝 Drafted`. User may set `Rejected` (archived on next draft run). Other board statuses may exist for human workflow. |
-| `Priority`                 | select                            | `🔥 Hot`, `💡 Good`, `📝 Maybe` — assigned by strategist |
-| `Category`                 | multi_select                      | 8 active content pillars (Web3/Psychology frozen; filtered on write) |
+| `Source`                   | select                            | Automation writes `Idea Scout` |
+| `Status`                   | select                            | `💭 Raw` → `📝 Drafted` / `👀 Needs Review` → human `✅ Selected` → `➡️ In Pipeline`; human `Rejected` kept for learning |
+| `Priority`                 | select                            | Derived from Confidence Score (Hot ≥8.5, Good ≥7, else Maybe) |
+| `Category`                 | multi_select                      | 8 active pillars (Web3/Psychology frozen) |
 | `Format Idea`              | select                            | `Short`, `Mid-length`, `Thread`, `Article`, `Video` |
-| `Variation Set`            | rich_text                         | Shared label for multi-format ideas from one scouted source |
+| `Variation Set`            | rich_text                         | Multi-format group from one scouted source |
 | `Hook Angle`               | rich_text                         | Opening angle / filled hook |
-| `Why it works`             | rich_text                         | Strategic/psychological rationale (code property name) |
-| `Steal-able Pattern`       | rich_text                         | Packaging pattern from Viral Library |
-| `Tweet Structure`          | rich_text                         | Body structure skeleton |
-| `Draft Tweet`              | rich_text                         | First ~2000 chars of draft; full text in page toggle |
-| `Inspired By (Scouted)`    | **relation → Scouted Content**    | Source lineage (UUID from pipeline) |
-| `Inspired By (Library)`    | **relation → Viral Post Library** | Optional template link |
-| `Inspired By (My Content)` | **relation → My Content Tracker** | Manual/human lineage |
+| `Why it works`             | rich_text                         | Strategic rationale |
+| `Steal-able Pattern` / `Tweet Structure` | rich_text              | Viral packaging |
+| `Draft Tweet`              | rich_text                         | First ~2000 chars; full draft in page toggle |
+| `Inspired By (Scouted)`    | **relation → Scouted Content**    | Source lineage |
+| `Inspired By (Library)`    | **relation → Viral Post Library** | Optional template |
+| `Inspired By (My Content)` | **relation → My Content Tracker** | Manual lineage |
+| `Source Strength` … `Effort Fit` | number                       | Component scores 1–10 |
+| `Confidence Score`         | number                            | Weighted editorial confidence |
+| `Evaluation State`         | select                            | `Pending`, `Scored`, `Failed`, `Skipped` |
+| `Evaluation Version` / `Evaluated At` | rich_text / date           | Evaluator provenance |
+| `Critical Flags` / `Improvement Notes` / `Recommendation Reason` | rich_text | Editorial evidence |
+| `Shelf Life` / `Expires At` | select / date                    | Curation window |
+| `Recommendation Date` / `Daily Rank` / `Recommendation Role` | date / number / select | Today’s Top 3 |
+| `Human Rating` / `Taste Note` / `Rejection Reason` | select / text / select | Taste learning |
+| `Hook A` / `Hook B` / `Hook C` / `Selected Hook` / `Hook Psychology` | text / multi-select | Safe / Sharp / Bold |
+| `Pipeline Item`            | **relation → Content Pipeline**   | Promote handoff |
 
-> **Automation note (v4):** `draft-ideas` creates pages at `Status = 💭 Raw`, `Source = "Idea Scout"`, with optional **Variation Set**. Page body: variation preamble → Hook + Output → collapsed strategist brief (outline, talking points, steps, gems) → Writer appends `▶️ Draft — {format}` and sets `📝 Drafted`. Up to 2 formats per rich source; `maxSourcesPerRun` caps how many scouted sources are processed per run.
+> **Automation note (v4.1):** Strategist creates `💭 Raw` pages. Writer sets `📝 Drafted` and queues `evaluate-draft`. Evaluator may move to `👀 Needs Review` (flags or confidence below 6.5). **Only humans** set `✅ Selected`. `promote-selected-ideas` then creates Pipeline and sets `➡️ In Pipeline`. `Rejected` is **never** auto-archived.
 
-**Views (live):**
+**Views (roadmap):**
 
-- `Ready to Use` / drafted views — filter by `📝 Drafted` or human board statuses as configured
-- `By Category` — table, group by Category
-- `By Source` — table, group by Source
-- `🔥 Hot Ideas Only` — table, filter: Priority = 🔥 Hot
-- `Backlog` — table, filter: Status = 💭 Raw
+- `Today’s Top 3` — Recommendation Date = today, ranked
+- `Scored Drafts` — Drafted + Evaluation State = Scored
+- `Needs Review` — Status = 👀 Needs Review
+- `Selected Ideas` — Status = ✅ Selected
+- `Raw Writer Failures` — Raw + Evaluation State = Skipped
+- `Rejected Learnings` — Status = Rejected
+- `By Category` / `🔥 Hot Ideas Only` / `Backlog` (Raw)
 
 ---
 
@@ -198,13 +210,35 @@ graph LR
 | `Draft`           | rich_text                         | Actual content draft                           |
 | `Scheduled Date`  | date                              | When scheduled to post                         |
 | `Posted URL`      | url                               | Link after publishing                          |
-| `Move to Tracker` | checkbox                          | When done, triggers add to My Content Tracker  |
-| `Based On`        | **relation → Ideas Bank**         |                                                |
+| `Platform`        | select                            | X, YouTube, Instagram, Newsletter (roadmap)    |
+| `Move to Tracker` | checkbox                          | Required with 🚀 Posted + Posted URL for auto sync |
+| `Based On`        | **relation → Ideas Bank**         | Created by `promote-selected-ideas`            |
+| `Tracker Item`    | **relation → My Content Tracker** | Filled by `sync-posted-content-to-tracker`     |
 | `Expanded From`   | **relation → My Content Tracker** | For Winner expansion                           |
+
+> **Automation note:** Promote is idempotent on `Based On` containing the idea. Sync only when Status = `🚀 Posted`, Move to Tracker checked, and Posted URL set. Publishing is always human.
 
 ---
 
-### 5. 👤 Creators (X)
+### 5. 🧠 Taste Profiles
+
+**ID:** `fb5e5bd1-9ff3-4a4c-a369-3f7f8322bc8a`  
+**Data Source ID:** `39652859-413b-42aa-8d75-0ac42e24a7fc`  
+**Role:** Weekly learned preferences from Human Rating / Taste Note / Rejection Reason on Ideas Bank
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Profile` | title | e.g. Taste Profile — YYYY-MM-DD |
+| `Status` | select | `Active` (current) or `Superseded` |
+| `Generated At` | date | When refreshed |
+| `Rated Ideas` / `Tracked Posts` | number | Evidence counts |
+| `Summary`, `Preferred Hooks`, `Rejected Patterns`, `Voice Notes`, `Format Preferences`, `Profile JSON` | rich_text | Profile content |
+
+> **Automation note:** `refresh-taste-profile` requires ≥ 10 human-rated ideas. Prior Active rows become Superseded. Strategist/writer load the Active profile when present.
+
+---
+
+### 6. 👤 Creators (X)
 
 **ID:** `18d75163-a3d6-455d-9d3d-2076f20d2fed`  
 **Data Source ID:** `24e6bb9b-b226-4ff6-86b4-f6a72493029d`  

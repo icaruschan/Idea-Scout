@@ -1,8 +1,8 @@
 # Agentic Workflows — Chronological Project Log & Reference Manual
 
-> **Last Updated:** July 9, 2026  
-> **Project:** Ultimate Creator Brain — Unified Idea Scout Pipeline (v4 Comprehension-First)  
-> **Platform:** Trigger.dev v3 (TypeScript), Notion API v5, TokenRouter (MiniMax-M3 strategist + `x-ai/grok-4.3` writer), Apify, TwitterAPI.io
+> **Last Updated:** July 13, 2026  
+> **Project:** Ultimate Creator Brain — Unified Idea Scout Pipeline (v4.1 Roadmap / Decision OS)  
+> **Platform:** Trigger.dev v3 (TypeScript), Notion API v5, TokenRouter (MiniMax-M3 strategist/evaluator + `x-ai/grok-4.3` writer), Apify, TwitterAPI.io
 
 ---
 
@@ -420,57 +420,74 @@ timeline
 
 ---
 
-### LOG ENTRY 32: Documentation Realignment (This Entry)
+### LOG ENTRY 32: Documentation Realignment
 *Date: July 9, 2026*
 
-* **Goal:** Sync `RECAP.md`, `README.md`, `directives/idea-scout.md`, `execution/README.md`, and Notion database map with the live v4 + Composer pipeline so agents stop reading stale OpenRouter / StrategyBrief / 7-day / 5+5 IG docs.
+* **Goal:** Sync docs with live v4 + Composer pipeline (TokenRouter, Variation Sets, 14-day catch-all, structured pages).
+
+---
+
+### LOG ENTRY 33: Editorial Scoring, Daily Curation, and Taste Loop (GPT-5.6 Sol)
+*Date: July 13, 2026*
+
+* **Goal:** Evolve Idea Scout from a high-volume draft generator into a selective creative operating system that judges quality, recommends the best available work, preserves human feedback, and closes Idea → Pipeline → Tracker without automating publishing.
+* **Notion migration:** Component scores, Confidence Score, Evaluation State/version, shelf life/expiry, recommendation rank/role/date, human taste feedback, Hook A/B/C + psychology, Pipeline relation on Ideas Bank. Reverse handoffs on Content Pipeline and My Content Tracker. New **Taste Profiles** DB (`fb5e5bd1-9ff3-4a4c-a369-3f7f8322bc8a` / DS `39652859-413b-42aa-8d75-0ac42e24a7fc`).
+* **Views:** Today’s Top 3, Scored Drafts, Needs Review, Selected Ideas, Raw Writer Failures, Rejected Learnings.
+* **Quality gate:** `write-tweets` queues `evaluate-draft` after structural validation. Evaluator scores source strength, audience fit, novelty, usefulness, voice, hook, timing + deterministic effort fit; routes to `📝 Drafted` or `👀 Needs Review` (flags or confidence below 6.5).
+* **Hooks:** All 100 templates enriched with psychology, best-fit archetypes, risk (Safe/Sharp/Bold), proof requirements. Plans carry three variants; Notion stores Hook A/B/C + Selected Hook.
+* **Decision loop:** `curate-daily-ideas` daily 07:00 Africa/Lagos (eligibility ≥ 7.5; no padding). `promote-selected-ideas` only reacts to human `✅ Selected`. Publishing remains manual. `sync-posted-content-to-tracker` requires 🚀 Posted + Move to Tracker + Posted URL.
+* **Feedback loop:** Rejections retained (auto-archive removed). Weekly Taste Profile needs ≥ 10 Human Ratings; active profile guides strategist/writer. Performance descriptive at 10 complete tracker posts; score-weight changes gated until 20.
+* **Scheduling:** Scout/draft converted to **manual tasks** (paused crons). Decision-loop schedules PRODUCTION-only with Africa/Lagos TZ.
+* **Modules:** `idea-evaluation.ts`, `idea-curation.ts`, `idea-roadmap-notion.ts`; tasks evaluate-draft, backfill-idea-evaluations, curate-daily-ideas, promote-selected-ideas, sync-posted-content-to-tracker, refresh-taste-profile.
+* **Scripts:** `migrate:roadmap`, `verify:roadmap`, `enrich:hooks`, evaluation/curation/hook tests in `npm test`.
+* **Learning:** Notion select option names cannot contain commas — use `/` separators.
+* **Docs:** README / RECAP Section 2 / directive / execution README / Notion map realigned to v4.1 roadmap (this entry’s doc pass).
 
 ---
 
 # SECTION 2: System Reference & Current Architecture
 
-### 1. The Unified Idea Scout Flow (v4 Comprehension-First)
+### 1. The Unified Idea Scout Flow (v4.1 Decision OS)
 
-Hybrid triggering with serial comprehension per source (not niche-bucket parallel synthesis):
+Generation is **manual-origin**; decision/feedback tasks are **PRODUCTION schedules** (Africa/Lagos):
 
 ```
-Trigger.dev Mon/Thu/Sun Cron
+Manual scout-content (maxDuration: 14400s)
+│   Creators YT10 / IG10 / X24 → scrape → process-content batches
+│   → Scouted Content + Full Transcript
+│   → dispatch draft-ideas(scoutedContentIds) if any
 │
-└── scout-content (3:30 AM UTC Mon/Thu/Sun | maxDuration: 14400s)
-    ├── 1. Creators: YT 10, IG 10, X 24 (Last Checked oldest first)
-    ├── 2. Scrape (5s cooldowns between platforms)
-    │      ├── YT: newest 5 videos/channel (Apify)
-    │      ├── IG: fetch ~30 reels, keep 5 (~3 newest + ~2 top-viewed); transcripts in chunks of 3
-    │      └── X: TwitterAPI.io, 5.5s throttle, views >= TWITTER_MIN_VIEWS (default 3000), X Articles + threads
-    ├── 3. process-content batches of 15 (queue concurrencyLimit: 5, maxDuration: 300s)
-    │      MiniMax-M3 filter+summary → Scouted Content (Full Transcript toggle + chunked property)
-    ├── 4. Last Checked only for successful creators
-    └── 5. Dispatch draft-ideas with scoutedContentIds (skip if empty)
-
-Hybrid draft triggers:
-│   • Immediate from scout-content (Mon/Thu/Sun)
-│   • Catch-all cron Wed/Fri 4:30 AM UTC — unlinked scouted content past 14 days
+Manual draft-ideas (maxDuration: 3600s)  [also direct for 14d unlinked]
+│   Preserve Rejected ideas (no auto-archive)
+│   Context: viral 4★+, titles 30d, pillar dist 14d, Active Taste Profile
+│   Prioritize YT/IG then X cap; maxSourcesPerRun=10
+│   Per source: resolvePrimaryPillar → COMPREHEND → BRAINSTORM → SELECT → PLAN
+│     (Safe/Sharp/Bold hooks, talkingPoints, stepByStep)
+│   Variation Sets → Ideas Bank 💭 Raw → dispatch write-tweets
 │
-└── draft-ideas [STRATEGIST] (maxDuration: 3600s)
-    ├── Clean rejected ideas (archive)
-    ├── Context: targeted IDs OR getRecentScoutedContent(14); viral 4★+ (30); titles 30d; pillar dist 14d
-    ├── Prioritize sources: all YT/IG by depth, then X capped ~30%; maxSourcesPerRun=10
-    ├── Per source (serial):
-    │     resolvePrimaryPillar (underserved if multi-tag)
-    │     COMPREHEND → BRAINSTORM → SELECT (≤2) → PLAN (outline, talkingPoints, stepByStep)
-    │     Variation Set label; titles suffixed with format
-    │     Write Ideas Bank (💭 Raw) structured page blocks + strategist toggle
-    └── Dispatch write-tweets per plan (async)
+write-tweets [WRITER]
+│   Voice samples + optional taste → Grok-4.3 → validateDraft
+│   fail → Evaluation Skipped, stay 💭 Raw
+│   pass → 📝 Drafted + Evaluation Pending → evaluate-draft
+│
+evaluate-draft [EDITOR]
+│   Scores + Confidence + shelf life + flags
+│   → 📝 Drafted or 👀 Needs Review; Hook A/B/C
+│
+curate-daily-ideas (07:00 Lagos) → up to 3 ranks (Best Overall / Quick Win / Bold Bet)
+human sets ✅ Selected
+promote-selected-ideas (*/15 Lagos) → Content Pipeline + ➡️ In Pipeline
+human publishes (manual)
+sync-posted-content-to-tracker (:05 hourly) → My Content Tracker
+refresh-taste-profile (Sun 08:00 Lagos) → Active Taste Profile (≥10 ratings)
 
-└── write-tweets [WRITER] (maxDuration: 600s, retry: 2)
-    ├── Voice samples from src/data/creator-voice-samples.json
-    ├── buildWriterPrompt + Grok-4.3 @ 0.7 via TokenRouter
-    ├── validateDraft (article ≥1200 words / ≥4 ##; thread ≥8 posts) — one retry if thin
-    └── Draft Tweet property + ▶️ Draft — {format} toggle → status 📝 Drafted
-
-Manual:
-└── research-tweets (14400s) — Viral Post Library fill via MiniMax-M3 (+ optional OpenRouter fallback path)
+Manual research-tweets → Viral Post Library
+Manual backfill-idea-evaluations → score historical drafts (batch 10)
 ```
+
+**Status path:** `💭 Raw` → `📝 Drafted` / `👀 Needs Review` → human `✅ Selected` → `➡️ In Pipeline` · human `Rejected` kept for learning.
+
+**Score weights:** usefulness 0.20; sourceStrength / audienceFit / novelty / voiceFit / hookStrength 0.15 each; timeliness 0.05. Effort Fit is deterministic (not in weighted confidence). Daily eligibility threshold **7.5**; needs-review threshold **6.5**.
 
 ---
 
@@ -487,6 +504,7 @@ Manual:
 | Instagram Creators | `3674a5db-f371-809a-88a9-d122c712139b` |
 | Content Pipeline   | `8cc7a479-7eea-4092-a11b-81381d4524b0` |
 | My Content Tracker | `69f828a6-5d4d-4ae1-bd62-b415abefe757` |
+| Taste Profiles     | `fb5e5bd1-9ff3-4a4c-a369-3f7f8322bc8a` |
 
 #### Data Source IDs (used for `dataSources.query` in API v5)
 | Database           | Data Source ID                         |
@@ -499,6 +517,7 @@ Manual:
 | Instagram Creators | `3674a5db-f371-80d2-bece-000b0dd38da2` |
 | Content Pipeline   | `4bfdc801-348f-4203-8966-9720d3e11088` |
 | My Content Tracker | `75600b9e-4eba-4594-92ac-ce01fa85b0a8` |
+| Taste Profiles     | `39652859-413b-42aa-8d75-0ac42e24a7fc` |
 
 ---
 
@@ -512,17 +531,22 @@ Manual:
 | `Category`              | Multi-select | Active content pillar (via `filterCategoryList`) |
 | `Hook Angle`            | Rich text    | Hook framing / filled hook example |
 | `Why it works`          | Rich text    | Strategic rationale |
-| `Status`                | Select       | `💭 Raw` → Writer sets `📝 Drafted`; user may mark `Rejected` (archived on next draft run) |
-| `Priority`              | Select       | `🔥 Hot`, `💡 Good`, `📝 Maybe` |
+| `Status`                | Select       | `💭 Raw`, `📝 Drafted`, `👀 Needs Review`, `✅ Selected`, `➡️ In Pipeline`, `Rejected` (kept) |
+| `Priority`              | Select       | From Confidence Score: Hot ≥8.5, Good ≥7, else Maybe |
 | `Format Idea`           | Select       | `Short`, `Mid-length`, `Thread`, `Article`, `Video` |
-| `Variation Set`         | Rich text    | Shared label grouping multi-format ideas from one scouted source |
-| `Steal-able Pattern`    | Rich text    | Viral library packaging pattern |
-| `Tweet Structure`       | Rich text    | Body structure skeleton |
-| `Draft Tweet`           | Rich text    | First ~2000 chars preview; full draft in page toggle `▶️ Draft — {format}` |
-| `Inspired By (Scouted)` | Relation     | Source Scouted Content page |
-| `Inspired By (Library)` | Relation     | Optional viral library template |
+| `Variation Set`         | Rich text    | Shared multi-format group label |
+| `Steal-able Pattern` / `Tweet Structure` | Rich text | Viral packaging |
+| `Draft Tweet`           | Rich text    | First ~2000 chars; full draft in `▶️ Draft — {format}` |
+| `Inspired By (Scouted/Library)` | Relation | Lineage |
+| Score dims + `Confidence Score` | Number | Editorial scores |
+| `Evaluation State`      | Select       | `Pending`, `Scored`, `Failed`, `Skipped` |
+| `Shelf Life` / `Expires At` | Select / Date | Curation timeliness |
+| Recommendation Date / Daily Rank / Role | Date / Number / Select | Top 3 |
+| Human Rating / Taste Note / Rejection Reason | Select / Text / Select | Taste learning |
+| Hook A/B/C, Selected Hook, Hook Psychology | Text / multi-select | Safe/Sharp/Bold |
+| `Pipeline Item`         | Relation     | Content Pipeline handoff |
 
-**Page body layout:** variation preamble (if multi-format) → Hook + Output (visible) → collapsed strategist brief (outline, talking points, steps, gems) → `▶️ Draft — {format}` after writer.
+**Page body layout:** variation preamble → Hook + Output → collapsed strategist brief → `▶️ Draft — {format}`.
 
 #### Scouted Content (Write Properties)
 | Property             | Type      | Description |
@@ -563,52 +587,50 @@ Manual:
 src/
 ├── data/
 │   ├── article-examples.json      — Full article few-shots for Writer
-│   ├── creator-voice-samples.json — Production voice samples (Dreyshq / Sharbel / Zaimiri)
-│   └── viral-hook-templates.json  — 100 opener templates
+│   ├── creator-voice-samples.json — Production voice samples
+│   └── viral-hook-templates.json  — 100 enriched hooks (psychology, risk, proof)
 │
 ├── lib/
-│   ├── apify.ts                   — YT + IG scrapers, Apify token rotation
-│   ├── constants.ts               — DB IDs, pillars, Twitter thresholds
-│   ├── content-intelligence.ts    — Strategist schemas (comprehension, plans)
-│   ├── draft-validator.ts         — Writer depth gates + retry hints
-│   ├── hook-matcher.ts            — Hook template matching
-│   ├── idea-page-blocks.ts        — Ideas Bank page markdown/blocks
-│   ├── idea-scout-config.ts       — Caps, budgets, format targets, maxSourcesPerRun
-│   ├── idea-variations.ts         — Variation Set labels, title suffixes
-│   ├── llm.ts                     — TokenRouter (M3/Grok) + legacy OpenRouter helpers
-│   ├── notion-markdown-blocks.ts  — Markdown → native Notion blocks
-│   ├── notion.ts                  — Reads/writes, transcripts, ideas, variations
-│   ├── pillar-selection.ts        — Underserved multi-tag pillar routing
-│   ├── pillar-utils.ts            — Alias map, matchPillar, filterCategoryList
-│   ├── scout-analysis.ts          — Scout Pass 1 analysis helpers
-│   ├── transcript-cleaner.ts      — YT/IG clean + head+tail budget
-│   ├── twitter.ts                 — TwitterAPI.io (TWITTER_API_KEY || BACKUP_TWITTER_API_KEY)
-│   └── voice-dna.ts               — ExecutionPlan, voice modes, buildWriterPrompt
+│   ├── idea-evaluation.ts         — Confidence scores, flags, thresholds (v1)
+│   ├── idea-curation.ts           — Daily Top 3 selection
+│   ├── idea-roadmap-notion.ts     — Evaluate / curate / promote / sync / taste I/O
+│   ├── hook-matcher.ts            — Safe/Sharp/Bold variants + psychology
+│   ├── voice-dna.ts               — ExecutionPlan (+ hookVariants), buildWriterPrompt(+taste)
+│   ├── ... (notion, apify, llm, pillar-*, transcript-cleaner, etc.)
 │
-└── trigger/
-    ├── idea-scout/
-    │   ├── scout-content.ts       — Mon/Thu/Sun 3:30 AM UTC orchestrator
-    │   ├── process-content.ts     — Relevance + summary → Scouted Content
-    │   ├── comprehend-source.ts   — Multi-phase strategist pipeline
-    │   ├── draft-ideas.ts         — Source prioritization, Variation Sets, dispatch Writer
-    │   └── write-tweets.ts        — Grok writer + validation
-    └── viral-library/
-        └── research-tweets.ts     — Manual Viral Post Library research
+└── trigger/idea-scout/
+    ├── scout-content.ts           — Manual orchestrator
+    ├── process-content.ts         — Relevance + summary
+    ├── comprehend-source.ts       — Multi-phase strategist
+    ├── draft-ideas.ts             — Manual strategist + taste profile
+    ├── write-tweets.ts            — Writer → queue evaluate-draft
+    ├── evaluate-draft.ts          — Editorial gate
+    ├── backfill-evaluations.ts    — Historical scoring batches
+    ├── curate-daily-ideas.ts      — Today’s Top 3
+    ├── promote-selected-ideas.ts  — ✅ Selected → Pipeline
+    ├── sync-posted-content.ts     — Posted → Tracker
+    └── refresh-taste-profile.ts   — Weekly Taste Profile
 ```
 
 ---
 
 ### 6. Trigger.dev Task Registry
 
-| Task ID | Type | Trigger / Schedule | Max Duration | Concurrency | Model | Status |
-| ------- | ---- | ------------------ | ------------ | ----------- | ----- | ------ |
-| `scout-content` | `schedules.task` | `30 3 * * 0,1,4` (Mon/Thu/Sun 3:30 AM UTC) | 14400s | 1 | — | Active |
-| `process-content` | `task` | Batched from scout | 300s | 5 (queue) | MiniMax-M3 via TokenRouter (`generateJSONFree`) | Active |
-| `draft-ideas` | `schedules.task` | scout dispatch + `30 4 * * 3,5` (Wed/Fri 4:30 AM UTC catch-all) | **3600s** | 1 | MiniMax-M3 (TokenRouter, streaming) | Active |
-| `write-tweets` | `task` | From draft-ideas | 600s | — | `x-ai/grok-4.3` (TokenRouter, temp 0.7) | Active |
-| `research-tweets` | `task` | Manual | 14400s | 1 | MiniMax-M3 primary | Active |
+| Task ID | Type | Trigger / Schedule | Max Duration | Model | Status |
+| ------- | ---- | ------------------ | ------------ | ----- | ------ |
+| `scout-content` | `task` | Manual (cron paused) | 14400s | — | Active manual |
+| `process-content` | `task` | Batched from scout | 300s | MiniMax-M3 | Active |
+| `draft-ideas` | `task` | Manual / scout dispatch | 3600s | MiniMax-M3 streaming | Active manual |
+| `write-tweets` | `task` | From draft-ideas | 600s | Grok-4.3 | Active |
+| `evaluate-draft` | `task` | From writer / backfill | 600s | MiniMax-M3 | Active |
+| `backfill-idea-evaluations` | `task` | Manual | 600s | Dispatches evaluate | Active |
+| `curate-daily-ideas` | `schedules.task` | 07:00 Africa/Lagos PRODUCTION | 300s | Deterministic | Active |
+| `promote-selected-ideas` | `schedules.task` | Every 15m Africa/Lagos PRODUCTION | 600s | Deterministic | Active |
+| `sync-posted-content-to-tracker` | `schedules.task` | Hourly :05 Africa/Lagos PRODUCTION | 600s | Deterministic | Active |
+| `refresh-taste-profile` | `schedules.task` | Sun 08:00 Africa/Lagos PRODUCTION | 600s | MiniMax-M3 | Active |
+| `research-tweets` | `task` | Manual | 14400s | MiniMax-M3 | Active |
 
-**Config knobs (see `src/lib/idea-scout-config.ts`):** `strategistMaxTranscriptChars: 30000`, `strategistUseStreaming: true`, `maxSourcesPerRun: 10`, article validate ≥1200 words / ≥4 `##` sections, thread validate ≥8 posts.
+**Config knobs (`idea-scout-config.ts`):** `strategistMaxTranscriptChars: 30000`, `strategistUseStreaming: true`, `maxSourcesPerRun: 10`. **Evaluation knobs (`idea-evaluation.ts`):** eligibility 7.5, needs-review 6.5, EVALUATION_VERSION v1.
 
 ---
 
@@ -657,5 +679,7 @@ TRIGGER_ENV=dev|prod
   ```bash
   npx trigger.dev@latest deploy
   ```
-- [ ] **Verify:** Dashboard test run for scout/draft; confirm Ideas Bank pages get Variation Set + Draft toggles.
+- [ ] **Verify:** Manual scout/draft run; confirm evaluate-draft scores; check Today’s Top 3 view.
+- [ ] **Roadmap schema:** `npm run migrate:roadmap` + `npm run verify:roadmap`
 - [ ] **Transcript budget check:** `npm run measure:transcripts`
+
