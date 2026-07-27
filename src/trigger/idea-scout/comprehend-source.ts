@@ -6,6 +6,7 @@ import { budgetTranscript } from "../../lib/transcript-cleaner";
 import {
   formatHookCandidates,
   matchHookTemplates,
+  normalizeHookVariants,
   type HookTemplate,
 } from "../../lib/hook-matcher";
 import type {
@@ -292,6 +293,7 @@ export async function brainstormOutputs(
   source: ScoutedContentForDraft,
   pillar: string,
   viralSummary: string,
+  tasteProfile = "",
 ): Promise<BrainstormedOutput[]> {
   const rawDepth = getRawSourceDepth(source);
   const shortOnly = rawDepth < IDEA_SCOUT_CONFIG.hardShortOnlyCharThreshold;
@@ -308,6 +310,8 @@ ${JSON.stringify(comprehension, null, 2)}
 
 VIRAL LIBRARY PATTERNS (packaging reference only):
 ${viralSummary || "None"}
+
+${tasteProfile ? `PERSONAL TASTE PROFILE (preference guidance only; do not override source truth):\n${tasteProfile}` : ""}
 
 RETURN JSON:
 {
@@ -477,7 +481,7 @@ ${JSON.stringify(chosen, null, 2)}
 SOURCE PAGE ID: ${source.pageId}
 PILLAR: ${pillar}
 
-HOOK TEMPLATE CANDIDATES (pick ONE, fill for this source):
+HOOK TEMPLATE CANDIDATES (use these to create three distinct options):
 ${hooksText}
 
 VIRAL TEMPLATE:
@@ -489,7 +493,9 @@ RETURN JSON matching ExecutionPlan fields including:
 - detailedOutline: array of { heading, purpose, sourceUnits, mustInclude, targetWords }
 - talkingPoints: 3-7 publishable bullets the writer MUST cover (from transcript gems, facts, teachable units — not generic advice)
 - stepByStepProcess: ordered steps from the source when a how-to/workflow exists (empty array if none); use "1. ..." format
-- hookTemplate, hookFilledExample, hookRationale
+- hookVariants: exactly 3 objects labelled Safe, Sharp, and Bold. Each object must contain text, template, rationale, psychology, and requiresProof. Keep every claim source-grounded.
+- selectedHookVariant: Safe | Sharp | Bold (default to Sharp unless the source cannot support it)
+- hookTemplate, hookFilledExample, hookRationale must describe the selected variant for backwards compatibility
 - viralTemplateId, viralTweetStructure, viralWhyItWorks, stealablePattern
 - sourceFacts, mustUseDetails (from transcript gems), doNotInvent
 - minWordTarget, minSectionCount (articles), minPostCount (threads)
@@ -501,7 +507,7 @@ RETURN JSON matching ExecutionPlan fields including:
     IDEA_SCOUT_CONFIG.strategistTemperature.plan,
   );
 
-  return buildExecutionPlan(raw, comprehension, chosen, source, pillar, viralTemplate);
+  return buildExecutionPlan(raw, comprehension, chosen, source, pillar, viralTemplate, hookCandidates);
 }
 
 export function deriveTalkingPoints(
@@ -585,6 +591,7 @@ function buildExecutionPlan(
   source: ScoutedContentForDraft,
   pillar: string,
   viralTemplate: ViralTemplateRef | null,
+  hookCandidates: HookTemplate[],
 ): ExecutionPlanPayload | null {
   const sourceFacts = ensureArray(raw.sourceFacts);
   const mustUse = ensureArray(raw.mustUseDetails);
@@ -598,6 +605,13 @@ function buildExecutionPlan(
   const targets = IDEA_SCOUT_CONFIG.formatWordTargets;
 
   const outline = normalizeOutline(raw.detailedOutline, format);
+
+  const fallbackHook = String(raw.hookFilledExample || chosen.hookDirection || "").trim();
+  const hookVariants = normalizeHookVariants(raw.hookVariants, fallbackHook, hookCandidates);
+  const selectedHookVariant = ["Safe", "Sharp", "Bold"].includes(String(raw.selectedHookVariant))
+    ? String(raw.selectedHookVariant) as "Safe" | "Sharp" | "Bold"
+    : "Sharp";
+  const selectedHook = hookVariants.find((item) => item.label === selectedHookVariant) || hookVariants[0];
 
   return {
     ideaTitle: cleanTitle(String(raw.ideaTitle || chosen.workingTitle)),
@@ -648,9 +662,11 @@ function buildExecutionPlan(
     contentArchetype: comprehension.contentType,
     primaryValueBomb: chosen.primaryValueBomb,
     detailedOutline: outline,
-    hookTemplate: normalizeHookTemplate(raw.hookTemplate),
-    hookFilledExample: String(raw.hookFilledExample || chosen.hookDirection || "").trim(),
-    hookRationale: String(raw.hookRationale || "").trim(),
+    hookTemplate: normalizeHookTemplate(raw.hookTemplate) || selectedHook?.template || "",
+    hookFilledExample: selectedHook?.text || fallbackHook,
+    hookRationale: String(raw.hookRationale || selectedHook?.rationale || "").trim(),
+    hookVariants,
+    selectedHookVariant,
     viralTemplateId: String(raw.viralTemplateId || viralTemplate?.id || "").trim() || undefined,
     viralTweetStructure: String(raw.viralTweetStructure || viralTemplate?.tweetStructure || "").trim(),
     viralWhyItWorks: String(raw.viralWhyItWorks || viralTemplate?.whyItWorks || "").trim(),
@@ -680,13 +696,20 @@ export async function runComprehensionPipeline(input: {
   pillar: string;
   viralPosts: any[];
   viralSummary: string;
+  tasteProfile?: string;
 }): Promise<ExecutionPlanPayload[]> {
-  const { source, pillar, viralPosts, viralSummary } = input;
+  const { source, pillar, viralPosts, viralSummary, tasteProfile = "" } = input;
 
   const comprehension = await comprehendSource(source);
   if (!comprehension) return [];
 
-  const brainstormed = await brainstormOutputs(comprehension, source, pillar, viralSummary);
+  const brainstormed = await brainstormOutputs(
+    comprehension,
+    source,
+    pillar,
+    viralSummary,
+    tasteProfile,
+  );
   if (brainstormed.length === 0) return [];
 
   const selected = selectOutputs(brainstormed, source);

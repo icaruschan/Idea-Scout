@@ -1,4 +1,5 @@
 import type { ContentFormat, VoiceMode } from "./voice-dna";
+import type { HookRiskLevel, HookVariant } from "./hook-matcher";
 
 export type ContentArchetype =
   | "workflow-walkthrough"
@@ -160,6 +161,8 @@ export interface ExecutionPlanPayload {
   hookTemplate: string;
   hookFilledExample: string;
   hookRationale: string;
+  hookVariants: HookVariant[];
+  selectedHookVariant: HookRiskLevel;
   viralTemplateId?: string;
   viralTweetStructure: string;
   viralWhyItWorks: string;

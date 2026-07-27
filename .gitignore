@@ -46,3 +46,11 @@ My Twitter Data/
 
 # Editor settings
 .vscode/
+
+# Local MCP schema dumps / agent tooling noise
+mcps/
+
+# Trigger / local run logs
+*.log
+run_*.txt
+run_*.log

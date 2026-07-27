@@ -1,4 +1,4 @@
-import { task, tasks, schedules } from "@trigger.dev/sdk/v3";
+import { schedules, tasks } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
 import {
@@ -14,6 +14,7 @@ import {
 import { resolvePrimaryPillar } from "../../lib/pillar-selection";
 import { ExecutionPlan } from "../../lib/voice-dna";
 import { runComprehensionPipeline } from "./comprehend-source";
+import { getActiveTasteProfile } from "../../lib/idea-roadmap-notion";
 import {
   getRecentScoutedContent,
   getScoutedContentByIds,
@@ -22,7 +23,6 @@ import {
   getPillarDistribution,
   createIdea,
   appendVariationSiblingFooters,
-  cleanRejectedIdeas,
   getRawSourceDepth,
   CreateIdeaOptions,
   ScoutedContentForDraft,
@@ -72,12 +72,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
       : `💡 Draft Ideas starting — catch-all mode, querying recent unlinked scouted content (past 7 days)`,
   );
 
-  const cleanedCount = await cleanRejectedIdeas();
-  if (cleanedCount > 0) {
-    console.log(`🗑️ Cleaned up ${cleanedCount} rejected ideas to free up source content.`);
-  }
-
-  const [scoutedContent, viralPosts, existingTitles, pillarCounts] =
+  const [scoutedContent, viralPosts, existingTitles, pillarCounts, tasteProfile] =
     await Promise.all([
       scoutedContentIds.length > 0
         ? getScoutedContentByIds(scoutedContentIds)
@@ -85,6 +80,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
       getTopViralPosts(30),
       getRecentIdeaTitles(30),
       getPillarDistribution(14),
+      getActiveTasteProfile().catch(() => ""),
     ]);
 
   const totalIdeas = (Object.values(pillarCounts) as number[]).reduce(
@@ -168,6 +164,7 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
         pillar,
         viralPosts: templates,
         viralSummary,
+        tasteProfile,
       });
 
       if (executionPlans.length === 0) {
@@ -286,12 +283,15 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
   return { ideasCreated };
 }
 
-// Hybrid scheduling:
-// - scout-content dispatches draft-ideas immediately with scoutedContentIds (Mon/Thu/Sun)
-// - Wed/Fri cron catches manual/orphaned unlinked scouted content (no scout run those days)
+// Scout runs dispatch fresh sources immediately. This Wednesday catch-all handles
+// manually added or orphaned unlinked sources that did not originate from a scout run.
 export const draftIdeas = schedules.task({
   id: "draft-ideas",
-  cron: "30 4 * * 3,5", // Wed/Fri 4:30 AM UTC catch-all backfill
+  cron: {
+    pattern: "30 5 * * 3",
+    timezone: "UTC",
+    environments: ["PRODUCTION"],
+  },
   maxDuration: 3600,
   retry: {
     maxAttempts: 2,

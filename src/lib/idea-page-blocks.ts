@@ -50,6 +50,9 @@ export function buildStrategistBriefMarkdown(plan: ExecutionPlan): string {
     ``,
     hookTemplate ? `## Hook Template\n${hookTemplate}` : "",
     plan.hookRationale ? `Rationale: ${plan.hookRationale}` : "",
+    plan.hookVariants?.length
+      ? `## Hook Options\n${plan.hookVariants.map((hook) => `- **${hook.label}:** ${hook.text} — ${hook.psychology.join(", ")}`).join("\n")}`
+      : "",
     ``,
     `## Packaging`,
     `Pattern: ${plan.stealablePattern || "Source-grounded guide"}`,
@@ -72,6 +75,9 @@ export function buildVisibleIdeaPageMarkdown(plan: ExecutionPlan): string {
     `## Hook`,
     plan.hookFilledExample || plan.contentPromise,
     hookTemplate ? `Template: ${hookTemplate}` : "",
+    plan.hookVariants?.length
+      ? `**Options:**\n${plan.hookVariants.map((hook) => `- ${hook.label}: ${hook.text}`).join("\n")}`
+      : "",
     ``,
     `## Output`,
     `**Format:** ${plan.format}`,

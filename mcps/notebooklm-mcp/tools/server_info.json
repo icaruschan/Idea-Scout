@@ -1,9 +1,0 @@
-{
-  "name": "server_info",
-  "description": "Get server version, check for updates, and report auth status.\n\nAI assistants: If update_available is True, inform the user that a new\nversion is available and suggest updating with the provided command.\n\nauth_status is the result of an AuthHealthChecker probe. The checker\nruns a multi-probe strategy (homepage fetch + API fallback) with\n30-second TTL caching and mtime-based bypass on auth-file changes.\nThe reported value may therefore be up to 30 seconds old, and an\nexternal `nlm login` is picked up within one check cycle without\nwaiting for the TTL to expire.\n\nauth_status meanings:\n- \"configured\"     — homepage (or API fallback) check passed; credentials\n                     are good. Cached credentials may be reported as\n                     configured for up to 30 seconds.\n- \"not_configured\" — no credentials are stored (first-time setup).\n- \"stale\"          — credentials are known-bad (expired or past the\n                     7-day heuristic). Operations will fail; ask the\n                     user to run `nlm login` to refresh.\n- \"unverified\"     — the check could not be completed (network error,\n                     timeout, non-200 response). Cached credentials may\n                     still work for actual API calls, so do not assume\n                     the user needs to re-auth.\n- \"error\"          — unexpected exception inside the check itself.\n\nReturns:\n    dict with version info:\n    - version: Current installed version\n    - latest_version: Latest version on PyPI (or None if check failed)\n    - update_available: True if a newer version is available\n    - auth_status: configured | stale | unverified | not_configured | error\n    - update_command: Command to run to update",
-  "inputSchema": {
-    "additionalProperties": false,
-    "properties": {},
-    "type": "object"
-  }
-}
