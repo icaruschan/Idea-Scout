@@ -11,6 +11,7 @@ type PropertyMap = Record<string, any>;
 const number = () => ({ type: "number", number: { format: "number" } });
 const text = () => ({ type: "rich_text", rich_text: {} });
 const date = () => ({ type: "date", date: {} });
+const checkbox = () => ({ type: "checkbox", checkbox: {} });
 const select = (names: string[]) => ({
   type: "select",
   select: { options: names.map((name) => ({ name })) },
@@ -54,11 +55,67 @@ const ideaProperties: PropertyMap = {
   "Hook C": text(),
   "Selected Hook": text(),
   "Hook Psychology": multiSelect(["Mistake", "Contrarian", "Proof", "How-to", "Comparison", "Tool stack", "Warning", "Personal story", "Resource drop", "Curiosity gap", "Status shift"]),
+  "Production Complexity": select(["Low", "Medium", "High"]),
+  "Estimated Production Minutes": number(),
+  "Preflight Asset Count": number(),
+  "Required Assets": text(),
+  "Preflight Asset Types": multiSelect(["Screenshot", "Screen recording", "Photograph", "Generated image", "Before-and-after comparison", "Diagram", "Chart", "Table", "Document", "Quote or citation", "B-roll", "Audio", "Downloadable resource", "External reference", "Other"]),
+  "Research Dependency": select(["None", "Low", "Medium", "High"]),
+  "Proof Dependency": select(["None", "Low", "Medium", "High"]),
+  "Editing Intensity": select(["None", "Low", "Medium", "High"]),
+  "Live Capture Required": checkbox(),
+  "Production Blockers": text(),
+  "Preflight State": select(["Complete", "Incomplete"]),
+  "Preflight Version": text(),
 };
 
 const pipelineProperties: PropertyMap = {
   Platform: select(["X", "YouTube", "Instagram", "Newsletter"]),
   "Tracker Item": relation(NOTION_DATA_SOURCE_IDS.MY_CONTENT_TRACKER),
+  "Production Scope": select(["Minimum", "Recommended", "Premium"]),
+  "Applied Production Scope": select(["Minimum", "Recommended", "Premium"]),
+  "Blueprint State": select(["Pending", "Generating", "Ready", "Failed", "Stale"]),
+  "Blueprint Version": text(),
+  "Blueprint Generated At": date(),
+  "Blueprint Error": text(),
+  "Generate or Regenerate Blueprint": checkbox(),
+  "Production Assets": relation(NOTION_DATA_SOURCE_IDS.PRODUCTION_ASSETS),
+  "Production Readiness": select(["Not Started", "In Progress", "Blocked", "Ready for Review"]),
+  "Asset Progress": number(),
+  "Required Asset Count": number(),
+  "Completed Asset Count": number(),
+  "Estimated Production Minutes": number(),
+  "Required Asset Types": multiSelect(["Screenshot", "Screen recording", "Photograph", "Generated image", "Before-and-after comparison", "Diagram", "Chart", "Table", "Document", "Quote or citation", "B-roll", "Audio", "Downloadable resource", "External reference", "Other"]),
+  "Production Blockers": text(),
+  "Blueprint Change Summary": text(),
+};
+
+const productionAssetProperties: PropertyMap = {
+  "Asset Key": text(),
+  "Pipeline Item": relation(NOTION_DATA_SOURCE_IDS.CONTENT_PIPELINE),
+  "Origin Idea": relation(NOTION_DATA_SOURCE_IDS.IDEAS_BANK),
+  "Asset Type": select(["Screenshot", "Screen recording", "Photograph", "Generated image", "Before-and-after comparison", "Diagram", "Chart", "Table", "Document", "Quote or citation", "B-roll", "Audio", "Downloadable resource", "External reference", "Other"]),
+  "Included In": multiSelect(["Minimum", "Recommended", "Premium"]),
+  Active: checkbox(),
+  "Blueprint Required": checkbox(),
+  Required: checkbox(),
+  Status: select(["Not Started", "Ready to Capture", "In Progress", "Blocked", "Captured", "Edited", "Placed", "Complete", "Skipped"]),
+  "Sort Order": number(),
+  Purpose: text(),
+  "Claim Supported": text(),
+  "Why Needed": text(),
+  "Acquisition Method": select(["Capture existing material", "Record live process", "Generate with AI", "Design from assets", "Download or source", "Recreate demonstration", "Reuse media library", "No media creation"]),
+  "Tool or App": text(),
+  "Source Location": text(),
+  "Capture Timing": select(["Before process", "During process", "After result", "Anytime", "Not applicable"]),
+  "Estimated Minutes": number(),
+  Dependencies: relation(NOTION_DATA_SOURCE_IDS.PRODUCTION_ASSETS),
+  Placement: text(),
+  Blocker: text(),
+  "Human Notes": text(),
+  "Needs Review": checkbox(),
+  "Completed At": date(),
+  "Blueprint Version": text(),
 };
 
 const trackerProperties: PropertyMap = {
@@ -121,6 +178,7 @@ async function main() {
   await ensureProperties("Ideas Bank", NOTION_DATA_SOURCE_IDS.IDEAS_BANK, ideaProperties);
   await mergeOptions("Ideas Bank", NOTION_DATA_SOURCE_IDS.IDEAS_BANK, "Status", ["👀 Needs Review", "✅ Selected", "➡️ In Pipeline"], "select");
   await ensureProperties("Content Pipeline", NOTION_DATA_SOURCE_IDS.CONTENT_PIPELINE, pipelineProperties);
+  await ensureProperties("Production Assets", NOTION_DATA_SOURCE_IDS.PRODUCTION_ASSETS, productionAssetProperties);
   await ensureProperties("My Content Tracker", NOTION_DATA_SOURCE_IDS.MY_CONTENT_TRACKER, trackerProperties);
   await mergeOptions("My Content Tracker", NOTION_DATA_SOURCE_IDS.MY_CONTENT_TRACKER, "Platform", ["Instagram"], "select");
   await mergeOptions("Content Pipeline", NOTION_DATA_SOURCE_IDS.CONTENT_PIPELINE, "Category", CONTENT_PILLARS, "multi_select");

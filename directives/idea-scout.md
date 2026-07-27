@@ -58,6 +58,7 @@ TRIGGER_ENV=dev|prod
 | **Content Pipeline** | `8cc7a479-7eea-4092-a11b-81381d4524b0` | `4bfdc801-348f-4203-8966-9720d3e11088` |
 | **My Content Tracker** | `69f828a6-5d4d-4ae1-bd62-b415abefe757` | `75600b9e-4eba-4594-92ac-ce01fa85b0a8` |
 | **Taste Profiles** | `fb5e5bd1-9ff3-4a4c-a369-3f7f8322bc8a` | `39652859-413b-42aa-8d75-0ac42e24a7fc` |
+| **Production Assets** | `388ca855-6492-4867-852c-6c775ce0dea9` | `82c96596-893b-40fa-a95d-c36493c85df7` |
 
 ---
 
@@ -82,9 +83,9 @@ The filter checks content relevance against these specific domains. If a piece o
 ## 4. Pipeline Architecture & Execution Flow
 
 ```
-Trigger.dev Manual Run
+Trigger.dev schedule (Mon/Thu 04:30 UTC, PRODUCTION) or Manual Run
 │
-└── scout-content (On-demand only | maxDuration: 14400s)
+└── scout-content (maxDuration: 14400s)
     ├── 1. Gather active creators (YT: 10, IG: 10, X: 24) sorted by Last Checked (oldest first)
     ├── 2. Scrape content streams (with 5s cooldowns between phases):
     │      ├── YT: Scrapes newest 5 videos (Apify Actor) — sequential per creator
@@ -103,9 +104,10 @@ Trigger.dev Manual Run
     ├── 4. Update Last Checked date ONLY for successfully processed creators (failed creators are skipped)
     └── 5. Dispatch draft-ideas with this run's `scoutedContentIds` (skipped when no new content was stored)
 
-Triggered two ways (both manual-origin):
-│   • Immediately by a manually started scout-content run with that run's scoutedContentIds
-│   • Direct manual dashboard / trigger-draft.ts run for unlinked scouted content (past 14 days; manual/orphaned)
+Triggered three ways:
+│   • Immediately by each scheduled or manual scout-content run with that run's scoutedContentIds
+│   • Wednesday 05:30 UTC catch-all for unlinked scouted content (past 14 days; manual/orphaned)
+│   • Direct manual dashboard / trigger-draft.ts run when explicitly requested
 │
 └── draft-ideas [VALUE STRATEGIST] (maxDuration: 3600s)
     ├── 1. Preserve rejected ideas as taste-learning evidence (never auto-archive)
@@ -172,7 +174,16 @@ Scheduled decision and feedback loop (production)
 ├── curate-daily-ideas — 07:00 Africa/Lagos
 │   └── Recommend up to 3 eligible, unexpired, variation-diverse ideas as Best Overall, Quick Win, and Bold Bet
 ├── promote-selected-ideas — every 15 minutes
-│   └── Only Status = ✅ Selected moves idempotently into Content Pipeline; Idea becomes ➡️ In Pipeline
+│   ├── Only Status = ✅ Selected moves idempotently into Content Pipeline; Idea becomes ➡️ In Pipeline
+│   └── Queue generate-production-blueprint for the new Pipeline item
+├── generate-production-blueprint — after selection or manual regeneration
+│   ├── Read source comprehension + selected idea + final draft + format + preflight
+│   ├── Derive Minimum / Recommended / Premium packages without target asset counts
+│   ├── Reject decorative assets; zero required assets is valid
+│   ├── Upsert Production Assets by stable key while preserving human work
+│   └── Render the full execution blueprint into the Pipeline page
+├── sync-production-readiness — every 15 minutes
+│   └── Recalculate progress from active required assets; never changes Pipeline Status
 ├── sync-posted-content-to-tracker — hourly at minute 5
 │   └── Only 🚀 Posted + Move to Tracker + Posted URL moves idempotently into My Content Tracker
 └── refresh-taste-profile — Sunday 08:00 Africa/Lagos
@@ -263,6 +274,7 @@ npm run migrate:roadmap:dry
 npm run verify:roadmap
 npm run enrich:hooks
 # backfill: trigger backfill-idea-evaluations or scripts/run-roadmap-backfill.ts
+# production preflight backfill: trigger backfill-production-preflights
 ```
 
 ---
@@ -278,6 +290,10 @@ npm run enrich:hooks
 - **Async Writer behavior:** `draft-ideas` does not wait for Writer completion. This is intentional; quality comes from the full source handoff, while final draft completion is handled by the child Writer task.
 - **Evaluator behavior:** The writer queues `evaluate-draft` only after structural validation passes. Existing drafts are backfilled in batches of 10 using `backfill-idea-evaluations`; pending records are excluded to prevent duplicate work.
 - **Selection remains manual:** The automation never changes an idea to `✅ Selected` and never publishes content. It only reacts after the user chooses `✅ Selected` or marks a Pipeline item `🚀 Posted` with `Move to Tracker` checked and a Posted URL.
+- **Production planning is dynamic:** The blueprint derives assets from the actual source, claims, mechanisms, draft, reader outcome, and format. The AI UGC scenario is a test fixture only; no asset name, count, complexity, time, or Effort Fit value is reused as a template.
+- **No forced media:** Every asset must prove, demonstrate, clarify, compare, contextualize, aid navigation, or create a useful resource. Text-only content may legitimately have `Required assets: 0`.
+- **Human-owned asset work is durable:** Regeneration matches stable Asset Keys, preserves status/notes/source location/blockers/completion, deactivates obsolete assets, and flags meaningful changes to completed assets for review.
+- **Blueprint scope:** Recommended is active by default; Minimum and Premium remain available. The system plans and tracks assets but does not capture screenshots, record screens, create media, or auto-mark content ready.
 - **Notion select option constraint:** Notion API select/multi-select option names cannot contain commas. Use `/` or another separator in migration labels.
 - **Production run polling:** Manual trigger scripts (`trigger-scout.ts`, `trigger-draft.ts`) set `TRIGGER_SECRET_KEY` from `TRIGGER_PRODUCTION_KEY`. Local status polling must use the same key path; `scripts/check-status.ts` falls back to `TRIGGER_PRODUCTION_KEY` before `TRIGGER_DEVELOPMENT_KEY` to avoid false 404s when polling production run IDs.
 

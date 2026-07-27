@@ -1,4 +1,4 @@
-import { task, tasks } from "@trigger.dev/sdk/v3";
+import { schedules, tasks } from "@trigger.dev/sdk/v3";
 import {
   getYouTubeCreators,
   getInstagramCreators,
@@ -19,7 +19,7 @@ import { TWITTER_FILTER_THRESHOLDS } from "../../lib/constants";
 // ═══════════════════════════════════════════════════════════════
 // IDEA SCOUT — Orchestrator
 // ═══════════════════════════════════════════════════════════════
-// Manual-only entry point. Run from the Trigger.dev dashboard or API when needed.
+// Scheduled Monday/Thursday at 04:30 UTC; can also be run manually.
 // Step 1: Query creators from 3 platforms (YT: 10, IG: 10, X: 24)
 // Step 2: Scrape content from each platform
 // Step 3: Dispatch each piece of content to process-content task
@@ -174,8 +174,13 @@ async function buildXContentItems(
   return items;
 }
 
-export const scoutContent = task({
+export const scoutContent = schedules.task({
   id: "scout-content",
+  cron: {
+    pattern: "30 4 * * 1,4",
+    timezone: "UTC",
+    environments: ["PRODUCTION"],
+  },
   maxDuration: 14400, // 4 hours — accounts for Apify actor wait times
   run: async (payload: any) => {
     const runTimestamp = payload?.timestamp ?? new Date().toISOString();

@@ -6,6 +6,10 @@ import { derivePriority } from "./idea-evaluation";
 import type { CurationCandidate, CuratedIdea } from "./idea-curation";
 import type { ContentFormat, ExecutionPlan } from "./voice-dna";
 import { markdownToNotionBlocks, type NotionBlock } from "./notion-markdown-blocks";
+import {
+  productionPreflightMarkdown,
+  type ProductionPreflight,
+} from "./production-blueprint";
 
 dotenv.config({ override: true });
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
@@ -91,6 +95,25 @@ async function appendBlocks(pageId: string, blocks: NotionBlock[]): Promise<void
     });
     if (index + 100 < blocks.length) await sleep(350);
   }
+}
+
+async function replaceNamedToggle(pageId: string, label: string, markdown: string): Promise<void> {
+  const blocks = await listChildren(pageId);
+  for (const block of blocks) {
+    if (block.type === "toggle" && blockText(block).trim() === label) {
+      await notion.blocks.delete({ block_id: block.id });
+    }
+  }
+  const response: any = await notion.blocks.children.append({
+    block_id: pageId,
+    children: [{
+      object: "block",
+      type: "toggle",
+      toggle: { rich_text: [{ type: "text", text: { content: label } }] },
+    }] as any,
+  });
+  const toggleId = response.results?.[0]?.id;
+  if (toggleId) await appendBlocks(toggleId, markdownToNotionBlocks(markdown));
 }
 
 export interface IdeaEvaluationRecord {
@@ -193,9 +216,22 @@ export async function saveIdeaEvaluation(pageId: string, evaluation: IdeaEvaluat
     "Shelf Life": { select: { name: evaluation.shelfLife } },
     Priority: { select: { name: derivePriority(evaluation.confidenceScore) } },
     Status: { select: { name: status } },
+    "Production Complexity": { select: { name: evaluation.productionPreflight.complexity } },
+    "Estimated Production Minutes": { number: evaluation.productionPreflight.estimatedProductionMinutes },
+    "Preflight Asset Count": { number: evaluation.productionPreflight.requiredAssetCount },
+    "Required Assets": richText(evaluation.productionPreflight.requiredAssets.map((asset, index) => `${index + 1}. ${asset.name}`).join("\n")),
+    "Preflight Asset Types": { multi_select: [...new Set(evaluation.productionPreflight.requiredAssets.map((asset) => asset.type))].map((name) => ({ name })) },
+    "Research Dependency": { select: { name: evaluation.productionPreflight.researchDependency } },
+    "Proof Dependency": { select: { name: evaluation.productionPreflight.proofDependency } },
+    "Editing Intensity": { select: { name: evaluation.productionPreflight.editingIntensity } },
+    "Live Capture Required": { checkbox: evaluation.productionPreflight.liveCaptureRequired },
+    "Production Blockers": richText(evaluation.productionPreflight.blockers.join("\n")),
+    "Preflight State": { select: { name: evaluation.productionPreflight.state } },
+    "Preflight Version": richText(evaluation.productionPreflight.version),
   };
   if (evaluation.expiresAt) properties["Expires At"] = { date: { start: evaluation.expiresAt } };
   await notion.pages.update({ page_id: pageId, properties });
+  await replaceNamedToggle(pageId, "🏗️ Production Preflight", productionPreflightMarkdown(evaluation.productionPreflight));
 }
 
 export async function markEvaluationFailed(pageId: string, message: string): Promise<void> {
@@ -227,6 +263,19 @@ export async function getBackfillCandidates(limit = 10, days = 30): Promise<stri
       const state = selectValue(page.properties?.["Evaluation State"]);
       return state !== "Scored" && state !== "Pending";
     })
+    .slice(0, limit)
+    .map((page: any) => page.id);
+}
+
+export async function getProductionPreflightBackfillCandidates(limit = 10): Promise<string[]> {
+  const response: any = await notion.dataSources.query({
+    data_source_id: NOTION_DATA_SOURCE_IDS.IDEAS_BANK,
+    filter: { property: "Status", select: { equals: "📝 Drafted" } },
+    sorts: [{ timestamp: "last_edited_time", direction: "descending" }],
+    page_size: 100,
+  });
+  return response.results
+    .filter((page: any) => selectValue(page.properties?.["Preflight State"]) !== "Complete")
     .slice(0, limit)
     .map((page: any) => page.id);
 }
@@ -313,6 +362,15 @@ export async function promoteIdeaToPipeline(idea: SelectedIdeaRecord): Promise<s
         Draft: richText(idea.draft),
         "Based On": { relation: [{ id: idea.pageId }] },
         Status: { select: { name: "📝 Drafting" } },
+        "Production Scope": { select: { name: "Recommended" } },
+        "Blueprint State": { select: { name: "Pending" } },
+        "Production Readiness": { select: { name: "Not Started" } },
+        "Asset Progress": { number: 0 },
+        "Required Asset Count": { number: idea.properties?.["Preflight Asset Count"]?.number || 0 },
+        "Completed Asset Count": { number: 0 },
+        "Estimated Production Minutes": { number: idea.properties?.["Estimated Production Minutes"]?.number || 0 },
+        "Required Asset Types": { multi_select: multiSelectValue(idea.properties?.["Preflight Asset Types"]).map((name) => ({ name })) },
+        "Production Blockers": richText(textValue(idea.properties?.["Production Blockers"])),
       },
     });
     pipelineId = response.id;
@@ -326,6 +384,44 @@ export async function promoteIdeaToPipeline(idea: SelectedIdeaRecord): Promise<s
     },
   });
   return pipelineId!;
+}
+
+export function preflightFromIdeaProperties(properties: Record<string, any>): ProductionPreflight {
+  const requiredNames = textValue(properties["Required Assets"])
+    .split("\n")
+    .map((line) => line.replace(/^\d+\.\s*/, "").trim())
+    .filter(Boolean);
+  const types = multiSelectValue(properties["Preflight Asset Types"]);
+  return {
+    state: selectValue(properties["Preflight State"]) === "Complete" ? "Complete" : "Incomplete",
+    contentArchetype: "See strategist context",
+    readerTransformation: "See strategist context and final draft",
+    importantClaims: [],
+    teachableUnits: [],
+    processesToDemonstrate: [],
+    evidenceRequirements: [],
+    visualizationOpportunities: [],
+    reusableResources: [],
+    requiredAssets: requiredNames.map((name, index) => ({
+      name,
+      type: (types[index] || "Other") as any,
+      purpose: "See full blueprint analysis",
+      necessityReasons: ["supplies_context"],
+    })),
+    requiredAssetCount: properties["Preflight Asset Count"]?.number || requiredNames.length,
+    estimatedProductionMinutes: properties["Estimated Production Minutes"]?.number || 0,
+    complexity: (selectValue(properties["Production Complexity"]) || "Low") as any,
+    researchDependency: (selectValue(properties["Research Dependency"]) || "None") as any,
+    proofDependency: (selectValue(properties["Proof Dependency"]) || "None") as any,
+    editingIntensity: (selectValue(properties["Editing Intensity"]) || "None") as any,
+    liveCaptureRequired: Boolean(properties["Live Capture Required"]?.checkbox),
+    blockers: textValue(properties["Production Blockers"]).split("\n").filter(Boolean),
+    version: "v1",
+  };
+}
+
+export async function getIdeaPlanningContext(pageId: string): Promise<string> {
+  return collectBlockText(pageId);
 }
 
 export interface PostedPipelineRecord {

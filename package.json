@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsc --noEmit && tsx scripts/test-pillar-matching.ts && tsx scripts/test-pillar-selection.ts && tsx scripts/test-idea-variations.ts && tsx scripts/test-notion-markdown-blocks.ts && tsx scripts/test-url-normalization.ts && tsx scripts/test-source-text.ts && tsx scripts/test-notion-transcript-storage.ts && tsx scripts/test-transcript-cleaner.ts && tsx scripts/test-value-brief.ts && tsx scripts/test-draft-prioritization.ts && tsx scripts/test-writer-voice-samples.ts && tsx scripts/test-idea-evaluation.ts && tsx scripts/test-idea-curation.ts && tsx scripts/test-hook-intelligence.ts",
+    "test": "tsc --noEmit && tsx scripts/test-pillar-matching.ts && tsx scripts/test-pillar-selection.ts && tsx scripts/test-idea-variations.ts && tsx scripts/test-notion-markdown-blocks.ts && tsx scripts/test-url-normalization.ts && tsx scripts/test-source-text.ts && tsx scripts/test-notion-transcript-storage.ts && tsx scripts/test-transcript-cleaner.ts && tsx scripts/test-value-brief.ts && tsx scripts/test-draft-prioritization.ts && tsx scripts/test-writer-voice-samples.ts && tsx scripts/test-idea-evaluation.ts && tsx scripts/test-idea-curation.ts && tsx scripts/test-hook-intelligence.ts && tsx scripts/test-production-blueprint.ts",
+    "test:production-blueprint": "tsx scripts/test-production-blueprint.ts",
     "test:pillars": "tsx scripts/test-pillar-matching.ts",
     "test:scrapers": "tsx scripts/test-scrapers.ts",
     "test:twitter": "tsx scripts/test-twitter.ts",

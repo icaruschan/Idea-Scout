@@ -1,6 +1,14 @@
 import type { ContentFormat, ExecutionPlan } from "./voice-dna";
+import {
+  ASSET_TYPES,
+  derivePreflightEffortFit,
+  incompleteProductionPreflight,
+  NECESSITY_REASONS,
+  normalizeProductionPreflight,
+  type ProductionPreflight,
+} from "./production-blueprint";
 
-export const EVALUATION_VERSION = "v1" as const;
+export const EVALUATION_VERSION = "v2" as const;
 export const DAILY_ELIGIBILITY_THRESHOLD = 7.5;
 export const NEEDS_REVIEW_THRESHOLD = 6.5;
 
@@ -42,6 +50,7 @@ export interface IdeaEvaluation {
     similarityReason: string;
   };
   evaluationVersion: typeof EVALUATION_VERSION;
+  productionPreflight: ProductionPreflight;
 }
 
 const SCORE_WEIGHTS = {
@@ -124,6 +133,9 @@ export function normalizeIdeaEvaluation(
   now = new Date(),
 ): IdeaEvaluation {
   const source = (raw.scores && typeof raw.scores === "object" ? raw.scores : raw) as Record<string, unknown>;
+  const productionPreflight = raw.productionPreflight && typeof raw.productionPreflight === "object"
+    ? normalizeProductionPreflight(raw.productionPreflight)
+    : incompleteProductionPreflight();
   const scores: IdeaScoreBreakdown = {
     sourceStrength: clampScore(source.sourceStrength),
     audienceFit: clampScore(source.audienceFit),
@@ -132,7 +144,9 @@ export function normalizeIdeaEvaluation(
     voiceFit: clampScore(source.voiceFit),
     hookStrength: clampScore(source.hookStrength),
     timeliness: clampScore(source.timeliness),
-    effortFit: deriveEffortFit(format, draft),
+    effortFit: productionPreflight.state === "Complete"
+      ? derivePreflightEffortFit(productionPreflight)
+      : deriveEffortFit(format, draft),
   };
   const shelfLife = normalizeShelfLife(raw.shelfLife);
   const criticalFlags = strings(raw.criticalFlags).filter((flag): flag is CriticalFlag =>
@@ -159,6 +173,7 @@ export function normalizeIdeaEvaluation(
         }
       : undefined,
     evaluationVersion: EVALUATION_VERSION,
+    productionPreflight,
   };
 }
 
@@ -199,6 +214,17 @@ Score each qualitative dimension from 1-10. Be strict: 5 is average, 7 is good, 
 Critical flags may only be: unsupported_claim, source_mismatch, generic_slop, weak_hook, voice_mismatch, duplicate_angle, incomplete_payoff.
 Only use duplicate_angle when the core claim, audience pain, and mechanism substantially overlap a recent idea.
 
+Also perform a DYNAMIC PRODUCTION PREFLIGHT for this exact idea and format.
+- Derive requirements only from the source, draft, claims, reader outcome, processes, and evidence needs.
+- Zero assets is valid. Never force media for decoration or to fill a quota.
+- Do not reuse asset names from unrelated examples or topics.
+- Every asset must have a concrete name and at least one necessity reason from: ${NECESSITY_REASONS.join(", ")}.
+- Asset types are taxonomy only, not a checklist: ${ASSET_TYPES.join(", ")}.
+- Short normally needs zero or one high-value asset unless more are essential. Mid-length stays focused. Thread assets map to posts. Article assets map to claims and sections.
+- requiredAssetCount is computed by code from requiredAssets. Do not return a separate count.
+- Estimate production time from the actual work described, not from format alone.
+- This is planning only. Do not claim the system will create or capture the assets.
+
 Return JSON only:
 {
   "scores": {
@@ -214,6 +240,29 @@ Return JSON only:
   "criticalFlags": [],
   "recommendationReason": "One concise explanation grounded in this draft.",
   "improvementNotes": ["Specific fix"],
-  "closestDuplicate": null
+  "closestDuplicate": null,
+  "productionPreflight": {
+    "contentArchetype": "Source-specific archetype",
+    "readerTransformation": "What the reader can understand or do after consuming it",
+    "importantClaims": [],
+    "teachableUnits": [],
+    "processesToDemonstrate": [],
+    "evidenceRequirements": [],
+    "visualizationOpportunities": [],
+    "reusableResources": [],
+    "requiredAssets": [{
+      "name": "Concrete content-specific asset name",
+      "type": "${ASSET_TYPES.join("|")}",
+      "purpose": "Specific role in this draft",
+      "necessityReasons": ["proves_claim"]
+    }],
+    "estimatedProductionMinutes": 0,
+    "complexity": "Low|Medium|High",
+    "researchDependency": "None|Low|Medium|High",
+    "proofDependency": "None|Low|Medium|High",
+    "editingIntensity": "None|Low|Medium|High",
+    "liveCaptureRequired": false,
+    "blockers": []
+  }
 }`;
 }

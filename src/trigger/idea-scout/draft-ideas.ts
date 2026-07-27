@@ -1,4 +1,4 @@
-import { task, tasks } from "@trigger.dev/sdk/v3";
+import { schedules, tasks } from "@trigger.dev/sdk/v3";
 import { CONTENT_PILLARS } from "../../lib/constants";
 import { IDEA_SCOUT_CONFIG } from "../../lib/idea-scout-config";
 import {
@@ -283,10 +283,15 @@ export async function runDraftIdeas(payload?: DraftIdeasPayload): Promise<{ idea
   return { ideasCreated };
 }
 
-// Manual-only entry point, also dispatched by a manually started scout-content run.
-// Run it directly to process manual/orphaned unlinked scouted content.
-export const draftIdeas = task({
+// Scout runs dispatch fresh sources immediately. This Wednesday catch-all handles
+// manually added or orphaned unlinked sources that did not originate from a scout run.
+export const draftIdeas = schedules.task({
   id: "draft-ideas",
+  cron: {
+    pattern: "30 5 * * 3",
+    timezone: "UTC",
+    environments: ["PRODUCTION"],
+  },
   maxDuration: 3600,
   retry: {
     maxAttempts: 2,

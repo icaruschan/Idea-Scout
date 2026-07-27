@@ -552,15 +552,15 @@ Entire `mcps/` tree **untracked** and listed in `.gitignore` (local IDE/MCP cach
 
 ### 1. The Unified Idea Scout Flow (v4.1 Decision OS)
 
-Generation is **manual-origin**; decision/feedback tasks are **PRODUCTION schedules** (Africa/Lagos):
+Generation follows a bounded **PRODUCTION schedule** and remains manually triggerable; decision/feedback tasks keep their existing production schedules:
 
 ```
-Manual scout-content (maxDuration: 14400s)
+scout-content — Mon/Thu 04:30 UTC or manual (maxDuration: 14400s)
 │   Creators YT10 / IG10 / X24 → scrape → process-content batches
 │   → Scouted Content + Full Transcript
 │   → dispatch draft-ideas(scoutedContentIds) if any
 │
-Manual draft-ideas (maxDuration: 3600s)  [also direct for 14d unlinked]
+draft-ideas — scout dispatch + Wed 05:30 UTC catch-all or manual (maxDuration: 3600s)
 │   Preserve Rejected ideas (no auto-archive)
 │   Context: viral 4★+, titles 30d, pillar dist 14d, Active Taste Profile
 │   Prioritize YT/IG then X cap; maxSourcesPerRun=10
@@ -702,10 +702,10 @@ src/
 │   ├── ... (notion, apify, llm, pillar-*, transcript-cleaner, etc.)
 │
 └── trigger/idea-scout/
-    ├── scout-content.ts           — Manual orchestrator
+    ├── scout-content.ts           — Mon/Thu 04:30 UTC orchestrator
     ├── process-content.ts         — Relevance + summary
     ├── comprehend-source.ts       — Multi-phase strategist
-    ├── draft-ideas.ts             — Manual strategist + taste profile
+    ├── draft-ideas.ts             — Scout dispatch + Wed catch-all strategist
     ├── write-tweets.ts            — Writer → queue evaluate-draft
     ├── evaluate-draft.ts          — Editorial gate
     ├── backfill-evaluations.ts    — Historical scoring batches
@@ -721,9 +721,9 @@ src/
 
 | Task ID | Type | Trigger / Schedule | Max Duration | Model | Status |
 | ------- | ---- | ------------------ | ------------ | ----- | ------ |
-| `scout-content` | `task` | Manual (cron paused) | 14400s | — | Active manual |
+| `scout-content` | `schedules.task` | Mon/Thu 04:30 UTC PRODUCTION or manual | 14400s | — | Active scheduled |
 | `process-content` | `task` | Batched from scout | 300s | MiniMax-M3 | Active |
-| `draft-ideas` | `task` | Manual / scout dispatch | 3600s | MiniMax-M3 streaming | Active manual |
+| `draft-ideas` | `schedules.task` | Scout dispatch + Wed 05:30 UTC catch-all or manual | 3600s | MiniMax-M3 streaming | Active scheduled |
 | `write-tweets` | `task` | From draft-ideas | 600s | Grok-4.3 | Active |
 | `evaluate-draft` | `task` | From writer / backfill | 600s | MiniMax-M3 | Active |
 | `backfill-idea-evaluations` | `task` | Manual | 600s | Dispatches evaluate | Active |
@@ -786,3 +786,25 @@ TRIGGER_ENV=dev|prod
 - [ ] **Roadmap schema:** `npm run migrate:roadmap` + `npm run verify:roadmap`
 - [ ] **Transcript budget check:** `npm run measure:transcripts`
 
+---
+
+### LOG ENTRY 35: Dynamic Content Production Blueprint
+*Date: July 16, 2026*
+
+* **Goal:** Convert each human-selected draft into an idea-specific production and execution plan without turning examples into templates or forcing media.
+* **Dynamic preflight:** `evaluate-draft` now identifies the archetype, reader transformation, evidence burden, actual required assets, time, complexity, research/proof dependencies, editing intensity, live-capture needs, and blockers. Required count is derived from the asset list; Effort Fit is derived from that burden, with the earlier format/length calculation retained only as a failure fallback.
+* **Blueprint engine:** Added `production-blueprint.ts` with strict asset-necessity, concrete-name, format-awareness, package hierarchy, dependency-cycle, and capture-runbook validation. Minimum, Recommended, and Premium have no target counts; zero assets is valid.
+* **Notion production system:** Added Production Assets DB (`388ca855-6492-4867-852c-6c775ce0dea9` / DS `82c96596-893b-40fa-a95d-c36493c85df7`) plus Pipeline blueprint/readiness fields and Ideas Bank preflight fields.
+* **Automation:** Selection queues `generate-production-blueprint`; `sync-production-readiness` calculates progress from active required assets. Neither task creates media, changes Pipeline Status, selects ideas, or publishes.
+* **Human-safe regeneration:** Stable asset keys preserve status, notes, captured location, blockers, and completion history. New assets start Not Started; obsolete assets are deactivated; changed completed assets are flagged for review.
+* **Generalization verification:** Seven fixtures cover an AI UGC article, automation thread, tool comparison, personal-story short, founder retrospective, contrarian text-first essay, and software tutorial. Tests require varying counts, legitimate zero-media plans, format-specific execution, concrete process-linked capture instructions, and no AI UGC leakage.
+
+---
+
+### LOG ENTRY 36: Recommended Generation Schedule Restored
+*Date: July 28, 2026*
+
+* **Scout cadence:** `scout-content` runs Monday and Thursday at 04:30 UTC in production and remains manually triggerable.
+* **Immediate drafting:** Each successful scout dispatches `draft-ideas` only for the new Scouted Content created by that run.
+* **Catch-all cadence:** Standalone `draft-ideas` runs Wednesday at 05:30 UTC to process recent unlinked manual/orphaned sources and remains manually triggerable.
+* **Cost boundary:** No extra production canary is part of deployment. Local TypeScript and fixture tests do not call scraper, Notion, or model APIs.

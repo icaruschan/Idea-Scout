@@ -1,4 +1,4 @@
-import { schedules } from "@trigger.dev/sdk/v3";
+import { schedules, tasks } from "@trigger.dev/sdk/v3";
 import { getSelectedIdeas, promoteIdeaToPipeline } from "../../lib/idea-roadmap-notion";
 
 export const promoteSelectedIdeas = schedules.task({
@@ -13,6 +13,7 @@ export const promoteSelectedIdeas = schedules.task({
     for (const idea of selected) {
       try {
         const pipelineId = await promoteIdeaToPipeline(idea);
+        await tasks.trigger("generate-production-blueprint", { pipelineId });
         promoted.push({ ideaId: idea.pageId, pipelineId });
       } catch (error) {
         failed.push({ ideaId: idea.pageId, error: (error as Error).message });

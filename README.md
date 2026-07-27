@@ -93,7 +93,7 @@ For posts that pass the filters, the AI generates a 2-3 sentence **AI Summary** 
 ---
 
 ### Step 5: The Source-First Two-Actor Idea Engine
-The idea engine is **manual-only**: when `scout-content` is started from the Trigger.dev dashboard or API, it immediately dispatches **draft-ideas** with that run's scouted page IDs. **draft-ideas** can also be started directly to draft any **unlinked** scouted content from the past **14 days** (manual/orphaned). The **Value Strategist** studies sources serially using MiniMax M3 via TokenRouter; the **Writer** turns each `ExecutionPlan` into Short / Mid-length / Thread / Article using Grok 4.3 via TokenRouter.
+The idea engine runs on a bounded production cadence: **scout-content** runs Monday and Thursday at **04:30 UTC** and immediately dispatches **draft-ideas** with that run's scouted page IDs. A Wednesday **05:30 UTC** catch-all lets **draft-ideas** process any **unlinked** scouted content from the past **14 days** (manual/orphaned). Both tasks can still be started manually. The **Value Strategist** studies sources serially using MiniMax M3 via TokenRouter; the **Writer** turns each `ExecutionPlan` into Short / Mid-length / Thread / Article using Grok 4.3 via TokenRouter.
 
 #### Actor 1: The Value Strategist (`draft-ideas`, maxDuration **3600s**)
 1. **Preserves rejected ideas** as taste-learning evidence — does **not** auto-archive Status = `Rejected`.
@@ -140,8 +140,10 @@ The idea engine is **manual-only**: when `scout-content` is started from the Tri
 1. **`curate-daily-ideas`** (07:00 Africa/Lagos, PRODUCTION) — up to 3 eligible drafts (confidence ≥ **7.5**, not expired, not recommended in last 7 days, distinct Variation Sets): **Best Overall**, **Quick Win**, **Bold Bet**. May return fewer than 3 rather than pad weak work.
 2. **You** set Status to **✅ Selected** — automation never does this.
 3. **`promote-selected-ideas`** (every 15 min) creates an idempotent Content Pipeline item and marks the idea **➡️ In Pipeline**.
-4. **You** publish manually. **`sync-posted-content-to-tracker`** (hourly :05) moves a Pipeline item only when Status = **🚀 Posted**, `Move to Tracker` is checked, and `Posted URL` is present.
-5. Rate ideas with **Human Rating**, **Taste Note**, **Rejection Reason**. After **10** ratings, **`refresh-taste-profile`** (Sunday 08:00 Africa/Lagos) can write an Active Taste Profile that guides future strategy/writing. Performance may inform guidance at 10 complete tracker posts; score-weight changes stay gated until 20.
+4. **`generate-production-blueprint`** turns that selected idea into an idea-specific production plan with Minimum, Recommended, and Premium scopes. It can recommend zero assets and never copies asset names or counts from examples.
+5. **`sync-production-readiness`** tracks completion from active required assets without changing Pipeline Status or creating media.
+6. **You** publish manually. **`sync-posted-content-to-tracker`** (hourly :05) moves a Pipeline item only when Status = **🚀 Posted**, `Move to Tracker` is checked, and `Posted URL` is present.
+7. Rate ideas with **Human Rating**, **Taste Note**, **Rejection Reason**. After **10** ratings, **`refresh-taste-profile`** (Sunday 08:00 Africa/Lagos) can write an Active Taste Profile that guides future strategy/writing. Performance may inform guidance at 10 complete tracker posts; score-weight changes stay gated until 20.
 
 #### Example of a Remix:
 * **Scouted Input:** A transcript about using Claude Code to build static websites.
@@ -234,6 +236,7 @@ These are the exact database IDs used in the codebase.
 | **Content Pipeline** | `8cc7a479-7eea-4092-a11b-81381d4524b0` |
 | **My Content Tracker** | `69f828a6-5d4d-4ae1-bd62-b415abefe757` |
 | **Taste Profiles** | `fb5e5bd1-9ff3-4a4c-a369-3f7f8322bc8a` |
+| **Production Assets** | `388ca855-6492-4867-852c-6c775ce0dea9` |
 
 #### Data Source IDs (Used for database queries)
 | Database Name | Data Source ID |
@@ -247,6 +250,7 @@ These are the exact database IDs used in the codebase.
 | **Content Pipeline** | `4bfdc801-348f-4203-8966-9720d3e11088` |
 | **My Content Tracker** | `75600b9e-4eba-4594-92ac-ce01fa85b0a8` |
 | **Taste Profiles** | `39652859-413b-42aa-8d75-0ac42e24a7fc` |
+| **Production Assets** | `82c96596-893b-40fa-a95d-c36493c85df7` |
 
 ---
 
@@ -317,6 +321,8 @@ src/
 │   ├── idea-evaluation.ts           — Confidence scores, shelf life, critical flags, thresholds.
 │   ├── idea-curation.ts             — Deterministic daily Top 3 selection.
 │   ├── idea-roadmap-notion.ts       — Evaluation/curation/promote/sync/taste Notion I/O.
+│   ├── production-blueprint.ts       — Dynamic preflight, asset taxonomy, validation, packages, rendering.
+│   ├── production-notion.ts          — Blueprint persistence, regeneration merge, asset readiness.
 │   ├── idea-page-blocks.ts          — Ideas Bank page layout (Hook/Output + strategist brief).
 │   ├── idea-scout-config.ts         — Caps/budgets (30k transcript, maxSourcesPerRun: 10, streaming).
 │   ├── idea-variations.ts           — Variation Set labels, format title suffixes, preambles.
@@ -333,7 +339,7 @@ src/
 │
 └── trigger/
     ├── idea-scout/
-    │   ├── scout-content.ts         — Mon/Thu/Sun orchestrator + scrapers + draft dispatch.
+    │   ├── scout-content.ts         — Mon/Thu 04:30 UTC orchestrator + scrapers + draft dispatch.
     │   ├── process-content.ts       — Relevance filter + summary → Scouted Content.
     │   ├── comprehend-source.ts     — Multi-phase strategist (Comprehend → Plan).
     │   ├── draft-ideas.ts           — Prioritize sources, Variation Sets, dispatch Writer.
@@ -342,6 +348,9 @@ src/
     │   ├── backfill-evaluations.ts  — Batch historical draft scoring.
     │   ├── curate-daily-ideas.ts    — Today’s Top 3 recommendations.
     │   ├── promote-selected-ideas.ts — ✅ Selected → Content Pipeline.
+    │   ├── generate-production-blueprint.ts — Idea-specific execution plan after selection.
+    │   ├── sync-production-readiness.ts — Active required asset progress.
+    │   ├── backfill-production-preflights.ts — Historical draft preflight backfill.
     │   ├── sync-posted-content.ts   — 🚀 Posted Pipeline → My Content Tracker.
     │   └── refresh-taste-profile.ts — Weekly human-feedback Taste Profile.
     │
@@ -356,14 +365,17 @@ The system uses the following task registrations in Trigger.dev:
 
 | Task ID | Trigger Type | Schedule / Trigger | Max Duration | Concurrency | Model |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `scout-content` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 | — |
+| `scout-content` | `schedules.task` | Mon/Thu 04:30 UTC (PRODUCTION) or manual | 14400 seconds (4 hours) | 1 | — |
 | `process-content`| `task` | Batched from orchestrator | 300 seconds (5 minutes) | 5 (queue limit) | `MiniMax-M3` (TokenRouter) |
-| `draft-ideas` | `task` | Triggered by a manual `scout-content` run or started directly on-demand | **3600 seconds (1 hour)** | 1 | `MiniMax-M3` (TokenRouter, streaming) |
+| `draft-ideas` | `schedules.task` | From `scout-content`; Wed 05:30 UTC catch-all (PRODUCTION); or manual | **3600 seconds (1 hour)** | 1 | `MiniMax-M3` (TokenRouter, streaming) |
 | `write-tweets` | `task` | Triggered by `draft-ideas` | 600 seconds (10 minutes) | — | `x-ai/grok-4.3` (TokenRouter, temp 0.7) |
 | `evaluate-draft` | `task` | After valid writer output or backfill | 600 seconds | — | `MiniMax-M3` |
 | `backfill-idea-evaluations` | `task` | Manual / script | 600 seconds | — | Dispatches `evaluate-draft` |
 | `curate-daily-ideas` | `schedules.task` | Daily 07:00 Africa/Lagos (PRODUCTION) | 300 seconds | — | Deterministic |
 | `promote-selected-ideas` | `schedules.task` | Every 15 min Africa/Lagos (PRODUCTION) | 600 seconds | — | Deterministic |
+| `generate-production-blueprint` | `task` | After selection or manual regeneration | 900 seconds | — | `MiniMax-M3` |
+| `sync-production-readiness` | `schedules.task` | Every 15 min Africa/Lagos (PRODUCTION) | 600 seconds | — | Deterministic |
+| `backfill-production-preflights` | `task` | Manual backfill | 600 seconds | — | Dispatches `evaluate-draft` |
 | `sync-posted-content-to-tracker` | `schedules.task` | Hourly :05 Africa/Lagos (PRODUCTION) | 600 seconds | — | Deterministic |
 | `refresh-taste-profile` | `schedules.task` | Sunday 08:00 Africa/Lagos (PRODUCTION) | 600 seconds | — | `MiniMax-M3` |
 | `research-tweets` | `task` | On-demand (Manual Run) | 14400 seconds (4 hours) | 1 | `MiniMax-M3` (TokenRouter) |
@@ -375,8 +387,18 @@ npm run migrate:roadmap        # add/ensure Notion roadmap properties
 npm run migrate:roadmap:dry    # dry-run migration
 npm run verify:roadmap         # live schema checks
 npm run enrich:hooks           # enrich viral-hook-templates.json metadata
-npm test                       # includes evaluation, curation, hook intelligence tests
+npm test                       # includes evaluation, curation, hook intelligence, and 7-fixture production tests
+npm run test:production-blueprint
 ```
+
+### Dynamic production blueprint rules
+
+- Inputs are the scouted source, comprehension, selected idea, full draft, format, reader outcome, claims, mechanisms, and evidence needs.
+- Every proposed asset must serve a necessity test; decorative and vague assets are rejected. Text-only output is valid.
+- Required Asset Count is derived from the actual asset list. Effort Fit is derived from preflight burden, with the old format/length calculation used only when preflight fails.
+- Short, Mid-length, Thread, and Article variations get independent plans.
+- Regeneration uses stable asset keys and preserves human status, notes, captured location, blockers, and completion history. Obsolete assets are deactivated, not deleted.
+- The automation plans and tracks production. It never creates media, changes Pipeline Status to Ready, selects an idea, or publishes content.
 
 ---
 
